@@ -4,6 +4,15 @@
 /*jslint nomen: true, white: true */
 /*global PS */
 
+
+//David Allen -  Added the following mods
+//	Changed the color palette
+//	Significantly changed the soundscape 
+//	Player will now automatically go back towards start instead of moving
+// 	New pieces of gold will now spawn on a timer (the time between spawns goes up so that the game is eventually completable)
+//	An ascending scale plays as gold pieces are collected
+
+
 // The G object will contain all public constants, variables and functions
 
 var G;
@@ -22,24 +31,25 @@ var G;
 	var PLANE_FLOOR = 0; // z-plane of floor
 	var PLANE_ACTOR = 1; // z-plane of actor
 
-	var COLOR_BG = PS.COLOR_GRAY_DARK; // background color
-	var COLOR_WALL = PS.COLOR_BLACK; // wall color
-	var COLOR_FLOOR = PS.COLOR_GRAY; // floor color
-	var COLOR_ACTOR = PS.COLOR_GREEN; // actor color
-	var COLOR_GOLD = PS.COLOR_YELLOW; // gold color
-	var COLOR_EXIT = PS.COLOR_BLUE; // exit color
+	var COLOR_BG = 0x725327; // background color
+	var COLOR_WALL = 0x171726; // wall color
+	var COLOR_FLOOR = 0x25191E; // floor color
+	var COLOR_ACTOR = 0xc0ffc0; // actor color
+	var COLOR_GOLD = 0x896D35; // gold color
+	var COLOR_EXIT = 0xD75F50; // exit color
 
-	var SOUND_FLOOR = "fx_click"; // touch floor sound
-	var SOUND_WALL = "fx_hoot"; // touch wall sound
-	var SOUND_GOLD = "fx_coin1"; // take coin sound
-	var SOUND_OPEN = "fx_powerup8"; // open exit sound
-	var SOUND_WIN = "fx_tada"; // win sound
+	var SOUND_FLOOR = "fx_tick"; // touch floor sound
+	var SOUND_WALL = "fx_bloink"; // touch wall sound
+	var SOUND_GOLD = ['hchord_c3', 'hchord_d3', 'hchord_e3', 'hchord_f3', 'hchord_g3', 'hchord_a3', 'hchord_b3', 'hchord_c4']; // take coin sound
+	var SOUND_OPEN = "fx_powerup6"; // open exit sound
+	var SOUND_WIN = "fx_squawk"; // win sound
 	var SOUND_ERROR = "fx_uhoh"; // error sound
 
 	var WALL = 0; // wall
 	var FLOOR = 1; // floor
 	var GOLD = 2; // floor + gold
 
+	var GOLD_SPAWN_DEFAULT = 5;
 	// Variables
 
 	var id_sprite; // actor sprite id
@@ -48,6 +58,7 @@ var G;
 
 	var gold_count; // initial number of gold pieces in map
 	var gold_found; // gold pieces collected
+	var gold_spawn = GOLD_SPAWN_DEFAULT;
 	var won = false; // true on win
 
 	// This handmade imageMap is used for map drawing and pathfinder logic
@@ -63,29 +74,30 @@ var G;
 		height: 21, // must match HEIGHT!
 		pixelSize: 1, // must be present!
 		data: [
-			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
 			0, 1, 1, 1, 1, 1, 2, 1, 0, 0, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1, 0,
 			0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0,
 			0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 2, 0,
 			0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0,
-			0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0,
-			0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0,
-			0, 1, 1, 1, 1, 0, 0, 1, 0, 0, 1, 2, 1, 1, 0, 0, 1, 0, 0, 1, 0,
+			0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0,
+			0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0,
+			0, 1, 1, 1, 1, 0, 0, 1, 0, 0, 1, 2, 1, 1, 0, 0, 1, 1, 1, 1, 0,
 			0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0,
 			0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0,
 			0, 1, 0, 0, 1, 2, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 0,
-			0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0,
-			0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0,
+			0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0,
+			0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0,
 			0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 2, 0,
 			0, 0, 0, 0, 1, 0, 0, 2, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0,
 			0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 2, 0, 0, 1, 0, 0, 1, 0,
 			0, 1, 0, 0, 1, 1, 1, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 1, 1, 1, 0,
-			0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0,
+			0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 0,
 			0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0,
 			0, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 1, 0,
 			0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 		]
 	};
+
 
 	// These two variables control the initial location of the actor
 	// This location MUST correspond to a floor location (1) in the maza.data array
@@ -111,11 +123,42 @@ var G;
 	var tick = function () {
 		var p, nx, ny, ptr, val;
 
+
+		gold_spawn--;
+		if(gold_spawn == 0){
+			var valid = false
+			while(!valid){
+				var point = PS.random(map.width*map.height);
+				if(map.data[point] == FLOOR){
+					valid = true;
+				}
+			}
+			gold_count++;
+
+			map.data[point] = GOLD;
+			PS.gridPlane( PLANE_FLOOR ); // switch to floor plane
+			
+			PS.audioPlay('perc_shaker');
+			// ptr = y * HEIGHT + x
+			var y = Math.floor(point / HEIGHT);
+			var x = point - (y * HEIGHT);
+			
+			PS.color( x, y, COLOR_GOLD ); // change visible floor color
+			
+
+			GOLD_SPAWN_DEFAULT += 3;
+			gold_spawn = GOLD_SPAWN_DEFAULT;
+		}
+
 		if ( !path ) { // path invalid (null)?
 			return; // just exit
 		}
+		
+		PS.audioPlay('perc_tambourine', {volume: 0.1});
 
 		// Get next point on path
+
+		
 
 		p = path[ step ];
 		nx = p[ 0 ]; // next x-pos
@@ -160,7 +203,12 @@ var G;
 
 			else {
 				PS.statusText( "Found " + gold_found + " gold!" );
-				PS.audioPlay( SOUND_GOLD );
+				
+				var note = gold_found - 1;
+				while(note >= 8){
+					note -= 8;
+				}
+				PS.audioPlay( SOUND_GOLD[note]);
 			}
 		}
 
@@ -180,6 +228,7 @@ var G;
 
 		if ( step >= path.length ) {
 			path = null;
+			G.move( 1, 1 );
 		}
 	};
 
@@ -245,7 +294,9 @@ var G;
 
 			PS.audioLoad( SOUND_FLOOR, { lock : true } );
 			PS.audioLoad( SOUND_WALL, { lock : true } );
-			PS.audioLoad( SOUND_GOLD, { lock : true } );
+			for (var i = SOUND_GOLD.length - 1; i >= 0; i--) {
+				PS.audioLoad( SOUND_GOLD[i], { lock : true } );
+			}
 			PS.audioLoad( SOUND_OPEN, { lock : true } );
 			PS.audioLoad( SOUND_WIN, { lock : true } );
 
@@ -317,7 +368,7 @@ PS.init = function( system, options ) {
 
 PS.touch = function( x, y, data, options ) {
 	"use strict";
-
+	PS.audioPlay("fx_blip");
 	G.move( x, y ); // initiates actor movement
 };
 
