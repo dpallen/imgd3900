@@ -368,9 +368,6 @@ PS.touch = function( x, y, data, options ) {
 
 	PS.dbEvent( "touchdb", "x", x, "y", y, "type", type);
 
-	PS.dbSend ( "touchdb", "dpallen" );
-
-
 	G.move( x, y ); // initiates actor movement
 };
 
