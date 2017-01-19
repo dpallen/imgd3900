@@ -90,6 +90,29 @@ var G;
 		]
 	};
 
+	var backtrack_array;
+
+	// create the backtrack_array
+	var backtrack_builder = function(){
+		var height = map.height;
+		var width = map.width;
+		var total_length = height*width;
+		backtrack_array = [];
+
+		// iterate thru the map data
+		for(var i = 0; i<total_length; i++){
+			// if 0 (wall), set to -1 becacuse it'll never go up
+			if(map.data[i] == 0){
+				backtrack_array.push(-1);
+			}else{ // Otherwise, set it to 0 (walked on there 0 times initially)
+				backtrack_array.push(0);
+			}
+		}
+
+		//PS.debug(backtrack_array);
+
+	};
+
 	// These two variables control the initial location of the actor
 
 	var actorX; // initial x-pos of actor sprite
@@ -129,15 +152,23 @@ var G;
 			return;
 		}
 
-		// Move sprite to next position
 
+		// Move sprite to next position
 		PS.spriteMove( id_sprite, nx, ny );
 		actorX = nx; // update actor's xpos
 		actorY = ny; // and ypos
+		ptr = ( actorY * map.height ) + actorX; // pointer to map data under actor
+		//PS.debug("pointer", ptr);
+		var ptr_X = -map.height*actorY+ptr; // X value from the pointer
+		var ptr_Y = ( ptr - actorX)/map.height; // Y value from the pointer
+		//PS.debug("("+ ptr_X +", "+ptr_Y+ ")");
+
+		// Consider old position
+		//PS.color(actorX, actorY, PS.COLOR_WHITE);
+		backtrack_array[ptr] = backtrack_array[ptr] + 1;
+		//PS.debug("ptr: " + ptr + " value: " + backtrack_array[ptr] + "\n");
 
 		// If actor has reached a gold piece, take it
-
-		ptr = ( actorY * map.height ) + actorX; // pointer to map data under actor
 		val = map.data[ ptr ]; // get map data
 		if ( val === MAP_GOLD ) {
 			map.data[ ptr ] = MAP_FLOOR; // change gold to floor in map.data
@@ -171,8 +202,25 @@ var G;
 			PS.statusText( "You escaped with " + gold_found + " gold!" );
 			PS.audioPlay( SOUND_WIN );
 
-			// Send touchDB
-			PS.dbSend ("touchdb", "dpallen");
+			// Populate backtrackDB and backtrackXYDB
+			for(var i = 0; i<backtrack_array.length; i++){
+				PS.dbEvent("backtrackDB", "ptr", i, "cover count", backtrack_array[i]);
+
+				var y = Math.floor(i / map.height);
+				var x = i - (y * map.height);
+
+				//var ptr_X = -map.height*actorY+i; // X value from the pointer
+				//var ptr_Y = ( i - actorX)/map.height; // Y value from the pointer
+
+				//PS.debug("("+ x +", "+ y + ")");
+
+				PS.dbEvent("backtrackXYDB", "X-coord", x, "Y-coord", y, "Cover Count", backtrack_array[i]);
+			}
+
+
+			// Send backtrackDB
+			PS.dbSend("backtrackDB", "dpallen");
+			PS.dbSend("backtrackXYDB", "dpallen");
 
 			won = true;
 			return;
@@ -308,6 +356,9 @@ var G;
 			path = null; // start with no path
 			step = 0;
 			id_timer = PS.timerStart( 6, tick );
+
+			// Populate the backtrack array
+			backtrack_builder();
 		},
 
 		// move( x, y )
@@ -349,8 +400,9 @@ var G;
 PS.init = function( system, options ) {
 	"use strict";
 
-	// init touchDB
-	PS.dbInit('touchdb');
+	// init backtrackDB
+	PS.dbInit('backtrackDB');
+	PS.dbInit('backtrackXYDB');
 
 	G.init(); // game-specific initialization
 
@@ -361,12 +413,6 @@ PS.init = function( system, options ) {
 
 PS.touch = function( x, y, data, options ) {
 	"use strict";
-
-	// record touchDB
-
-	var type = G.calcBeadType(x, y);
-
-	PS.dbEvent( "touchdb", "x", x, "y", y, "type", type);
 
 	G.move( x, y ); // initiates actor movement
 };
