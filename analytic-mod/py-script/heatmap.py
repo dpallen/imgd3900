@@ -36,7 +36,7 @@ if __name__ == "__main__":
     fig, (ax1) = plt.subplots()
     cax = ax1.imshow(arr1, interpolation="nearest")
 
-    cbar = fig.colorbar(cax, ticks=[-1, 0, 1, 2, 3])  # color bar
+    cbar = fig.colorbar(cax, ticks=[-1, 0, 1, 2, 3, 4])  # color bar
 
     rect = 111  # subplot param for combined axes
 
