@@ -40,7 +40,7 @@ var G;
 	var MAP_EXIT = 4; // floor + exit
 
 	var GOLD_MAX = 10; // maximum gold
-
+	var DEBUG_MODE = false;
 	// Variables
 
 	var id_sprite; // actor sprite id
@@ -102,7 +102,7 @@ var G;
 		// iterate thru the map data
 		for(var i = 0; i<total_length; i++){
 			// if 0 (wall), set to -1 becacuse it'll never go up
-			if(map.data[i] == 0){
+			if(map.data[i] === 0){
 				backtrack_array.push(-1);
 			}else{ // Otherwise, set it to 0 (walked on there 0 times initially)
 				backtrack_array.push(0);
@@ -183,7 +183,11 @@ var G;
 				PS.color( exitX, exitY, COLOR_EXIT ); // show the exit
 				PS.glyphColor( exitX, exitY, PS.COLOR_WHITE ); // mark with white X
 				PS.glyph( exitX, exitY, "X" );
-				PS.statusText( "Found " + gold_found + " gold! Exit open!" );
+				
+				if(DEBUG_MODE !== true){
+					PS.statusText( "Found " + gold_found + " gold! Exit open!" );
+				}
+				
 				PS.audioPlay( SOUND_OPEN );
 			}
 
@@ -404,6 +408,9 @@ PS.init = function( system, options ) {
 	PS.dbInit('backtrackDB');
 	PS.dbInit('backtrackXYDB');
 
+	PS.borderColor ( PS.ALL, PS.ALL, 0xE519D2FF );
+
+
 	G.init(); // game-specific initialization
 
 };
@@ -414,7 +421,9 @@ PS.init = function( system, options ) {
 PS.touch = function( x, y, data, options ) {
 	"use strict";
 
-	G.move( x, y ); // initiates actor movement
+	if(G.DEBUG_MODE !== true){
+		G.move( x, y ); // initiates actor movement
+	}
 };
 
 // All event functions must be present to prevent startup errors,
@@ -426,10 +435,22 @@ PS.release = function( x, y, data, options ) {
 
 PS.enter = function( x, y, data, options ) {
 	"use strict";
+
+	if(G.DEBUG_MODE === true){
+		PS.statusText("(" + x + ", " + y + ")");
+		PS.borderColor ( x, y, 0xE519D2FF );
+
+		PS.border( x, y, 4 );
+	}
 };
 
 PS.exit = function( x, y, data, options ) {
 	"use strict";
+
+	if(G.DEBUG_MODE === true){
+		PS.statusText("(" + x + ", " + y + ")");
+		PS.border( x, y, 0);
+	}
 };
 
 PS.exitGrid = function( options ) {
@@ -438,6 +459,17 @@ PS.exitGrid = function( options ) {
 
 PS.keyDown = function( key, shift, ctrl, options ) {
 	"use strict";
+	if(key == PS.KEY_ARROW_UP){
+		if(G.DEBUG_MODE === true){
+			PS.statusText('Debug mode disabled');
+			PS.border( PS.ALL, PS.ALL, 0);
+			G.DEBUG_MODE = false;
+		} else {
+			PS.statusText('Debug mode enabled');
+			G.DEBUG_MODE = true;
+		}
+	}
+	
 };
 
 PS.keyUp = function( key, shift, ctrl, options ) {
