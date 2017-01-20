@@ -40,10 +40,16 @@ if __name__ == "__main__":
     fig, (ax1) = plt.subplots()
 
     cmap = colors.ListedColormap(['black','#00267F','#33CB64','#CFFA04', '#FFBE00', '#CC4632'])
-    bounds=[-1.5,-0.5, 0.5, 1.5, 2.5, 3.5, 4.5]
+    no_wall = colors.ListedColormap(['#00267F','#33CB64','#CFFA04', '#FFBE00', '#CC4632'])
+
+    bounds = [-1.5,-0.5, 0.5, 1.5, 2.5, 3.5, 4.5]
+    no_bounds = [-0.5, 0.5, 1.5, 2.5, 3.5, 4.5]
+
     norm = colors.BoundaryNorm(bounds, cmap.N)
+    no_norm = colors.BoundaryNorm(bounds, no_wall.N)
+
     cax = ax1.imshow(arr1, interpolation="nearest", cmap=cmap, norm=norm)
-    cbar = fig.colorbar(cax, cmap=cmap, norm=norm, boundaries=bounds, ticks=[-1, 0, 1, 2, 3, 4])  # color bar
+    cbar = fig.colorbar(cax, cmap=no_wall, norm=no_norm, boundaries=no_bounds, ticks=[0, 1, 2, 3, 4])  # color bar
 
     for ax in [ax1]:
         ax.locator_params(nbins=4)
