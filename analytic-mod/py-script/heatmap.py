@@ -39,8 +39,8 @@ if __name__ == "__main__":
 
     fig, (ax1) = plt.subplots()
 
-    cmap = colors.ListedColormap(['black','#00267F','#33CB64','#CFFA04', '#FFBE00', '#CC4632'])
-    no_wall = colors.ListedColormap(['#00267F','#33CB64','#CFFA04', '#FFBE00', '#CC4632'])
+    cmap = colors.ListedColormap(['black','#000FD9','#59CF04','#CEF705', '#D77A05', '#D40505'])
+    no_wall = colors.ListedColormap(['#000FD9','#59CF04','#CEF705', '#D77A05', '#D40505'])
 
     bounds = [-1.5,-0.5, 0.5, 1.5, 2.5, 3.5, 4.5]
     no_bounds = [-0.5, 0.5, 1.5, 2.5, 3.5, 4.5]
