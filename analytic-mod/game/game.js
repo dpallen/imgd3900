@@ -164,6 +164,7 @@ var G;
 		// Consider old position
 		//PS.color(actorX, actorY, PS.COLOR_WHITE);
 		backtrack_array[ptr] = backtrack_array[ptr] + 1;
+		/*
 		switch(backtrack_array[ptr]){
 			case 1:
 				PS.color(actorX, actorY, PS.COLOR_WHITE);
@@ -176,7 +177,7 @@ var G;
 				break;
 			default:
 				break;
-		}
+		}*/
 		//PS.debug("ptr: " + ptr + " value: " + backtrack_array[ptr] + "\n");
 
 		// If actor has reached a gold piece, take it

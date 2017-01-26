@@ -1,5 +1,4 @@
 // game.js for Perlenspiel 3.2.x
-
 /*
 Perlenspiel is a scheme by Professor Moriarty (bmoriarty@wpi.edu).
 Perlenspiel is Copyright © 2009-17 Worcester Polytechnic Institute.
@@ -19,24 +18,532 @@ You may have received a copy of the GNU Lesser General Public License
 along with Perlenspiel. If not, see <http://www.gnu.org/licenses/>.
 */
 
+/**
+ * LOCK:HACK
+ * Created by Henry Wheeler-Mackta and David Allen
+ * January 2017
+ *
+ * Background music is...
+ * All sound effects are...
+ **/
+var G = { // General game logic
+	GRID_HEIGHT: 9,
+	GRID_WIDTH: 9,
+
+	COLOR_BG: PS.COLOR_BLACK, // temporary until we figure out what the background will look like
+	COLOR_BEAD_DEFAULT: PS.COLOR_WHITE, // bead that is not toggled or on or whatever
+	COLOR_BEAD_SELECTED: PS.COLOR_GRAY, // bead that is currently selected
+	COLOR_BEAD_CORRECT: PS.COLOR_GREEN, // bead that was correct
+	COLOR_BEAD_INCORRECT: PS.COLOR_RED, // bead that isn't involved
+	COLOR_BEAD_ALMOST: PS.COLOR_YELLOW, // bead that is in the right spot but not the right order
+	COLOR_LINE_DEFAULT: PS.COLOR_GRAY, // line while drawing
+
+
+	isPlayable: false, // for cutscenes, etc.
+	isDragging: false, // is player dragging the mouse?
+
+	currentPool: "zero", // difficulty pool
+	currentLevel: "", // name of level
+
+	currentStep: 0, // the currentStep, starts at 0
+	currentLockedBead: [0, 0], // the current locked bead
+	lastLockedBead: [0, 0],
+	level_attempt:[], // the level attempt
+	hint_array:[], // the hint array
+
+	HINT_NOTPART: 0, //for hint array
+	HINT_CORRECT: 1,
+	HINT_WRONG: 2,
+	HINT_ALMOST: 3,
+
+	show_hint_rate: 60, // how long to show hints
+	show_hint_timer: 0, // how long to show hints timer
+	show_win_rate: 120, // how long to show win
+	show_win_timer: 0, // how long to show win timer
+
+	reset_attempt: function(){ // reset the level_attempt
+		G.level_attempt =
+			[0, 0, 0,
+				0, 0, 0,
+				0, 0, 0];
+	},
+
+	toggle_bead: function(x, y){
+		// convert the x/y to the 3*3 scale
+		// 0 1 2
+		// 3 4 5
+		// 6 7 8
+		var level_x = -1; // the x translated to level logic
+		var level_y = -1; // the y translated to level logic
+
+		switch(x){ // convert x
+			case L.x_coords[0]:
+				level_x = 0;
+				break;
+			case L.x_coords[1]:
+				level_x = 1;
+				break;
+			case L.x_coords[2]:
+				level_x = 2;
+				break;
+			default: // doesn't do anything
+				break;
+			}
+
+		switch(y){ // convert yy
+			case L.y_coords[0]:
+				level_y = 0;
+				break;
+			case L.y_coords[1]:
+				level_y = 1;
+				break;
+			case L.y_coords[2]:
+				level_y = 2;
+				break;
+			default: // doesn't do anything
+				break;
+		}
+
+		// if either level_x or level_y are equal to -1, escape
+		if((level_x == -1) || (level_y == -1)){
+			//PS.debug("no");
+			return;
+		}
+
+		//
+
+		//J.lock_line();
+		G.lastLockedBead = G.currentLockedBead;
+		G.currentLockedBead = [x, y];
+		// Lock the previous drawn line if greater than step 1
+		if(G.currentStep > 0) {
+			J.lock_line();
+		}
+
+		var ptr = ( level_y * L.y_height ) + level_x; // pointer to location in level attempt array
+
+		if(G.level_attempt[ptr] == 0) { // only iterate if we're on a spot that hasn't been occupied yet
+			G.currentStep++; // iterate currentStep
+
+		// set level_attempt index value to whatever currentStep is
+		//PS.debug("ptr:" + ptr);
+		//PS.debug("\nptrv: " + G.level_attempt[ptr] + "\n");
+
+			G.level_attempt[ptr] = G.currentStep;
+
+			var short_correct = G.check_attempt_helper(); // check for correctness
+			if(short_correct){
+				G.check_attempt();
+			}
+		}
+		},
+
+	check_attempt_helper : function(){ // check the actual values
+		var correct = true;
+		for (var i = 0; i < G.level_attempt.length; i++) {
+			if (G.level_attempt[i] !== L.level[i]){
+				//PS.debug("you're wrong"); /** FOR DEBUGGING**/
+				correct = false;
+			}
+		}
+
+		return correct;
+	},
+
+	check_attempt: function(){ // check attempt versus current level
+		G.isPlayable = false;
+		//PS.debug(G.level_attempt + "\n");
+		//PS.debug(L.level + "\n");
+		var correct = G.check_attempt_helper();
+		//PS.debug("you're right"); /** FOR DEBUGGING**/
+
+		if(!correct){
+			G.give_hint();
+		}else{
+			// GO ON TO NEXT LEVEL OR SOMETHING
+			G.win_board();
+		}
+		return correct;
+	},
+
+	give_hint: function(){ // builds the hint array and sends it to juice
+		//PS.debug("building hint array...\n");
+
+		G.hint_array = // populate with not parts
+			[G.HINT_NOTPART, G.HINT_NOTPART, G.HINT_NOTPART,
+				G.HINT_NOTPART, G.HINT_NOTPART, G.HINT_NOTPART,
+				G.HINT_NOTPART, G.HINT_NOTPART, G.HINT_NOTPART];
+
+		// HINT VALUES:
+		// 0 = who cares
+		// 1 = correct
+		// 2 = incorrect
+		// 3 = correct but in wrong order
+
+		for(var i = 0; i< L.level.length; i++){ // check versus attempt
+			if((L.level[i] == G.HINT_NOTPART) && (G.level_attempt[i] != G.HINT_NOTPART)){ // a part that shouldn't be
+				G.hint_array[i] = G.HINT_WRONG;
+			}else if((L.level[i] != G.level_attempt[i])&&(G.level_attempt[i]!=0)){ // wrong order
+				G.hint_array[i] = G.HINT_ALMOST;
+			}
+
+			if((L.level[i] == G.level_attempt[i]) && (G.level_attempt[i] != 0)){ // check if they're the same, but not if the attempt included 0
+				G.hint_array[i] = G.HINT_CORRECT;
+			}
+		}
+
+		//PS.debug(G.hint_array);
+		J.show_hints(); // show the hints
+	},
+
+	reset_board: function(){
+		G.currentStep = 0; // the currentStep, starts at 0
+		G.currentLockedBead = [0, 0]; // the current locked bead
+		G.lastLockedBead = [0, 0];
+		G.level_attempt =[]; // the level attempt
+		G.hint_array=[]; // the hint array
+	},
+
+	win_board: function(){ // the board is won!
+		S.showIntel();
+		// start timer for how long to show intel then load another one
+		G.show_win_timer = PS.timerStart(G.show_win_rate, G.next_level);
+
+		PS.gridPlane(J.PLANE_BEAD_HINT);
+		for(var i = 0; i< G.level_attempt.length; i++){
+			// if its not zero it has to be part of it
+			if(G.level_attempt[i]>0){
+				var real = G.convert_simple_to_actual(i);
+				PS.alpha(real[0], real[1], 100);
+				J.paint_bead(real[0], real[1], "CORRECT");
+			}
+		}
+	},
+
+	next_level: function(){ // stop the win timer
+		PS.timerStop(G.show_win_timer);
+		// clear the boards and stuff
+		G.reset_attempt();
+		G.reset_board();
+		S.hideIntel();
+		L.load_level("zero_1");
+	},
+
+	convert_simple_to_actual: function(ptr){ // convert the pointer to the actual X/Y value
+		var actual_x = 0;
+		var actual_y = 0;
+
+		// first we convert to the 3*3 array
+		actual_y = Math.floor(ptr / L.y_height);
+		actual_x = ptr - (actual_y * L.y_height);
+
+		// next we convert to the actual 9*9 array
+		//2 = 7
+		//1 = 4
+		//0 = 1
+		actual_y = actual_y * 3 + 1; /** HARD-CODED **/
+		actual_x = actual_x * 3 + 1;
+
+		return [actual_x, actual_y];
+	}
+};
+
+var L = { // Level logic, loading, etc.
+
+	// Which beads do we care about?
+	x_coords: [1, 4, 7], // the x-coords that can have a thing
+	y_coords: [1, 4, 7], // the y-coords that can have a thing
+	x_width: 3, // height of the level array
+	y_height: 3, // height of the level array
+
+	level:[], // the level data, typically a 3x3 array
+	numSteps: 0, // the number of beads needed to complete the level
+
+
+	load_level: function(level){
+		// reset the level attempt and board
+
+		G.reset_board();
+		G.reset_attempt();
+		G.isDragging = false; // set dragging to false
+		L.numSteps = 0; // set steps to zero initially
+		L.currentStep = 0; // reset step to 0
+
+		//L.level = level; // set the level
+		L[level](); // initialize the level
+
+
+
+		PS.gridPlane(J.PLANE_FLOOR);
+		PS.borderColor(PS.ALL, PS.ALL, G.COLOR_BG); // temporary until we figure out what background will look like
+
+		var i = 0; // counter for level populator
+		for(var y = 0; y < G.GRID_HEIGHT; y++){
+			for(var x = 0; x < G.GRID_WIDTH; x++){
+				// Check if X or Y are equal to the beads that we care about
+				if(L.x_coords.indexOf(x) != -1){
+					if(L.y_coords.indexOf(y) != -1){
+						// we care
+						PS.data(x, y, L.level[i]);
+						PS.gridPlane(J.PLANE_BEAD);
+						PS.alpha(x, y, 255);
+						J.paint_bead(x, y, "DEFAULT"); // color it white or whatever
+
+						if(L.level[i] != 0){ // zeroes are beads that aren't part of the puzzle
+							L.numSteps++; // increase nusteps by one
+							//PS.color(x, y, PS.COLOR_CYAN); /**FOR DEBUGGING**/
+						}
+
+						//PS.glyph(x, y, i.toString()); /**FOR DEBUGGING**/
+						i++;
+
+					}
+				}
+			}
+		}
+
+		G.isPlayable = true; // set playable
+	},
+
+	// dummy level
+	zero_1: function(){
+		L.level =
+			[0, 1, 2,
+			 0, 0, 3,
+			 0, 0, 4];
+
+
+
+	}
+};
+
+var J = { // Juice
+	PLANE_FLOOR: 0, // plane for floor (unneeded?)
+	PLANE_LINE: 1, // plane for drawn lines
+	PLANE_NEWLINE: 2, // plane for newly drawn lines
+	PLANE_BEAD: 3, // plane for drawn beads
+	PLANE_LINE_HINT: 4, // plane for hints
+	PLANE_BEAD_HINT: 5, // plane for hints
+
+
+	paint_bead: function(x, y, style){ // style can be DEFAULT, SELECTED, WRONG, ALMOST, CORRECT
+		PS.borderColor(x, y, G.COLOR_BG);
+		switch(style){
+			case "DEFAULT":
+				PS.color(x, y, G.COLOR_BEAD_DEFAULT);
+				break;
+			case "SELECTED":
+				PS.color(x, y, G.COLOR_BEAD_SELECTED); // I don't know what this will be
+				break;
+			case "WRONG":
+				PS.color(x, y, G.COLOR_BEAD_INCORRECT);
+				break;
+			case "ALMOST":
+				PS.color(x, y, G.COLOR_BEAD_ALMOST);
+				break;
+			case "CORRECT":
+				PS.color(x, y, G.COLOR_BEAD_CORRECT);
+				break;
+		}
+	},
+
+	repaint_board: function(){ // repaints the whole board to the default
+		PS.gridPlane(J.PLANE_FLOOR);
+		PS.color(PS.ALL, PS.ALL, G.COLOR_BG);
+
+		// now clear the lines
+		PS.gridPlane(J.PLANE_NEWLINE);
+		PS.alpha(PS.ALL, PS.ALL, 0);
+		PS.gridPlane(J.PLANE_LINE);
+		PS.alpha(PS.ALL, PS.ALL, 0);
+
+		// also clear hints
+		PS.gridPlane(J.PLANE_BEAD_HINT);
+		PS.alpha(PS.ALL, PS.ALL, 0);
+	},
+
+	show_hints: function(){ // show the hints, this will be more complicated eventually
+		// START HINT TIMER
+		G.show_hint_timer = PS.timerStart(G.show_hint_rate, J.hide_hints);
+
+		PS.gridPlane(J.PLANE_BEAD_HINT);
+		for(var i = 0; i<G.hint_array.length; i++){
+			// switch for the 3 possibilities
+			switch(G.hint_array[i]){
+				case G.HINT_CORRECT: // make it green
+					var real = G.convert_simple_to_actual(i);
+					PS.alpha(real[0], real[1], 100);
+					J.paint_bead(real[0], real[1], "CORRECT");
+					break;
+				case G.HINT_ALMOST: // make it yellow
+					var real = G.convert_simple_to_actual(i);
+					PS.alpha(real[0], real[1], 100);
+					J.paint_bead(real[0], real[1], "ALMOST");
+					break;
+				case G.HINT_WRONG: // make it RED
+					var real = G.convert_simple_to_actual(i);
+					PS.alpha(real[0], real[1], 100);
+					J.paint_bead(real[0], real[1], "WRONG");
+					break;
+			}
+		}
+	},
+
+	hide_hints: function(){ // hide the hints, allowing for additional attempts
+		PS.timerStop(G.show_hint_timer);
+		//PS.debug("hide them now");
+
+		// first clear the hints
+		PS.gridPlane(J.PLANE_BEAD_HINT);
+		for(var i = 0; i<G.hint_array.length; i++){
+			// switch for the 3 possibilities
+			switch(G.hint_array[i]){
+				case G.HINT_CORRECT: // make it green
+					var real = G.convert_simple_to_actual(i);
+					PS.alpha(real[0], real[1], 0);
+					J.paint_bead(real[0], real[1], "DEFAULT");
+					break;
+				case G.HINT_ALMOST: // make it yellow
+					var real = G.convert_simple_to_actual(i);
+					PS.alpha(real[0], real[1], 0);
+					J.paint_bead(real[0], real[1], "DEFAULT");
+					break;
+				case G.HINT_WRONG: // make it RED
+					var real = G.convert_simple_to_actual(i);
+					PS.alpha(real[0], real[1], 0);
+					J.paint_bead(real[0], real[1], "DEFAULT");
+					break;
+			}
+		}
+
+		// reset the board and attempt
+		J.repaint_board();
+		G.reset_board();
+		G.reset_attempt();
+
+		// make playable again
+		G.isPlayable = true;
+
+	},
+
+	init_planes: function(){
+		/*
+		PLANE_FLOOR: 0, // plane for floor (unneeded?)
+			PLANE_LINE: 1, // plane for drawn lines
+			PLANE_NEWLINE: 2, // plane for newly drawn lines
+			PLANE_BEAD: 3, // plane for drawn beads
+			PLANE_LINE_HINT: 4, // plane for hints
+			PLANE_BEAD_HINT: 5, // plane for hints
+			*/
+		PS.gridPlane(J.PLANE_FLOOR);
+
+		PS.gridPlane(J.PLANE_LINE);
+		PS.color(PS.ALL, PS.ALL, G.COLOR_LINE_DEFAULT);
+		PS.alpha(PS.ALL, PS.ALL, 0); // invisibile initially
+		PS.border(PS.ALL, PS.ALL, 10);
+		PS.borderAlpha(PS.ALL, PS.ALL, 0);
+
+		PS.gridPlane(J.PLANE_NEWLINE);
+		PS.color(PS.ALL, PS.ALL, G.COLOR_LINE_DEFAULT);
+		PS.alpha(PS.ALL, PS.ALL, 0);
+		PS.border(PS.ALL, PS.ALL, 16);
+		PS.borderColor(PS.ALL, PS.ALL, G.COLOR_BEAD_CORRECT);
+		PS.borderAlpha(PS.ALL, PS.ALL, 255);
+
+		PS.gridPlane(J.PLANE_BEAD);
+		PS.alpha(PS.ALL, PS.ALL, 0);
+		PS.color(PS.ALL, PS.ALL, G.COLOR_BG);
+		PS.border(PS.ALL, PS.ALL, 0);
+
+
+
+	},
+
+	draw_line: function(x, y, x2, y2){ // draws a line from (x, y) to (x2, y2)
+		PS.gridPlane(J.PLANE_NEWLINE);
+		// first, clear all lines on the new plane (make transparent)
+		PS.alpha(PS.ALL, PS.ALL, 0);
+
+		/** TODO: Fix main beads being smaller when not supposed to**/
+		var line_array = PS.line(x, y, x2, y2);
+		for(var i = 0; i<line_array.length; i++){ //iterate thru line array
+			PS.alpha(line_array[i][0], line_array[i][1], 255); // set alpha to max
+			PS.border(line_array[i][0], line_array[i][1], 16); // set alpha to max
+
+		}
+	},
+
+	lock_line: function(){ // draws a permanent line from last x/y to last x2/y2
+		PS.gridPlane(J.PLANE_LINE);
+		//PS.alpha(PS.ALL, PS.ALL, 0);
+		var line_array = PS.line(G.lastLockedBead[0], G.lastLockedBead[1], G.currentLockedBead[0], G.currentLockedBead[1]);
+		for(var i = 0; i<line_array.length; i++){ //iterate thru line array
+			PS.alpha(line_array[i][0], line_array[i][1], 255); // set alpha to max
+		}
+	}
+
+
+};
+
+var A = { // Audio
+
+};
+
+var E = { // Editor
+
+};
+
+var S = { // Status Line
+	intelArray: [], // array of all intel
+	readIntel: [], // intel that has been read
+
+	populateIntel : function(){ // populates the array
+		// just put strings below here
+		// strings must look like...
+		//intelArray.push("#############################################");
+		S.intelArray.push("Aliens are real.");
+		S.intelArray.push("Anime is real.");
+		S.intelArray.push("The government is real.");
+		S.intelArray.push("Good boys sleep with hands atop the covers.");
+		S.intelArray.push("Missouri: Best Nuclear Dropping Site");
+		S.intelArray.push("Vaporwave isn't real");
+		S.intelArray.push("Burger King: 50% of Gov. Stock");
+		S.intelArray.push("[PUT SECRET HERE]");
+		S.intelArray.push("The Burger King is the most prolific Lobbyist");
+		S.intelArray.push("McDonalds owns 70% of Gov. Stock");
+		S.intelArray.push("Unreliable Narrator :^)");
+		S.intelArray.push("A hotdog with no bun");
+		S.intelArray.push("1/2 Cups of Walnut sauce");
+		S.intelArray.push("Cigarettes cure cancer");
+		S.intelArray.push("Lobbyists hate him!");
+		S.intelArray.push("Military.");
+		S.intelArray.push("We lost all the tanks.");
+		S.intelArray.push("'Nuclear proliferation is okay I guess'");
+
+
+	},
+
+	showIntel : function() { // outputs intel to status line
+		var rando = PS.random(S.intelArray.length+1); // generate from 1 to max
+
+		// push shown intel to the already read intel array
+		S.readIntel.push(S.intelArray[rando]);
+		PS.statusColor(PS.COLOR_WHITE);
+		PS.statusText(S.intelArray[rando]);
+
+	},
+
+	hideIntel : function() { // clears status line
+		PS.statusText("");
+	},
+};
+
+
+
 // The "use strict" directive in the following line is important. Don't remove it!
 "use strict";
 
 // The following comment lines are for JSLint/JSHint. Don't remove them!
-
-/*jslint nomen: true, white: true */
-/*global PS */
-
-// This is a template for creating new Perlenspiel games
-
-// All of the functions below MUST exist, or the engine will complain!
-
-// PS.init( system, options )
-// Initializes the game
-// This function should normally begin with a call to PS.gridSize( x, y )
-// where x and y are the desired initial dimensions of the grid
-// [system] = an object containing engine and platform information; see documentation for details
-// [options] = an object with optional parameters; see documentation for details
 
 PS.init = function( system, options ) {
 	// Use PS.gridSize( x, y ) to set the grid to
@@ -44,91 +551,80 @@ PS.init = function( system, options ) {
 	// Do this FIRST to avoid problems!
 	// Otherwise you will get the default 8x8 grid
 
-	PS.gridSize( 8, 8 );
+	PS.gridSize(G.GRID_WIDTH, G.GRID_HEIGHT);
+	PS.data(PS.ALL, PS.ALL, 0);   //init all beads to 0
+	PS.gridColor(G.COLOR_BG);
+	PS.gridFade(50);
+	PS.color(PS.ALL, PS.ALL, G.COLOR_BG);
+	PS.border(PS.ALL, PS.ALL, 0);
+
+	J.repaint_board();
+
+
+	//A.init_sound();
+	//L.populate_fail_count();
+
+	PS.statusText("");
+	J.init_planes();
+	S.populateIntel();
+	L.load_level("zero_1");
+	//A.start_bgm();
 
 	// Add any other initialization code you need here
 };
 
-// PS.touch ( x, y, data, options )
-// Called when the mouse button is clicked on a bead, or when a bead is touched
-// It doesn't have to do anything
-// [x] = zero-based x-position of the bead on the grid
-// [y] = zero-based y-position of the bead on the grid
-// [data] = the data value associated with this bead, 0 if none has been set
-// [options] = an object with optional parameters; see documentation for details
-
 PS.touch = function( x, y, data, options ) {
 	// Uncomment the following line to inspect parameters
 	// PS.debug( "PS.touch() @ " + x + ", " + y + "\n" );
-
-	// Add code here for mouse clicks/touches over a bead
+	if(!G.isPlayable){
+		return;
+	}
+	G.isDragging = true;  // we are dragging
+	G.toggle_bead(x, y);
+	G.currentLockedBead = [x, y];
+	G.lastLockedBead = [x, y];
 };
 
-// PS.release ( x, y, data, options )
-// Called when the mouse button is released over a bead, or when a touch is lifted off a bead
-// It doesn't have to do anything
-// [x] = zero-based x-position of the bead on the grid
-// [y] = zero-based y-position of the bead on the grid
-// [data] = the data value associated with this bead, 0 if none has been set
-// [options] = an object with optional parameters; see documentation for details
 
 PS.release = function( x, y, data, options ) {
 	// Uncomment the following line to inspect parameters
 	// PS.debug( "PS.release() @ " + x + ", " + y + "\n" );
-
-	// Add code here for when the mouse button/touch is released over a bead
+	if(!G.isPlayable){
+		return;
+	}
+	G.isDragging = false; // we are no longer dragging
+	G.check_attempt();
 };
 
-// PS.enter ( x, y, button, data, options )
-// Called when the mouse/touch enters a bead
-// It doesn't have to do anything
-// [x] = zero-based x-position of the bead on the grid
-// [y] = zero-based y-position of the bead on the grid
-// [data] = the data value associated with this bead, 0 if none has been set
-// [options] = an object with optional parameters; see documentation for details
 
 PS.enter = function( x, y, data, options ) {
 	// Uncomment the following line to inspect parameters
 	// PS.debug( "PS.enter() @ " + x + ", " + y + "\n" );
-
-	// Add code here for when the mouse cursor/touch enters a bead
+	if(!G.isPlayable){
+		return;
+	}
+	if(G.isDragging){
+		G.toggle_bead(x, y);
+		J.draw_line(G.currentLockedBead[0], G.currentLockedBead[1], x, y);
+	}
 };
 
-// PS.exit ( x, y, data, options )
-// Called when the mouse cursor/touch exits a bead
-// It doesn't have to do anything
-// [x] = zero-based x-position of the bead on the grid
-// [y] = zero-based y-position of the bead on the grid
-// [data] = the data value associated with this bead, 0 if none has been set
-// [options] = an object with optional parameters; see documentation for details
 
 PS.exit = function( x, y, data, options ) {
 	// Uncomment the following line to inspect parameters
 	// PS.debug( "PS.exit() @ " + x + ", " + y + "\n" );
 
-	// Add code here for when the mouse cursor/touch exits a bead
+
 };
 
-// PS.exitGrid ( options )
-// Called when the mouse cursor/touch exits the grid perimeter
-// It doesn't have to do anything
-// [options] = an object with optional parameters; see documentation for details
 
 PS.exitGrid = function( options ) {
 	// Uncomment the following line to verify operation
 	// PS.debug( "PS.exitGrid() called\n" );
 
-	// Add code here for when the mouse cursor/touch moves off the grid
+	G.isDragging = false; // this prevents messiness
 };
 
-// PS.keyDown ( key, shift, ctrl, options )
-// Called when a key on the keyboard is pressed
-// It doesn't have to do anything
-// [key] = ASCII code of the pressed key, or one of the PS.KEY constants documented at:
-// http://users.wpi.edu/~bmoriarty/ps/constants.html
-// [shift] = true if shift key is held down, else false
-// [ctrl] = true if control key is held down, else false
-// [options] = an object with optional parameters; see documentation for details
 
 PS.keyDown = function( key, shift, ctrl, options ) {
 	// Uncomment the following line to inspect parameters
@@ -137,14 +633,6 @@ PS.keyDown = function( key, shift, ctrl, options ) {
 	// Add code here for when a key is pressed
 };
 
-// PS.keyUp ( key, shift, ctrl, options )
-// Called when a key on the keyboard is released
-// It doesn't have to do anything
-// [key] = ASCII code of the pressed key, or one of the PS.KEY constants documented at:
-// http://users.wpi.edu/~bmoriarty/ps/constants.html
-// [shift] = true if shift key is held down, false otherwise
-// [ctrl] = true if control key is held down, false otherwise
-// [options] = an object with optional parameters; see documentation for details
 
 PS.keyUp = function( key, shift, ctrl, options ) {
 	// Uncomment the following line to inspect parameters
@@ -153,11 +641,6 @@ PS.keyUp = function( key, shift, ctrl, options ) {
 	// Add code here for when a key is released
 };
 
-// PS.input ( sensors, options )
-// Called when an input device event (other than mouse/touch/keyboard) is detected
-// It doesn't have to do anything
-// [sensors] = an object with sensor information; see documentation for details
-// [options] = an object with optional parameters; see documentation for details
 
 PS.input = function( sensors, options ) {
 	// Uncomment the following block to inspect parameters
@@ -173,10 +656,6 @@ PS.input = function( sensors, options ) {
 	// Add code here for when an input event is detected
 };
 
-// PS.shutdown ( options )
-// Called when the browser window running Perlenspiel is about to close
-// It doesn't have to do anything
-// [options] = an object with optional parameters; see documentation for details
 
 PS.shutdown = function( options ) {
 
