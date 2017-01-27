@@ -26,6 +26,7 @@ along with Perlenspiel. If not, see <http://www.gnu.org/licenses/>.
  * Background music is...
  * All sound effects are...
  **/
+
 var G = { // General game logic
 	GRID_HEIGHT: 9,
 	GRID_WIDTH: 9,
@@ -47,6 +48,7 @@ var G = { // General game logic
 
 	currentStep: 0, // the currentStep, starts at 0
 	currentLockedBead: [0, 0], // the current locked bead
+	currentAttemps: 0, // current attemps
 	lastLockedBead: [0, 0],
 	level_attempt:[], // the level attempt
 	hint_array:[], // the hint array
@@ -117,7 +119,11 @@ var G = { // General game logic
 		G.currentLockedBead = [x, y];
 		// Lock the previous drawn line if greater than step 1
 		if(G.currentStep > 0) {
+			PS.audioPlay(A.sfx_click_next);
 			J.lock_line();
+		}else{
+			PS.audioPlay(A.sfx_click);
+
 		}
 
 		var ptr = ( level_y * L.y_height ) + level_x; // pointer to location in level attempt array
@@ -152,6 +158,8 @@ var G = { // General game logic
 
 	check_attempt: function(){ // check attempt versus current level
 		G.isPlayable = false;
+		J.clear_drawn_lines();
+		G.currentAttemps++;
 		//PS.debug(G.level_attempt + "\n");
 		//PS.debug(L.level + "\n");
 		var correct = G.check_attempt_helper();
@@ -169,6 +177,7 @@ var G = { // General game logic
 	give_hint: function(){ // builds the hint array and sends it to juice
 		//PS.debug("building hint array...\n");
 
+		PS.audioPlay(A.sfx_fail);
 		G.hint_array = // populate with not parts
 			[G.HINT_NOTPART, G.HINT_NOTPART, G.HINT_NOTPART,
 				G.HINT_NOTPART, G.HINT_NOTPART, G.HINT_NOTPART,
@@ -206,6 +215,7 @@ var G = { // General game logic
 
 	win_board: function(){ // the board is won!
 		S.showIntel();
+		PS.audioPlay(A.sfx_win);
 		// start timer for how long to show intel then load another one
 		G.show_win_timer = PS.timerStart(G.show_win_rate, G.next_level);
 
@@ -218,6 +228,9 @@ var G = { // General game logic
 				J.paint_bead(real[0], real[1], "CORRECT");
 			}
 		}
+
+		// send end to database
+		PS.dbEvent( "lockhack_db", "1 for Start 2 for End", 1, "Total attempts", G.currentAttemps, "Level Code 0", L.level[0], "Level Code 1", L.level[1], "Level Code 2", L.level[2], "Level Code 3", L.level[3], "Level Code 4", L.level[4], "Level Code 5", L.level[5], "Level Code 6", L.level[6], "Level Code 7", L.level[7], "Level Code 8", L.level[8]);
 	},
 
 	next_level: function(){ // stop the win timer
@@ -225,6 +238,7 @@ var G = { // General game logic
 		// clear the boards and stuff
 		G.reset_attempt();
 		G.reset_board();
+		J.repaint_board();
 		S.hideIntel();
 		L.load_level("zero_1");
 	},
@@ -260,19 +274,29 @@ var L = { // Level logic, loading, etc.
 	numSteps: 0, // the number of beads needed to complete the level
 
 
-	load_level: function(level){
+	load_level: function(){
 		// reset the level attempt and board
+		PS.statusColor(PS.COLOR_WHITE);
+		PS.audioPlay(A.sfx_load);
+		//PS.statusText("GO: HACKER");
 
 		G.reset_board();
 		G.reset_attempt();
 		G.isDragging = false; // set dragging to false
 		L.numSteps = 0; // set steps to zero initially
 		L.currentStep = 0; // reset step to 0
+		G.currentAttemps = 0;
 
 		//L.level = level; // set the level
-		L[level](); // initialize the level
+		var level = L.generate_level(false, 4);
+		var iterator = 0;
 
-
+		for(var i = 0; i < level.length; i++){
+			for(var j = 0; j < level[0].length; j++){
+				L.level[iterator] = level[i][j];
+				iterator++;
+			}
+		}
 
 		PS.gridPlane(J.PLANE_FLOOR);
 		PS.borderColor(PS.ALL, PS.ALL, G.COLOR_BG); // temporary until we figure out what background will look like
@@ -303,17 +327,147 @@ var L = { // Level logic, loading, etc.
 		}
 
 		G.isPlayable = true; // set playable
+
+		// send start to database
+		PS.dbEvent( "lockhack_db", "1 for Start 2 for End", 1, "Total attempts", 0, "Level Code 0", L.level[0], "Level Code 1", L.level[1], "Level Code 2", L.level[2], "Level Code 3", L.level[3], "Level Code 4", L.level[4], "Level Code 5", L.level[5], "Level Code 6", L.level[6], "Level Code 7", L.level[7], "Level Code 8", L.level[8]);
 	},
 
-	// dummy level
-	zero_1: function(){
-		L.level =
-			[0, 1, 2,
-			 0, 0, 3,
-			 0, 0, 4];
+	// Code based on Android Password Generator from Berkeley Churchill
+	// Content Copyright 2009-2014 Berkeley Churchill. All rights reserved.
 
+	generate_level: function(hard, num) {
 
+		var max_length = num;
 
+		var order = [];
+
+		var mx;
+		var my;
+
+		var done = new Array(3);
+		var legal = new Array(3);
+		var available = 9;
+
+		for (var i = 0;i<3;i++)
+		{
+			done[i] = new Array(3);
+			legal[i] = new Array(3);
+			for(var j = 0; j<3 ;j++)
+			{
+				done[i][j] = 0;
+				legal[i][j] = 1;
+			}
+		}
+		var x = -1;
+		var y = -1;
+
+		for(var length = 1; length <= max_length; length++)
+		{
+			//pick an available next location
+			var prevx = x;
+			var prevy = y;
+			var index = Math.ceil(Math.random()*available); //1..available
+			var sofar = 0;
+			//choice = -1;
+			for(var i = 0;i<3;i++)
+				for(var j = 0;j<3;j++)
+					if(legal[i][j] == 1)
+					{
+						sofar++;
+						if(sofar == index)
+						{
+							x = i;
+							y = j;
+							order.push(x);
+							order.push(y);
+							break;
+						}
+					}
+
+			//record it
+			done[x][y] = length;
+
+			//check available next spots
+
+			available = 0;
+			for(var i = 0;i<3;i++)
+				for(var j = 0;j<3;j++)
+				{
+					if(done[i][j] > 0)
+					{
+						legal[i][j] = 0;
+						continue;
+					}
+
+					var d1 = Math.abs(i-x);
+					var d2 = Math.abs(j-y);
+					if(d1 < 2 && d2 < 2)
+					{
+						legal[i][j] = 1;
+						available++;
+					}else
+					{
+						if(d1 != 1 && d2 != 1) //one is 0 or 2, the other is 2
+						{
+							//just check midpoint
+							mx = (x+i)/2;
+							my = (y+j)/2;
+							if(done[mx][my] == 0)
+							{
+								legal[i][j] = 0;
+								continue;
+							}
+							else
+							{
+								legal[i][j] = 1;
+								available++;
+								continue;
+							}
+						}else
+						{
+							if(hard == 1)
+							{
+								legal[i][j] = 1;
+								available++;
+								continue;
+							}
+
+							if(d1 == 1) //d1 == 1, d2 == 2
+							{
+								my = (j + y)/2;
+								if(done[i][my] == 0 && done[x][my] == 0)
+								{
+									legal[i][j] = 0;
+									continue;
+								}
+								else
+								{
+									legal[i][j] = 1;
+									available++;
+									continue;
+								}
+							}else       //d1 == 2, d1 == 1
+							{
+								mx = (i + x)/2;
+								if(done[mx][j] == 0 && done[mx][y] == 0)
+								{
+									legal[i][j] = 0;
+									continue;
+								}
+								else
+								{
+									available++;
+									legal[i][j] = 1;
+									continue;
+								}
+							}
+
+						}
+					}
+				}
+			//done finding valid next moves
+		}
+		return done;
 	}
 };
 
@@ -459,16 +613,36 @@ var J = { // Juice
 
 	},
 
+	clear_drawn_lines: function(){
+		PS.gridPlane(J.PLANE_NEWLINE);
+		PS.alpha(PS.ALL, PS.ALL, 0);
+	},
+
 	draw_line: function(x, y, x2, y2){ // draws a line from (x, y) to (x2, y2)
 		PS.gridPlane(J.PLANE_NEWLINE);
 		// first, clear all lines on the new plane (make transparent)
-		PS.alpha(PS.ALL, PS.ALL, 0);
+		J.clear_drawn_lines();
 
-		/** TODO: Fix main beads being smaller when not supposed to**/
 		var line_array = PS.line(x, y, x2, y2);
 		for(var i = 0; i<line_array.length; i++){ //iterate thru line array
-			PS.alpha(line_array[i][0], line_array[i][1], 255); // set alpha to max
-			PS.border(line_array[i][0], line_array[i][1], 16); // set alpha to max
+			var x_point = line_array[i][0];
+			var y_point = line_array[i][1];
+			PS.alpha(x_point, y_point, 255); // set alpha to max
+			//PS.debug("\nx: " + line_array[i][0]);
+			//PS.debug("\ny: " + line_array[i][1]);
+
+			var isPeg = false;
+			if(L.x_coords.indexOf(x_point) != -1) {
+				if (L.y_coords.indexOf(y_point) != -1) {
+					isPeg = true;
+					// also toggle it
+					G.toggle_bead(x_point, y_point);
+				}
+			}
+
+			if(!isPeg){
+				PS.border(line_array[i][0], line_array[i][1], 16); // set border to max
+			}
 
 		}
 	},
@@ -486,7 +660,21 @@ var J = { // Juice
 };
 
 var A = { // Audio
+	sfx_click: "fx_chirp1", // initial touch
+	sfx_click_next: "fx_chirp2", // after the initial
+	sfx_load: "fx_pop", // loading a level
+	sfx_fail: "fx_blast4", // wrong
+	sfx_win: "fx_squawk", // correct
 
+	init_sound: function () {
+
+		PS.audioLoad(A.sfx_click);
+		PS.audioLoad(A.sfx_click_next);
+		PS.audioLoad(A.sfx_load);
+		PS.audioLoad(A.sfx_fail);
+		PS.audioLoad(A.sfx_win);
+
+	}
 };
 
 var E = { // Editor
@@ -524,7 +712,7 @@ var S = { // Status Line
 	},
 
 	showIntel : function() { // outputs intel to status line
-		var rando = PS.random(S.intelArray.length+1); // generate from 1 to max
+		var rando = PS.random(S.intelArray.length); // generate from 1 to max
 
 		// push shown intel to the already read intel array
 		S.readIntel.push(S.intelArray[rando]);
@@ -558,16 +746,18 @@ PS.init = function( system, options ) {
 	PS.color(PS.ALL, PS.ALL, G.COLOR_BG);
 	PS.border(PS.ALL, PS.ALL, 0);
 
+	PS.dbInit("lockhack_db", false ); // establish database for puzzles, request username input
+
 	J.repaint_board();
 
 
 	//A.init_sound();
 	//L.populate_fail_count();
 
-	PS.statusText("");
 	J.init_planes();
+	A.init_sound();
 	S.populateIntel();
-	L.load_level("zero_1");
+	L.load_level();
 	//A.start_bgm();
 
 	// Add any other initialization code you need here
@@ -622,7 +812,12 @@ PS.exitGrid = function( options ) {
 	// Uncomment the following line to verify operation
 	// PS.debug( "PS.exitGrid() called\n" );
 
-	G.isDragging = false; // this prevents messiness
+	J.clear_drawn_lines();
+	if(!G.isPlayable){
+		return;
+	}
+	G.isDragging = false; // we are no longer dragging
+	G.check_attempt();
 };
 
 
@@ -658,6 +853,7 @@ PS.input = function( sensors, options ) {
 
 
 PS.shutdown = function( options ) {
+		PS.dbEvent( "lockhack_db", "shutdown", true );
+		PS.dbSend( "lockhack_db", "dpallen" );
 
-	// Add code here for when Perlenspiel is about to close
 };
