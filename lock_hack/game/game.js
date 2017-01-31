@@ -43,8 +43,8 @@ var G = { // General game logic
 	isPlayable: false, // for cutscenes, etc.
 	isDragging: false, // is player dragging the mouse?
 
-	currentPool: "zero", // difficulty pool
-	currentLevel: "", // name of level
+	minimumLength:1,
+	lengthModifier:1,
 
 	currentStep: 0, // the currentStep, starts at 0
 	currentLockedBead: [0, 0], // the current locked bead
@@ -59,9 +59,10 @@ var G = { // General game logic
 	HINT_WRONG: 2,
 	HINT_ALMOST: 3,
 
-	show_hint_rate: 7, // how long to show hints
+	show_hint_rate: 30, // how long to show hints
 	show_hint_timer: 0, // how long to show hints timer
-	show_win_rate: 120, // how long to show win
+
+	show_win_rate: 15, // how long to show win
 	show_win_timer: 0, // how long to show win timer
 
 	reset_attempt: function(){ // reset the level_attempt
@@ -113,6 +114,9 @@ var G = { // General game logic
 			return;
 		}
 
+		// set border
+		PS.border(x, y, J.PEG_TOGGLE_BORDER);
+
 		//
 		G.isDragging = true; // we are dragging
 		//J.lock_line();
@@ -120,7 +124,6 @@ var G = { // General game logic
 		G.currentLockedBead = [x, y];
 		// Lock the previous drawn line if greater than step 1
 		if(G.currentStep > 0) {
-			PS.audioPlay(A.sfx_click_next);
 			J.lock_line();
 		}else{
 			PS.audioPlay(A.sfx_click);
@@ -131,7 +134,7 @@ var G = { // General game logic
 
 		if(G.level_attempt[ptr] == 0) { // only iterate if we're on a spot that hasn't been occupied yet
 			G.currentStep++; // iterate currentStep
-
+			PS.audioPlay(A.sfx_click_next);
 		// set level_attempt index value to whatever currentStep is
 		//PS.debug("ptr:" + ptr);
 		//PS.debug("\nptrv: " + G.level_attempt[ptr] + "\n");
@@ -145,7 +148,7 @@ var G = { // General game logic
 		}
 
 		if(G.currentStep > L.level_length){
-			J.error_too_long();
+			//J.error_too_long();
 		}
 		},
 
@@ -219,32 +222,23 @@ var G = { // General game logic
 	},
 
 	win_board: function(){ // the board is won!
-		S.showIntel();
 		PS.audioPlay(A.sfx_win);
 		// start timer for how long to show intel then load another one
-		G.show_win_timer = PS.timerStart(G.show_win_rate, G.next_level);
-
-		PS.gridPlane(J.PLANE_BEAD_HINT);
-		for(var i = 0; i< G.level_attempt.length; i++){
-			// if its not zero it has to be part of it
-			if(G.level_attempt[i]>0){
-				var real = G.convert_simple_to_actual(i);
-				PS.alpha(real[0], real[1], 100);
-				J.paint_bead(real[0], real[1], "CORRECT");
-			}
-		}
-
+		G.show_win_timer = PS.timerStart(5, J.win_board_helper);
 		// send end to database
 		PS.dbEvent( "lockhack_db", "1 for Start 2 for End", 1, "Total attempts", G.currentAttempts, "Level Code 0", L.level[0], "Level Code 1", L.level[1], "Level Code 2", L.level[2], "Level Code 3", L.level[3], "Level Code 4", L.level[4], "Level Code 5", L.level[5], "Level Code 6", L.level[6], "Level Code 7", L.level[7], "Level Code 8", L.level[8]);
+
 	},
 
 	next_level: function(){ // stop the win timer
-		PS.timerStop(G.show_win_timer);
+		//PS.timerStop(G.show_win_timer);
 		// clear the boards and stuff
 		G.reset_attempt();
 		G.reset_board();
 		J.repaint_board();
 		S.hideIntel();
+		PS.fade(PS.ALL, PS.ALL, 0);
+		J.hide_hints();
 		L.load_level("zero_1");
 	},
 
@@ -285,6 +279,9 @@ var L = { // Level logic, loading, etc.
 		PS.audioPlay(A.sfx_load);
 		//PS.statusText("GO: HACKER");
 
+		// reset data
+		PS.data(PS.ALL, PS.ALL, 0);
+
 		G.reset_board();
 		G.reset_attempt();
 		G.isDragging = false; // set dragging to false
@@ -293,11 +290,10 @@ var L = { // Level logic, loading, etc.
 		G.currentAttempts = 0;
 
 		G.allowedAttempts = 7; // current allowed attempts
-		J.refill_attempt_counter();
 
 		//L.level = level; // set the level
 		/** TEMPORARY: RANDOMLY GENERATE NUMBER BETWEEN 3 and 9**/
-		var num_length = PS.random(4)+3;
+		var num_length = PS.random(G.minimumLength)+ G.lengthModifier;
 		L.level_length = num_length;
 	//	PS.debug(L.level_length);
 		// PS.debug(num_length);
@@ -338,6 +334,8 @@ var L = { // Level logic, loading, etc.
 				}
 			}
 		}
+
+		J.show_initial_hint();
 
 		// send start to database
 		PS.dbEvent( "lockhack_db", "1 for Start 2 for End", 1, "Total attempts", 0, "Level Code 0", L.level[0], "Level Code 1", L.level[1], "Level Code 2", L.level[2], "Level Code 3", L.level[3], "Level Code 4", L.level[4], "Level Code 5", L.level[5], "Level Code 6", L.level[6], "Level Code 7", L.level[7], "Level Code 8", L.level[8]);
@@ -489,9 +487,12 @@ var J = { // Juice
 	PLANE_BEAD: 3, // plane for drawn beads
 	PLANE_LINE_HINT: 4, // plane for hints
 	PLANE_BEAD_HINT: 5, // plane for hints
+	PLANE_ATTEMPTS: 6, // plane for attempts
+	PLANE_INTEL: 7, // plane for intel
 
 	PEG_BORDER: 0, // peg border width
 	LINE_BORDER: 16, // line border width
+	PEG_TOGGLE_BORDER: 2, // peg toggle border
 
 	//246, 73, 152
 	COLOR_ATTEMPT_R: 246,
@@ -503,14 +504,19 @@ var J = { // Juice
 	attempt_counter_x: 0, // stage for filling
 	attempt_counter_y: 10, // location for counter
 
-	too_long_rate: G.show_hint_rate,
-	too_long_timer: 0,
-	too_long_counter: 0,
-	too_long_toggle: false,
-	too_long_max: 5,
-
-	hint_hide_toggle: true, // go between T and F
+	//hint_hide_toggle: true, // go between T and F
 	hide_hint_counter: 0, // counter for timer
+	hide_hint_counter_max: 4, // counter for timer
+	//hint_hide_counter_internal: 0, // internal counter for timer
+
+	show_win_counter: 0,
+	show_win_counter_max:15,
+
+	fade_rate: 1,
+
+	win_board_purple_rate: 2,
+	win_board_purple_timer: 0,
+	win_board_step: 0,
 
 
 	paint_bead: function(x, y, style){ // style can be DEFAULT, SELECTED, WRONG, ALMOST, CORRECT
@@ -547,88 +553,70 @@ var J = { // Juice
 		// also clear hints
 		PS.gridPlane(J.PLANE_BEAD_HINT);
 		PS.alpha(PS.ALL, PS.ALL, 0);
+
+		J.init_borders(); // reset borders
 	},
 
 	show_hints: function(){ // show the hints, this will be more complicated eventually
 		// START HINT TIMER
-		J.hint_hide_toggle = true;
+		//PS.fade(PS.ALL, PS.ALL, G.show_hint_rate);
+		for(var i = 0; i< L.level.length; i++){
+			var real = G.convert_simple_to_actual(i);
+			PS.fade(real[0], real[1], G.show_hint_rate);
+		}
 		J.hide_hint_counter = 0;
-		G.show_hint_timer = PS.timerStart(G.show_hint_rate, J.flash_hints);
+		G.show_hint_timer = PS.timerStart(G.show_hint_rate/2, J.show_hints_helper);
 
 	},
 
-	flash_hints: function(){
+	show_hints_helper: function(){
 		PS.gridPlane(J.PLANE_BEAD_HINT);
-		if(!J.hint_hide_toggle){
-			PS.audioPlay(A.sfx_fail);
-		}
 		for(var i = 0; i<G.hint_array.length; i++){
+			var real = G.convert_simple_to_actual(i);
+			if(J.hide_hint_counter == 0){
+				PS.alpha(real[0], real[1], 255);
+			}
+
+			if(J.hide_hint_counter == 1){
+				PS.fade(real[0], real[1], G.show_hint_rate*2);
+				PS.alpha(real[0], real[1], 0);
+			}
+
 			// switch for the 3 possibilities
 			switch(G.hint_array[i]){
 				case G.HINT_CORRECT: // make it green
-					var real = G.convert_simple_to_actual(i);
-					if(J.hint_hide_toggle) {
-						PS.alpha(real[0], real[1], 100);
-					}else{
-						PS.alpha(real[0], real[1], 255);
-					}
 					J.paint_bead(real[0], real[1], "CORRECT");
 					break;
 				case G.HINT_ALMOST: // make it yellow
-					var real = G.convert_simple_to_actual(i);
-					if(J.hint_hide_toggle) {
-						PS.alpha(real[0], real[1], 50);
-					}else{
-						PS.alpha(real[0], real[1], 255);
-					}
 					J.paint_bead(real[0], real[1], "ALMOST");
 					break;
 				case G.HINT_WRONG: // make it RED
-					var real = G.convert_simple_to_actual(i);
-					if(J.hint_hide_toggle) {
-						PS.alpha(real[0], real[1], 100);
-					}else{
-						PS.alpha(real[0], real[1], 255);
-					}
 					J.paint_bead(real[0], real[1], "WRONG");
 					break;
 			}
 		}
-
-		J.hint_hide_toggle = !J.hint_hide_toggle;
-		J.hide_hint_counter++;
-		if(J.hide_hint_counter > 6){
+		if(J.hide_hint_counter == J.hide_hint_counter_max){
+			//PS.fade(PS.ALL, PS.ALL, 0);
+			PS.timerStop(G.show_hint_timer);
 			J.hide_hints();
 		}
+
+		J.hide_hint_counter++;
 	},
 
 	hide_hints: function(){ // hide the hints, allowing for additional attempts
-		PS.timerStop(G.show_hint_timer);
-		J.hint_hide_toggle = true;
+		//PS.timerStop(G.show_hint_timer);
+
+		//PS.timerStop(G.show_hint_timer);
 		J.hide_hint_counter = 0;
-		//PS.debug("hide them now");
 
 		// first clear the hints
+
 		PS.gridPlane(J.PLANE_BEAD_HINT);
 		for(var i = 0; i<G.hint_array.length; i++){
-			// switch for the 3 possibilities
-			switch(G.hint_array[i]){
-				case G.HINT_CORRECT: // make it green
-					var real = G.convert_simple_to_actual(i);
-					PS.alpha(real[0], real[1], 0);
-					J.paint_bead(real[0], real[1], "DEFAULT");
-					break;
-				case G.HINT_ALMOST: // make it yellow
-					var real = G.convert_simple_to_actual(i);
-					PS.alpha(real[0], real[1], 0);
-					J.paint_bead(real[0], real[1], "DEFAULT");
-					break;
-				case G.HINT_WRONG: // make it RED
-					var real = G.convert_simple_to_actual(i);
-					PS.alpha(real[0], real[1], 0);
-					J.paint_bead(real[0], real[1], "DEFAULT");
-					break;
-			}
+			var real = G.convert_simple_to_actual(i);
+			PS.alpha(real[0], real[1], 0);
+			J.paint_bead(real[0], real[1], "DEFAULT");
 		}
 
 		// reset the board and attempt
@@ -638,6 +626,57 @@ var J = { // Juice
 
 		// make playable again
 		G.isPlayable = true;
+
+	},
+
+	show_initial_hint: function(){
+		G.isPlayable = false;
+		G.isDragging = false;
+
+
+		for(var i = 0; i< L.level.length; i++){
+			if(L.level[i] != 0){ // zeroes are beads that aren't part of the puzzle
+				G.hint_array[i] = G.HINT_ALMOST;
+			}else{
+				G.hint_array[i] = G.HINT_NOTPART;
+			}
+			var real = G.convert_simple_to_actual(i);
+			PS.fade(real[0], real[1], G.show_hint_rate);
+		}
+
+		//PS.fade(PS.ALL, PS.ALL, G.show_hint_rate);
+		J.hide_hint_counter = 0;
+		G.show_hint_timer = PS.timerStart(G.show_hint_rate, J.show_initial_hint_helper);
+
+	},
+
+	show_initial_hint_helper: function(){
+		PS.gridPlane(J.PLANE_BEAD_HINT);
+		for(var i = 0; i<G.hint_array.length; i++){
+			var real = G.convert_simple_to_actual(i);
+			if(J.hide_hint_counter == 0){
+				PS.alpha(real[0], real[1], 255);
+			}
+
+			if(J.hide_hint_counter == 2){
+				PS.fade(real[0], real[1], G.show_hint_rate*2);
+				PS.alpha(real[0], real[1], 0);
+			}
+			// switch for the 3 possibilities
+			switch(G.hint_array[i]){
+				case G.HINT_ALMOST: // make it yellow
+					J.paint_bead(real[0], real[1], "ALMOST");
+					break;
+			}
+		}
+
+		if(J.hide_hint_counter == J.hide_hint_counter_max){
+			PS.timerStop(G.show_hint_timer);
+			J.hide_hints();
+			J.refill_attempt_counter();
+		}
+
+		J.hide_hint_counter++;
 
 	},
 
@@ -670,6 +709,9 @@ var J = { // Juice
 		PS.color(PS.ALL, PS.ALL, G.COLOR_BG);
 		//PS.border(PS.ALL, PS.ALL, 0);
 
+		PS.gridPlane(J.PLANE_ATTEMPTS);
+		PS.alpha(PS.ALL, PS.ALL, 0);
+
 
 
 	},
@@ -682,7 +724,9 @@ var J = { // Juice
 					// we care
 					PS.border(x, y, J.PEG_BORDER);
 				}else{
-					PS.border(x, y, J.LINE_BORDER);
+					if(y < 10){ // don't mess with the attempts
+						PS.border(x, y, J.LINE_BORDER);
+					}
 				}
 			}
 		}
@@ -713,6 +757,9 @@ var J = { // Juice
 		//PS.alpha(PS.ALL, PS.ALL, 0);
 		var line_array = PS.line(G.lastLockedBead[0], G.lastLockedBead[1], G.currentLockedBead[0], G.currentLockedBead[1]);
 		for(var i = 0; i<line_array.length; i++){ //iterate thru line array
+			if(PS.data(line_array[i][0], line_array[i][1])!=0){
+				G.toggle_bead(line_array[i][0], line_array[i][1]);
+			}
 			PS.alpha(line_array[i][0], line_array[i][1], 255); // set alpha to max
 		}
 	},
@@ -722,6 +769,8 @@ var J = { // Juice
 		J.COLOR_ATTEMPT_G = 73;
 		J.COLOR_ATTEMPT_B = 132;
 		J.attempt_counter_x = 0;
+
+		G.isPlayable = false;
 
 		J.attempt_counter_timer = PS.timerStart(J.attempt_counter_rate, J.refill_attempt_counter_helper);
 
@@ -735,7 +784,7 @@ var J = { // Juice
 			right : 1
 		});
 		PS.borderColor(J.attempt_counter_x, J.attempt_counter_y, 255, 255, 255);
-		PS.gridPlane(J.PLANE_BEAD);
+		PS.gridPlane(J.PLANE_ATTEMPTS);
 		PS.alpha(J.attempt_counter_x, 10, 255);
 		PS.color(J.attempt_counter_x, J.attempt_counter_y, J.COLOR_ATTEMPT_R, J.COLOR_ATTEMPT_G, J.COLOR_ATTEMPT_B);
 		J.COLOR_ATTEMPT_R = J.COLOR_ATTEMPT_R - 15;
@@ -752,13 +801,18 @@ var J = { // Juice
 	},
 
 	lower_attempt_counter: function(){
-		PS.gridPlane(J.PLANE_BEAD);
+		PS.gridPlane(J.PLANE_ATTEMPTS);
+		//PS.debug("help");
 		var attempt_x = G.allowedAttempts - G.currentAttempts;
 		if(attempt_x <= 0){
 			attempt_x = 0;
 			PS.debug("WHAT HAPPENS NOW!??!?!");
 		}
+		PS.gridPlane(J.PLANE_ATTEMPTS);
+		//PS.debug(attempt_x + " " + J.attempt_counter_y + "\n");
+		PS.fade(attempt_x, J.attempt_counter_y, G.show_hint_rate);
 		PS.alpha(attempt_x, J.attempt_counter_y, 0);
+		PS.alpha(attempt_x, J.attempt_counter_y);
 	},
 
 	error_too_long: function(){
@@ -771,12 +825,6 @@ var J = { // Juice
 
 	error_too_long_helper: function() {
 		PS.gridPlane(J.PLANE_BEAD_HINT);
-		if(!J.too_long_toggle){
-			PS.audioPlay(A.sfx_fail);
-			PS.statusText("ERROR: INPUT TOO LONG");
-		}else{
-			PS.statusText("");
-		}
 		for (var i = 0; i < 9; i++) {
 			// switch for the 3 possibilities
 			var real = G.convert_simple_to_actual(i);
@@ -788,9 +836,19 @@ var J = { // Juice
 			}
 			J.paint_bead(real[0], real[1], "WRONG");
 		}
-		J.too_long_toggle = !J.too_long_toggle;
-		J.too_long_counter++;
-		//J.hide_hints();
+
+		J.too_long_counter_internal++;
+		if(J.too_long_counter_internal > 1){
+			if(!J.too_long_toggle){
+				PS.audioPlay(A.sfx_fail);
+				PS.statusText("ERROR: INPUT TOO LONG");
+				J.too_long_counter_internal = 0;
+			}else{
+				//PS.statusText("");
+			}
+			J.too_long_counter++;
+			J.too_long_toggle = !J.too_long_toggle;
+		}
 
 		if (J.too_long_counter > 5) {
 			J.hide_too_long();
@@ -815,8 +873,52 @@ var J = { // Juice
 		G.reset_attempt();
 
 		G.isPlayable = true;
-	}
+	},
 
+	win_board_helper: function(){
+		PS.gridPlane(J.PLANE_BEAD_HINT);
+		for(var i = 0; i< G.level_attempt.length; i++){
+			// if its not zero it has to be part of it
+			if(G.level_attempt[i]>0){
+				var real = G.convert_simple_to_actual(i);
+				if(J.show_win_counter == 0) {
+					PS.fade(real[0], real[1], 15);
+					PS.alpha(real[0], real[1], 255);
+					J.paint_bead(real[0], real[1], "CORRECT");
+				}
+
+			}
+		}
+
+		if(J.show_win_counter == J.show_win_counter_max){
+			J.show_win_counter = 0;
+			PS.timerStop(G.show_win_timer);
+			J.win_board_step = 0;
+			J.win_board_purple_timer = PS.timerStart(J.win_board_purple_rate, J.win_board_purple);
+
+		}
+		J.show_win_counter++;
+
+	},
+
+	win_board_purple: function(){
+		PS.gridPlane(J.PLANE_INTEL);
+		PS.fade(PS.ALL, PS.ALL, 150);
+		PS.color(PS.ALL, PS.ALL, G.COLOR_BG);
+		PS.borderColor(PS.ALL, PS.ALL, G.COLOR_BG);
+		PS.alpha(PS.ALL, PS.ALL, 255);
+
+		S.showIntel();
+
+		if(J.win_board_step == J.win_board_max){
+			PS.timerStop(G.win_board_purple_timer);
+			/**
+			 * NEXT LEVEL
+			 */
+		}
+
+		J.win_board_step++;
+	}
 
 };
 
@@ -859,6 +961,8 @@ var S = { // Status Line
 	appendMessage: "",
 	messageLength: "",
 	currentMessagePos: 0,
+
+	intel_timer : 0,
 
 	updateLine: function(speed, max, message){
 		S.currentMessage = message;
@@ -917,7 +1021,6 @@ var S = { // Status Line
 		if(S.error_counter > S.error_counter_max){
 			PS.timerStop(S.line_update_timer);
 		}
-
 	},
 
 	populateIntel : function(){ // populates the array
@@ -951,8 +1054,10 @@ var S = { // Status Line
 
 		// push shown intel to the already read intel array
 		S.readIntel.push(S.intelArray[rando]);
-		PS.statusColor(PS.COLOR_WHITE);
-		PS.statusText(S.intelArray[rando]);
+		//PS.statusColor(PS.COLOR_WHITE);
+		//PS.statusText(S.intelArray[rando]);
+
+		S.updateLine();
 
 	},
 
@@ -1055,7 +1160,7 @@ PS.exit = function( x, y, data, options ) {
 PS.exitGrid = function( options ) {
 	// Uncomment the following line to verify operation
 	// PS.debug( "PS.exitGrid() called\n" );
-
+/*
 	J.clear_drawn_lines();
 	if(!G.isPlayable){
 		return;
@@ -1064,6 +1169,7 @@ PS.exitGrid = function( options ) {
 		G.isDragging = false; // we are no longer dragging
 		G.check_attempt();
 	}
+	*/
 };
 
 
