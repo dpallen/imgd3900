@@ -43,13 +43,13 @@ var G = { // General game logic
 	isPlayable: false, // for cutscenes, etc.
 	isDragging: false, // is player dragging the mouse?
 
-	minimumLength:1,
+	minimumLength:3,
 	lengthModifier:1,
 
 	currentStep: 0, // the currentStep, starts at 0
 	currentLockedBead: [0, 0], // the current locked bead
 	currentAttempts: 0, // current attempts
-	allowedAttempts: 7, // the allowed attempts, defaults to 7
+	allowedAttempts: 2, // the allowed attempts, defaults to 7
 	lastLockedBead: [0, 0],
 	level_attempt:[], // the level attempt
 	hint_array:[], // the hint array
@@ -185,7 +185,10 @@ var G = { // General game logic
 
 	give_hint: function(){ // builds the hint array and sends it to juice
 		//PS.debug("building hint array...\n");
-
+		var attempt_x = G.allowedAttempts - G.currentAttempts;
+		if(attempt_x <= 0){
+			return;
+		}
 		G.hint_array = // populate with not parts
 			[G.HINT_NOTPART, G.HINT_NOTPART, G.HINT_NOTPART,
 				G.HINT_NOTPART, G.HINT_NOTPART, G.HINT_NOTPART,
@@ -224,7 +227,12 @@ var G = { // General game logic
 	win_board: function(){ // the board is won!
 		PS.audioPlay(A.sfx_win);
 		// start timer for how long to show intel then load another one
+		L.totalCompleted++;
+
+		J.show_win_counter = 0;
+		//PS.debug("eree");
 		G.show_win_timer = PS.timerStart(5, J.win_board_helper);
+
 		// send end to database
 		PS.dbEvent( "lockhack_db", "1 for Start 2 for End", 1, "Total attempts", G.currentAttempts, "Level Code 0", L.level[0], "Level Code 1", L.level[1], "Level Code 2", L.level[2], "Level Code 3", L.level[3], "Level Code 4", L.level[4], "Level Code 5", L.level[5], "Level Code 6", L.level[6], "Level Code 7", L.level[7], "Level Code 8", L.level[8]);
 
@@ -233,13 +241,15 @@ var G = { // General game logic
 	next_level: function(){ // stop the win timer
 		//PS.timerStop(G.show_win_timer);
 		// clear the boards and stuff
+
+		PS.fade(PS.ALL, PS.ALL, 0);
+		J.init_planes();
+		J.init_borders();
+		J.hide_hints();
 		G.reset_attempt();
 		G.reset_board();
 		J.repaint_board();
-		S.hideIntel();
-		PS.fade(PS.ALL, PS.ALL, 0);
-		J.hide_hints();
-		L.load_level("zero_1");
+		L.load_level();
 	},
 
 	convert_simple_to_actual: function(ptr){ // convert the pointer to the actual X/Y value
@@ -273,6 +283,20 @@ var L = { // Level logic, loading, etc.
 	level_length: 0, // the level's length
 	numSteps: 0, // the number of beads needed to complete the level
 
+	totalCompleted: 0, // the amount of levels completed
+	totalFailures: 0, // the amount of failures
+
+	modulate_difficilty: function(){
+		if(L.totalCompleted == 0){ // escape if none completed
+			return;
+		}
+		if((L.totalCompleted %3) &&(L.minimumLength<5)){ // never go over 5
+			L.minimumLength++;
+			G.allowedAttempts++;
+		}
+
+	},
+
 	load_level: function(){
 		// reset the level attempt and board
 		PS.statusColor(PS.COLOR_WHITE);
@@ -289,11 +313,11 @@ var L = { // Level logic, loading, etc.
 		L.currentStep = 0; // reset step to 0
 		G.currentAttempts = 0;
 
-		G.allowedAttempts = 7; // current allowed attempts
+		G.allowedAttempts = 5; // current allowed attempts
 
 		//L.level = level; // set the level
-		/** TEMPORARY: RANDOMLY GENERATE NUMBER BETWEEN 3 and 9**/
-		var num_length = PS.random(G.minimumLength)+ G.lengthModifier;
+		var num_length = G.minimumLength+ PS.random(2) - 1;
+		//PS.debug(num_length);
 		L.level_length = num_length;
 	//	PS.debug(L.level_length);
 		// PS.debug(num_length);
@@ -341,9 +365,8 @@ var L = { // Level logic, loading, etc.
 		PS.dbEvent( "lockhack_db", "1 for Start 2 for End", 1, "Total attempts", 0, "Level Code 0", L.level[0], "Level Code 1", L.level[1], "Level Code 2", L.level[2], "Level Code 3", L.level[3], "Level Code 4", L.level[4], "Level Code 5", L.level[5], "Level Code 6", L.level[6], "Level Code 7", L.level[7], "Level Code 8", L.level[8]);
 	},
 
-	// Code based on Android Password Generator from Berkeley Churchill
+	// Generate_Level Code based on Android Password Generator from Berkeley Churchill
 	// Content Copyright 2009-2014 Berkeley Churchill. All rights reserved.
-
 	generate_level: function(hard, num) {
 
 		var max_length = num;
@@ -517,6 +540,12 @@ var J = { // Juice
 	win_board_purple_rate: 2,
 	win_board_purple_timer: 0,
 	win_board_step: 0,
+	win_board_max: 2,
+
+	failure_timer: 0,
+	failure_timer_rate: 90,
+	failure_step: 0,
+	failure_max: 3,
 
 
 	paint_bead: function(x, y, style){ // style can be DEFAULT, SELECTED, WRONG, ALMOST, CORRECT
@@ -662,11 +691,11 @@ var J = { // Juice
 				PS.fade(real[0], real[1], G.show_hint_rate*2);
 				PS.alpha(real[0], real[1], 0);
 			}
-			// switch for the 3 possibilities
-			switch(G.hint_array[i]){
-				case G.HINT_ALMOST: // make it yellow
-					J.paint_bead(real[0], real[1], "ALMOST");
-					break;
+
+			if(G.hint_array[i] == G.HINT_ALMOST){
+				J.paint_bead(real[0], real[1], "ALMOST");
+			}else{
+				J.paint_bead(real[0], real[1], "DEFAULT");
 			}
 		}
 
@@ -806,7 +835,7 @@ var J = { // Juice
 		var attempt_x = G.allowedAttempts - G.currentAttempts;
 		if(attempt_x <= 0){
 			attempt_x = 0;
-			PS.debug("WHAT HAPPENS NOW!??!?!");
+			J.error_failure();
 		}
 		PS.gridPlane(J.PLANE_ATTEMPTS);
 		//PS.debug(attempt_x + " " + J.attempt_counter_y + "\n");
@@ -815,64 +844,57 @@ var J = { // Juice
 		PS.alpha(attempt_x, J.attempt_counter_y);
 	},
 
-	error_too_long: function(){
-		//S.errorLine("ERROR: INPUT TOO LONG");
+	error_failure: function(){
+		//PS.debug("Failure");
 		G.isPlayable = false;
 		G.isDragging = false;
+		L.totalFailures++;
 
-		J.too_long_timer = PS.timerStart(J.too_long_rate, J.error_too_long_helper);
-	},
-
-	error_too_long_helper: function() {
 		PS.gridPlane(J.PLANE_BEAD_HINT);
 		for (var i = 0; i < 9; i++) {
 			// switch for the 3 possibilities
 			var real = G.convert_simple_to_actual(i);
 			//PS.debug(real + '\n');
-			if (J.too_long_toggle) {
-				PS.alpha(real[0], real[1], 100);
-			} else {
-				PS.alpha(real[0], real[1], 255);
-			}
+			PS.fade(real[0], real[1], 15);
+			PS.alpha(real[0], real[1], 255);
+
+			PS.statusFade(15);
+			PS.statusColor(G.COLOR_BEAD_INCORRECT);
+			PS.statusText("L O C K O U T");
+
 			J.paint_bead(real[0], real[1], "WRONG");
 		}
 
-		J.too_long_counter_internal++;
-		if(J.too_long_counter_internal > 1){
-			if(!J.too_long_toggle){
-				PS.audioPlay(A.sfx_fail);
-				PS.statusText("ERROR: INPUT TOO LONG");
-				J.too_long_counter_internal = 0;
-			}else{
-				//PS.statusText("");
-			}
-			J.too_long_counter++;
-			J.too_long_toggle = !J.too_long_toggle;
-		}
+		PS.borderColor(PS.ALL, J.attempt_counter_y, G.COLOR_BEAD_INCORRECT);
 
-		if (J.too_long_counter > 5) {
-			J.hide_too_long();
-			PS.statusText("");
-			PS.timerStop(J.too_long_timer);
-		}
+		J.failure_step = 0;
+		J.failure_timer = PS.timerStart(J.failure_timer_rate, J.error_failure_reboot);
 	},
 
-	hide_too_long: function(){
-		J.too_long_counter = false;
-		J.too_long_counter = 0;
-		PS.gridPlane(J.PLANE_BEAD_HINT);
-		for (var i = 0; i < 9; i++) {
-			// switch for the 3 possibilities
-			var real = G.convert_simple_to_actual(i);
-			PS.alpha(real[0], real[1], 0);
-			//J.paint_bead(real[0], real[1], "WRONG");
+	error_failure_reboot: function(){
+		if(J.failure_step == 0){
+			J.fade_to_black();
+			PS.statusColor(PS.COLOR_WHITE);
+			S.updateLine(4, 1, "REBOOTING...");
 		}
-		// reset the board and attempt
-		J.repaint_board();
-		G.reset_board();
-		G.reset_attempt();
+		if(J.failure_step == J.failure_max){
+			PS.timerStop(J.failure_timer);
+			/** LOAD LEVEL
+			 *
+			 */
+			PS.statusText("");
 
-		G.isPlayable = true;
+			PS.gridPlane(J.PLANE_INTEL);
+			PS.fade(PS.ALL, PS.ALL, 150);
+			PS.color(PS.ALL, PS.ALL, G.COLOR_BG);
+			PS.borderColor(PS.ALL, PS.ALL, G.COLOR_BG);
+			PS.alpha(PS.ALL, PS.ALL, 0);
+
+			G.next_level();
+
+			return;
+		}
+		J.failure_step++;
 	},
 
 	win_board_helper: function(){
@@ -901,17 +923,20 @@ var J = { // Juice
 
 	},
 
-	win_board_purple: function(){
+	fade_to_black: function(){
 		PS.gridPlane(J.PLANE_INTEL);
 		PS.fade(PS.ALL, PS.ALL, 150);
 		PS.color(PS.ALL, PS.ALL, G.COLOR_BG);
 		PS.borderColor(PS.ALL, PS.ALL, G.COLOR_BG);
 		PS.alpha(PS.ALL, PS.ALL, 255);
+	},
 
-		S.showIntel();
+	win_board_purple: function(){
+		J.fade_to_black();
 
 		if(J.win_board_step == J.win_board_max){
-			PS.timerStop(G.win_board_purple_timer);
+			S.showIntel();
+			PS.timerStop(J.win_board_purple_timer);
 			/**
 			 * NEXT LEVEL
 			 */
@@ -963,6 +988,11 @@ var S = { // Status Line
 	currentMessagePos: 0,
 
 	intel_timer : 0,
+	intel_received_rate : 120,
+	intel_proper: false,
+
+	intel_hider_timer : 0,
+	intel_hider_rate : 120,
 
 	updateLine: function(speed, max, message){
 		S.currentMessage = message;
@@ -971,6 +1001,7 @@ var S = { // Status Line
 		S.messageLength = message.length;
 		S.line_update_stage = 0;
 		S.currentMessagePos = S.currentMessage.length-1;
+		S.appendMessage = "";
 
 		S.line_update_timer = PS.timerStart(S.line_update_rate, S.updateLineHelper);
 	},
@@ -997,6 +1028,9 @@ var S = { // Status Line
 			// stop if long enough
 			if((S.messageLength < 0) || (PS.statusText() == S.currentMessage)){
 				PS.timerStop(S.line_update_timer);
+				if(S.intel_proper){ // actually intel
+					S.intel_hider_timer = PS.timerStart(S.intel_hider_rate, S.hideIntel);
+				}
 			}
 		}
 	},
@@ -1046,24 +1080,47 @@ var S = { // Status Line
 		S.intelArray.push("We lost all the tanks.");
 		S.intelArray.push("'Nuclear proliferation is okay I guess'");
 
-
 	},
 
 	showIntel : function() { // outputs intel to status line
+
+		S.currentMessage = "";
+		S.appendMessage = "";
+		S.intel_proper = false;
+
+		S.updateLine(2, 1, "INTEL RECEIVED...");
+		S.intel_timer = PS.timerStart(S.intel_received_rate, S.showIntelContent);
+
+	},
+
+	showIntelContent : function() {
+		PS.timerStop(S.intel_timer);
 		var rando = PS.random(S.intelArray.length); // generate from 1 to max
 
+		//PS.debug(rando+"\n");
 		// push shown intel to the already read intel array
+		S.intel_proper = true;
+		S.currentMessage = "";
+		S.appendMessage = "";
 		S.readIntel.push(S.intelArray[rando]);
-		//PS.statusColor(PS.COLOR_WHITE);
-		//PS.statusText(S.intelArray[rando]);
-
-		S.updateLine();
+		S.updateLine(4, 1, S.intelArray[rando]);
 
 	},
 
 	hideIntel : function() { // clears status line
+		PS.timerStop(S.intel_hider_timer);
 		PS.statusText("");
+
+		PS.gridPlane(J.PLANE_INTEL);
+		PS.fade(PS.ALL, PS.ALL, 150);
+		PS.color(PS.ALL, PS.ALL, G.COLOR_BG);
+		PS.borderColor(PS.ALL, PS.ALL, G.COLOR_BG);
+		PS.alpha(PS.ALL, PS.ALL, 0);
+
+		G.next_level();
+
 	},
+
 };
 
 
