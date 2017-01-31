@@ -303,6 +303,7 @@ var L = { // Level logic, loading, etc.
 		PS.audioPlay(A.sfx_load);
 		//PS.statusText("GO: HACKER");
 
+		L.modulate_difficilty();
 		// reset data
 		PS.data(PS.ALL, PS.ALL, 0);
 
@@ -948,19 +949,26 @@ var J = { // Juice
 };
 
 var A = { // Audio
+	SFX_PATH: "http://users.wpi.edu/~hjwheelermackta/Frauds/FraudsYearTwo/LockHack/lockhack_mark2/audio/",
+
 	sfx_click: "fx_chirp1", // initial touch
 	sfx_click_next: "fx_chirp2", // after the initial
 	sfx_load: "fx_pop", // loading a level
 	sfx_fail: "fx_blast4", // wrong
 	sfx_win: "fx_squawk", // correct
+	bgm: "bgm", //bgm
 
 	init_sound: function () {
 
+		PS.debug(A.SFX_PATH+"\n");
+		PS.audioLoad(A.bgm, {lock:true, path: A.SFX_PATH});
 		PS.audioLoad(A.sfx_click);
 		PS.audioLoad(A.sfx_click_next);
 		PS.audioLoad(A.sfx_load);
 		PS.audioLoad(A.sfx_fail);
 		PS.audioLoad(A.sfx_win);
+
+		//PS.audioLoad(A.sfx_trans, {lock:true, path: A.SFX_PATH});
 
 	}
 };
@@ -1158,6 +1166,8 @@ PS.init = function( system, options ) {
 	A.init_sound();
 	S.populateIntel();
 	L.load_level();
+
+	PS.audioPlay(A.bgm);
 
 	S.updateLine(4, 1, "WELCOME HACKER");
 
