@@ -37,7 +37,7 @@ var G = { // General game logic
 	COLOR_BEAD_CORRECT: PS.COLOR_GREEN, // bead that was correct
 	COLOR_BEAD_INCORRECT: PS.COLOR_RED, // bead that isn't involved
 	COLOR_BEAD_ALMOST: PS.COLOR_YELLOW, // bead that is in the right spot but not the right order
-	COLOR_LINE_DEFAULT: PS.COLOR_GRAY, // line while drawing
+	COLOR_LINE_DEFAULT: 0xCFCECA, // line while drawing
 
 
 	isPlayable: false, // for cutscenes, etc.
@@ -49,7 +49,7 @@ var G = { // General game logic
 	currentStep: 0, // the currentStep, starts at 0
 	currentLockedBead: [0, 0], // the current locked bead
 	currentAttempts: 0, // current attempts
-	allowedAttempts: 2, // the allowed attempts, defaults to 7
+	allowedAttempts: 4, // the allowed attempts, defaults to 7
 	lastLockedBead: [0, 0],
 	level_attempt:[], // the level attempt
 	hint_array:[], // the hint array
@@ -117,7 +117,18 @@ var G = { // General game logic
 		// set border
 		PS.border(x, y, J.PEG_TOGGLE_BORDER);
 
-		//
+		// play theclacks
+		if(!A.clack_started){
+			A.clack_started = true;
+			A.clack_channel = PS.audioPlay(A.sfx_clack_loop, {loop:true, path: A.SFX_PATH});
+			A.clack_playing = true;
+		}else{
+			if(!A.clack_playing){
+				A.clack_playing = true;
+				PS.audioPause(A.clack_channel);
+			}
+		}
+
 		G.isDragging = true; // we are dragging
 		//J.lock_line();
 		G.lastLockedBead = G.currentLockedBead;
@@ -126,7 +137,7 @@ var G = { // General game logic
 		if(G.currentStep > 0) {
 			J.lock_line();
 		}else{
-			PS.audioPlay(A.sfx_click);
+			PS.audioPlay(A.sfx_peg_enter, {volume: 2.0, path: A.SFX_PATH});
 
 		}
 
@@ -134,7 +145,7 @@ var G = { // General game logic
 
 		if(G.level_attempt[ptr] == 0) { // only iterate if we're on a spot that hasn't been occupied yet
 			G.currentStep++; // iterate currentStep
-			PS.audioPlay(A.sfx_click_next);
+			PS.audioPlay(A.sfx_peg_enter, {volume: 2.0, path: A.SFX_PATH});
 		// set level_attempt index value to whatever currentStep is
 		//PS.debug("ptr:" + ptr);
 		//PS.debug("\nptrv: " + G.level_attempt[ptr] + "\n");
@@ -225,7 +236,12 @@ var G = { // General game logic
 	},
 
 	win_board: function(){ // the board is won!
-		PS.audioPlay(A.sfx_win);
+		PS.audioPause(A.bgm_channel);
+		PS.audioPlay(A.sfx_win, {volume:0.75, path: A.SFX_PATH});
+		if(A.clack_playing){
+			PS.audioPause(A.clack_channel);
+			A.clack_playing = false;
+		}
 		// start timer for how long to show intel then load another one
 		L.totalCompleted++;
 
@@ -241,7 +257,6 @@ var G = { // General game logic
 	next_level: function(){ // stop the win timer
 		//PS.timerStop(G.show_win_timer);
 		// clear the boards and stuff
-
 		PS.fade(PS.ALL, PS.ALL, 0);
 		J.init_planes();
 		J.init_borders();
@@ -249,6 +264,7 @@ var G = { // General game logic
 		G.reset_attempt();
 		G.reset_board();
 		J.repaint_board();
+
 		L.load_level();
 	},
 
@@ -290,19 +306,31 @@ var L = { // Level logic, loading, etc.
 		if(L.totalCompleted == 0){ // escape if none completed
 			return;
 		}
-		if((L.totalCompleted %3) &&(L.minimumLength<5)){ // never go over 5
-			L.minimumLength++;
+		if(L.totalCompleted== 4){
+			G.minimumLength++;
 			G.allowedAttempts++;
 		}
+		if(L.totalCompleted==8){
+			G.minimumLength++;
+			G.allowedAttempts++;
+		}
+		if(L.totalCompleted ==12){
+			G.minimumLength++;
+			G.allowedAttempts++;
+		}
+
 
 	},
 
 	load_level: function(){
 		// reset the level attempt and board
 		PS.statusColor(PS.COLOR_WHITE);
-		PS.audioPlay(A.sfx_load);
+		PS.audioPlay(A.sfx_initial_hint, {path: A.SFX_PATH});
 		//PS.statusText("GO: HACKER");
 
+		if(A.bgm_channel == 0){
+			A.bgm_channel = PS.audioPlay(A.bgm, {volume:0.5, loop:true, path: A.SFX_PATH});
+		}
 		L.modulate_difficilty();
 		// reset data
 		PS.data(PS.ALL, PS.ALL, 0);
@@ -314,7 +342,7 @@ var L = { // Level logic, loading, etc.
 		L.currentStep = 0; // reset step to 0
 		G.currentAttempts = 0;
 
-		G.allowedAttempts = 5; // current allowed attempts
+		//G.allowedAttempts = 5; // current allowed attempts
 
 		//L.level = level; // set the level
 		var num_length = G.minimumLength+ PS.random(2) - 1;
@@ -344,7 +372,7 @@ var L = { // Level logic, loading, etc.
 						// we care
 						PS.data(x, y, L.level[i]);
 						PS.gridPlane(J.PLANE_BEAD);
-						PS.alpha(x, y, 255);
+						PS.alpha(x, y, 0);
 						J.paint_bead(x, y, "DEFAULT"); // color it white or whatever
 
 						if(L.level[i] != 0){ // zeroes are beads that aren't part of the puzzle
@@ -518,10 +546,18 @@ var J = { // Juice
 	LINE_BORDER: 16, // line border width
 	PEG_TOGGLE_BORDER: 2, // peg toggle border
 
+	current_line_alpha: 255, // current line alpha
 	//246, 73, 152
 	COLOR_ATTEMPT_R: 246,
 	COLOR_ATTEMPT_G: 73,
 	COLOR_ATTEMPT_B: 152,
+
+	COLOR_BG_R1: 6,
+	COLOR_BG_G1: 0,
+	COLOR_BG_B1: 10,
+	COLOR_BG_R2: 10,
+	COLOR_BG_G2: 0,
+	COLOR_BG_B2: 20,
 
 	attempt_counter_rate: 5, // rate for attempt fill
 	attempt_counter_timer: 0, // the timer for filling
@@ -548,6 +584,30 @@ var J = { // Juice
 	failure_step: 0,
 	failure_max: 3,
 
+	background_shifter_timer:0,
+	background_shifter_rate: 50,
+	background_shifter_toggle: false,
+
+	background_shifter: function(){
+		//background_shifter_timer: PS.timerStart(J.background_shifter_rate, J.background_shifter_helper);
+		PS.gridFade(50, {onStep: J.color_updater});
+		//PS.gridColor(J.COLOR_BG_R1, J.COLOR_BG_G1, J.COLOR_BG_B1);
+		J.background_shifter_toggle = true;
+	},
+
+	background_shifter_helper: function(){
+		if(J.background_shifter_toggle){
+			PS.gridColor(J.COLOR_BG_R2, J.COLOR_BG_G2, J.COLOR_BG_B2);
+		}else{
+			PS.gridColor(J.COLOR_BG_R1, J.COLOR_BG_G1, J.COLOR_BG_B1);
+		}
+
+		J.background_shifter_toggle = !J.background_shifter_toggle;
+	},
+
+	color_updater: function(){
+		G.COLOR_BG = PS.gridColor();
+	},
 
 	paint_bead: function(x, y, style){ // style can be DEFAULT, SELECTED, WRONG, ALMOST, CORRECT
 		PS.borderColor(x, y, G.COLOR_BG);
@@ -573,6 +633,7 @@ var J = { // Juice
 	repaint_board: function(){ // repaints the whole board to the default
 		PS.gridPlane(J.PLANE_FLOOR);
 		PS.color(PS.ALL, PS.ALL, G.COLOR_BG);
+		PS.alpha(PS.ALL, PS.ALL, 0);
 
 		// now clear the lines
 		PS.gridPlane(J.PLANE_NEWLINE);
@@ -584,6 +645,7 @@ var J = { // Juice
 		PS.gridPlane(J.PLANE_BEAD_HINT);
 		PS.alpha(PS.ALL, PS.ALL, 0);
 
+		J.current_line_alpha = 255;
 		J.init_borders(); // reset borders
 	},
 
@@ -594,6 +656,7 @@ var J = { // Juice
 			var real = G.convert_simple_to_actual(i);
 			PS.fade(real[0], real[1], G.show_hint_rate);
 		}
+		PS.audioPlay(A.sfx_hint, {volume:0.75, path: A.SFX_PATH});
 		J.hide_hint_counter = 0;
 		G.show_hint_timer = PS.timerStart(G.show_hint_rate/2, J.show_hints_helper);
 
@@ -662,6 +725,7 @@ var J = { // Juice
 	show_initial_hint: function(){
 		G.isPlayable = false;
 		G.isDragging = false;
+		//PS.debug("hitn!");
 
 
 		for(var i = 0; i< L.level.length; i++){
@@ -675,6 +739,8 @@ var J = { // Juice
 		}
 
 		//PS.fade(PS.ALL, PS.ALL, G.show_hint_rate);
+		//SOUND
+		//PS.audioPlay(A.sfx_hint, {path: A.SFX_PATH});
 		J.hide_hint_counter = 0;
 		G.show_hint_timer = PS.timerStart(G.show_hint_rate, J.show_initial_hint_helper);
 
@@ -691,6 +757,9 @@ var J = { // Juice
 			if(J.hide_hint_counter == 2){
 				PS.fade(real[0], real[1], G.show_hint_rate*2);
 				PS.alpha(real[0], real[1], 0);
+				PS.gridPlane(J.PLANE_BEAD);
+				PS.alpha(real[0], real[1], 255);
+				PS.gridPlane(J.PLANE_BEAD_HINT);
 			}
 
 			if(G.hint_array[i] == G.HINT_ALMOST){
@@ -753,9 +822,12 @@ var J = { // Juice
 				if((L.x_coords.indexOf(x) != -1) &&(L.y_coords.indexOf(y) != -1)){
 					// we care
 					PS.border(x, y, J.PEG_BORDER);
+					//PS.borderAlpha(x, y, 0);
 				}else{
 					if(y < 10){ // don't mess with the attempts
 						PS.border(x, y, J.LINE_BORDER);
+						//PS.borderAlpha(x, y, 0);
+
 					}
 				}
 			}
@@ -776,7 +848,7 @@ var J = { // Juice
 		for(var i = 0; i<line_array.length; i++){ //iterate thru line array
 			var x_point = line_array[i][0];
 			var y_point = line_array[i][1];
-			PS.alpha(x_point, y_point, 255); // set alpha to max
+			PS.alpha(x_point, y_point, J.current_line_alpha); // set alpha to max
 			//PS.debug("\nx: " + line_array[i][0]);
 			//PS.debug("\ny: " + line_array[i][1]);
 		}
@@ -790,8 +862,10 @@ var J = { // Juice
 			if(PS.data(line_array[i][0], line_array[i][1])!=0){
 				G.toggle_bead(line_array[i][0], line_array[i][1]);
 			}
-			PS.alpha(line_array[i][0], line_array[i][1], 255); // set alpha to max
+			PS.alpha(line_array[i][0], line_array[i][1], J.current_line_alpha); // set alpha to max
 		}
+
+		J.current_line_alpha = J.current_line_alpha - 15;
 	},
 
 	refill_attempt_counter: function(){ // refills the attempt counter
@@ -827,6 +901,12 @@ var J = { // Juice
 			PS.timerStop(J.attempt_counter_timer);
 
 			G.isPlayable = true; // set playable
+
+			// play endsound
+			PS.audioPlay(A.sfx_attempt_fill_last, {volume: 0.4, path: A.SFX_PATH});
+		}else{
+			// play normal sound
+			PS.audioPlay(A.sfx_attempt_fill, {volume: 0.4, path: A.SFX_PATH});
 		}
 	},
 
@@ -847,6 +927,8 @@ var J = { // Juice
 
 	error_failure: function(){
 		//PS.debug("Failure");
+		PS.audioPlay(A.sfx_fail, {path: A.SFX_PATH});
+		PS.audioPause(A.bgm_channel);
 		G.isPlayable = false;
 		G.isDragging = false;
 		L.totalFailures++;
@@ -874,8 +956,10 @@ var J = { // Juice
 
 	error_failure_reboot: function(){
 		if(J.failure_step == 0){
+			PS.audioPause(A.bgm_channel);
 			J.fade_to_black();
 			PS.statusColor(PS.COLOR_WHITE);
+			S.intel_proper = false;
 			S.updateLine(4, 1, "REBOOTING...");
 		}
 		if(J.failure_step == J.failure_max){
@@ -935,12 +1019,11 @@ var J = { // Juice
 	win_board_purple: function(){
 		J.fade_to_black();
 
+		PS.audioPause(A.bgm_channel);
 		if(J.win_board_step == J.win_board_max){
 			S.showIntel();
 			PS.timerStop(J.win_board_purple_timer);
-			/**
-			 * NEXT LEVEL
-			 */
+
 		}
 
 		J.win_board_step++;
@@ -951,25 +1034,69 @@ var J = { // Juice
 var A = { // Audio
 	SFX_PATH: "http://users.wpi.edu/~hjwheelermackta/Frauds/FraudsYearTwo/LockHack/lockhack_mark2/audio/",
 
+
 	sfx_click: "fx_chirp1", // initial touch
 	sfx_click_next: "fx_chirp2", // after the initial
 	sfx_load: "fx_pop", // loading a level
-	sfx_fail: "fx_blast4", // wrong
-	sfx_win: "fx_squawk", // correct
+
+	sfx_attempt_fill: "sfx_attempt_low",
+	sfx_attempt_fill_last: "sfx_attempt_high",
+	sfx_clack_release: "sfx_clack_end",
+	sfx_clack_loop: "sfx_loop_clack",
+	sfx_fail: "sfx_fail", // wrong
+	sfx_win: "sfx_win", // correct
+	sfx_hint: "sfx_hint",
+	sfx_initial_hint: "sfx_initial_hint",
+	sfx_peg_enter: "sfx_peg_enter",
 	bgm: "bgm", //bgm
+
+	clack_channel: 0,
+	clack_started: false,
+	clack_playing:false,
+
+	bgm_channel: 0,
+
+	load_timer: 0,
+	load_timer_rate: 125,
 
 	init_sound: function () {
 
-		PS.debug(A.SFX_PATH+"\n");
+		//PS.debug(A.SFX_PATH + "\n");
+
 		PS.audioLoad(A.bgm, {lock:true, path: A.SFX_PATH});
+
 		PS.audioLoad(A.sfx_click);
 		PS.audioLoad(A.sfx_click_next);
+		PS.audioLoad(A.sfx_clack_loop, {lock:true, path: A.SFX_PATH});
 		PS.audioLoad(A.sfx_load);
-		PS.audioLoad(A.sfx_fail);
-		PS.audioLoad(A.sfx_win);
+		PS.audioLoad(A.sfx_fail, {lock:true, path: A.SFX_PATH});
+		PS.audioLoad(A.sfx_win, {lock:true, path: A.SFX_PATH});
+		PS.audioLoad(A.sfx_attempt_fill, {lock:true, path: A.SFX_PATH});
+		PS.audioLoad(A.sfx_attempt_fill_last, {lock:true, path: A.SFX_PATH});
+		PS.audioLoad(A.sfx_clack_release, {lock:true, path: A.SFX_PATH});
+		PS.audioLoad(A.sfx_hint, {lock:true, path: A.SFX_PATH});
+		PS.audioLoad(A.sfx_initial_hint, {lock:true, path: A.SFX_PATH});
+		PS.audioLoad(A.sfx_peg_enter, {lock:true, path: A.SFX_PATH});
+
 
 		//PS.audioLoad(A.sfx_trans, {lock:true, path: A.SFX_PATH});
 
+		A.load_timer = PS.timerStart(A.load_timer_rate, A.load_everything);
+	},
+
+	load_everything: function(){
+		PS.timerStop(A.load_timer);
+
+		J.repaint_board();
+
+		//A.init_sound();
+		//L.populate_fail_count();
+
+		J.init_planes();
+		J.init_borders();
+		L.load_level();
+
+		J.background_shifter();
 	}
 };
 
@@ -1069,24 +1196,43 @@ var S = { // Status Line
 		// just put strings below here
 		// strings must look like...
 		//intelArray.push("#############################################");
-		S.intelArray.push("Aliens are real.");
-		S.intelArray.push("Anime is real.");
-		S.intelArray.push("The government is real.");
-		S.intelArray.push("Good boys sleep with hands atop the covers.");
-		S.intelArray.push("Missouri: Best Nuclear Dropping Site");
-		S.intelArray.push("Vaporwave isn't real");
-		S.intelArray.push("Burger King: 50% of Gov. Stock");
-		S.intelArray.push("[PUT SECRET HERE]");
-		S.intelArray.push("The Burger King is the most prolific Lobbyist");
-		S.intelArray.push("McDonalds owns 70% of Gov. Stock");
-		S.intelArray.push("Unreliable Narrator :^)");
-		S.intelArray.push("A hotdog with no bun");
-		S.intelArray.push("1/2 Cups of Walnut sauce");
-		S.intelArray.push("Cigarettes cure cancer");
-		S.intelArray.push("Lobbyists hate him!");
-		S.intelArray.push("Military.");
-		S.intelArray.push("We lost all the tanks.");
-		S.intelArray.push("'Nuclear proliferation is okay I guess'");
+		S.intelArray.push("ANIME: #1 IMPORT");
+		S.intelArray.push("IBM: 33% LESS WORTH IT");
+		S.intelArray.push("ROBOCOP WAS FOUND FOOTAGE");
+		S.intelArray.push("TOP RANK: BILLY MITCHELL");
+		S.intelArray.push("WATERGATE: FALSE FLAG");
+		S.intelArray.push("THERE WILL ALWAYS BE A GHOST BUSTERS");
+		S.intelArray.push("HACKING WILL BE ILLEGALIZED IN 20XX");
+		S.intelArray.push("BOTTOM RANK: J. ROLFE");
+		S.intelArray.push("THE COLD WAR WAS A COVER UP");
+		S.intelArray.push("VAPORWAVE: MIND CONTROL");
+		S.intelArray.push("SPACE TRAVEL TRAINING TOOL: TYRIAN");
+		S.intelArray.push("HIGHEST GROSSING DISNEY FILM: AKIRA");
+		S.intelArray.push("ARNOLD NEVER CAME BACK");
+		S.intelArray.push("DRUG CARTEL: RONALD REAGAN");
+		S.intelArray.push("SAILOR MOON: MILITARY COVER UP");
+		S.intelArray.push("NEXT IN LINE: M. GROENING");
+		S.intelArray.push("NEW WAVE IS THE OLD WAVE");
+		S.intelArray.push("NOW YOU'RE PLAYING WITH POWER");
+		S.intelArray.push("JIMMY CARTER WILL RETURN");
+		S.intelArray.push("__DRIVE__");
+		S.intelArray.push("R E A L H U M A N B E I N G");
+		S.intelArray.push("WHO IS RYAN GOSLING?");
+		S.intelArray.push("SEGMENTATION FAULT");
+		S.intelArray.push("FIRE IN SPURTS");
+		S.intelArray.push("CHOOSE UPPER OR LOWER THEN GO TO MAP");
+		S.intelArray.push("FUZZZ BUSTERS ARE EASY TO DESTROY");
+		S.intelArray.push("CHOOSE WISELY THE 'SPIRIT' YOU TAKE");
+		S.intelArray.push("1997, OCTOBER 1: THE END DAY");
+		S.intelArray.push("TOP RANK: BILLY MITCHELL");
+		S.intelArray.push("DOLPHINS ARE JUST A MYTH");
+		S.intelArray.push("IT IS NOW SAFE TO TURN OFF YOUR ---");
+		S.intelArray.push("APPLE: MICROSOFT: FOREVER");
+		S.intelArray.push("B. GATES NEVER LEFT US");
+		S.intelArray.push("TOP RANK: BILLY MITCHELL");
+		S.intelArray.push("<<REDACTED>>");
+
+
 
 	},
 
@@ -1099,11 +1245,12 @@ var S = { // Status Line
 		S.updateLine(2, 1, "INTEL RECEIVED...");
 		S.intel_timer = PS.timerStart(S.intel_received_rate, S.showIntelContent);
 
+
 	},
 
 	showIntelContent : function() {
 		PS.timerStop(S.intel_timer);
-		var rando = PS.random(S.intelArray.length); // generate from 1 to max
+		var rando = PS.random(S.intelArray.length-1); // generate from 1 to max
 
 		//PS.debug(rando+"\n");
 		// push shown intel to the already read intel array
@@ -1111,7 +1258,8 @@ var S = { // Status Line
 		S.currentMessage = "";
 		S.appendMessage = "";
 		S.readIntel.push(S.intelArray[rando]);
-		S.updateLine(4, 1, S.intelArray[rando]);
+		S.updateLine(2, 1, S.intelArray[rando]);
+
 
 	},
 
@@ -1125,6 +1273,8 @@ var S = { // Status Line
 		PS.borderColor(PS.ALL, PS.ALL, G.COLOR_BG);
 		PS.alpha(PS.ALL, PS.ALL, 0);
 
+		//PS.audioPause(A.bgm_channel);
+		//PS.debug("loading...");
 		G.next_level();
 
 	},
@@ -1151,26 +1301,15 @@ PS.init = function( system, options ) {
 	PS.color(PS.ALL, PS.ALL, G.COLOR_BG);
 	PS.border(PS.ALL, PS.ALL, 0);
 
+	PS.statusColor(PS.COLOR_WHITE);
 	PS.statusText("");
 
 	PS.dbInit("lockhack_db", false ); // establish database for puzzles, request username input
 
-	J.repaint_board();
-
-
-	//A.init_sound();
-	//L.populate_fail_count();
-
-	J.init_planes();
-	J.init_borders();
-	A.init_sound();
 	S.populateIntel();
-	L.load_level();
-
-	PS.audioPlay(A.bgm);
-
 	S.updateLine(4, 1, "WELCOME HACKER");
 
+	A.init_sound();
 //	J.init_attempt_counter();
 	//A.start_bgm();
 
@@ -1197,6 +1336,11 @@ PS.release = function( x, y, data, options ) {
 		return;
 	}
 	if(G.isDragging){
+		if(A.clack_playing){
+			A.clack_playing = false;
+			PS.audioPause(A.clack_channel);
+			PS.audioPlay(A.sfx_clack_release, {path: A.SFX_PATH});
+		}
 		G.isDragging = false; // we are no longer dragging
 		G.check_attempt();
 	}
