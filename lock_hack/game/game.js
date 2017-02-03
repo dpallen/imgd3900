@@ -1184,12 +1184,14 @@ var A = { // Audio
 	sfx_initial_hint: "sfx_initial_hint",
 	sfx_peg_enter: "sfx_peg_enter",
 	bgm: "bgm", //bgm
+	bgm_tut: "bgm_tut", //bgm
 
 	clack_channel: 0,
 	clack_started: false,
 	clack_playing:false,
 
 	bgm_channel: 0,
+	bgm_t_channel: 0,
 
 	load_timer: 0,
 	load_timer_rate: 125,
@@ -1199,6 +1201,8 @@ var A = { // Audio
 		//PS.debug(A.SFX_PATH + "\n");
 
 		PS.audioLoad(A.bgm, {lock:true, path: A.SFX_PATH});
+		PS.audioLoad(A.bgm_tut, {lock:true, path: A.SFX_PATH});
+
 
 		PS.audioLoad(A.sfx_click);
 		PS.audioLoad(A.sfx_click_next);
@@ -1345,6 +1349,7 @@ var T = { // Tutorial
 		T.isTutorial = true;
 		T.canSkip = false;
 		T.currentTutorial= 1;
+		A.bgm_t_channel = PS.audioPlay(A.bgm_tut, {volume:0.5, loop:true, path: A.SFX_PATH})
 		PS.timerStop(T.tutorialOneTimer);
 		A.load_everything();
 		S.updateLine(1, 1, "SWIPE TO UNLOCK");
@@ -1417,6 +1422,9 @@ var T = { // Tutorial
 			PS.timerStop(T.tutorialTimer);
 		}
 		S.updateLine(4, 2, "...");
+		if(A.bgm_t_channel != 0){
+			PS.audioStop(A.bgm_t_channel);
+		}
 		T.tutorialTimer = PS.timerStart(T.tutorialRate, T.closeTutorial3);
 		//T.isTutorial = false;
 		//L.load_level();
