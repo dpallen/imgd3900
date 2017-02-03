@@ -42,6 +42,7 @@ var G = { // General game logic
 
 	isPlayable: false, // for cutscenes, etc.
 	isDragging: false, // is player dragging the mouse?
+	isRowsDisabled: false, // are top/bottom rows disabled?
 
 	minimumLength:3,
 	lengthModifier:1,
@@ -49,7 +50,7 @@ var G = { // General game logic
 	currentStep: 0, // the currentStep, starts at 0
 	currentLockedBead: [0, 0], // the current locked bead
 	currentAttempts: 0, // current attempts
-	allowedAttempts: 4, // the allowed attempts, defaults to 7
+	allowedAttempts: 5, // the allowed attempts, defaults to 7
 	lastLockedBead: [0, 0],
 	level_attempt:[], // the level attempt
 	hint_array:[], // the hint array
@@ -236,14 +237,18 @@ var G = { // General game logic
 	},
 
 	win_board: function(){ // the board is won!
-		PS.audioPause(A.bgm_channel);
+		if(A.bgm_channel != 0){
+			PS.audioPause(A.bgm_channel);
+		}
 		PS.audioPlay(A.sfx_win, {volume:0.75, path: A.SFX_PATH});
 		if(A.clack_playing){
 			PS.audioPause(A.clack_channel);
 			A.clack_playing = false;
 		}
 		// start timer for how long to show intel then load another one
-		L.totalCompleted++;
+		if(!T.isTutorial){
+			L.totalCompleted++;
+		}
 
 		J.show_win_counter = 0;
 		//PS.debug("eree");
@@ -265,7 +270,11 @@ var G = { // General game logic
 		G.reset_board();
 		J.repaint_board();
 
-		L.load_level();
+		if(T.isTutorial){
+			T.nextTutorial()
+		}else{
+			L.load_level();
+		}
 	},
 
 	convert_simple_to_actual: function(ptr){ // convert the pointer to the actual X/Y value
@@ -303,6 +312,9 @@ var L = { // Level logic, loading, etc.
 	totalFailures: 0, // the amount of failures
 
 	modulate_difficilty: function(){
+		if(T.isTutorial){
+			G.allowedAttempts = 999;
+		}
 		if(L.totalCompleted == 0){ // escape if none completed
 			return;
 		}
@@ -322,16 +334,19 @@ var L = { // Level logic, loading, etc.
 
 	},
 
-	load_level: function(){
+	load_specialty_level: function(the_level, num_length){ // loads an explicit level
 		// reset the level attempt and board
 		PS.statusColor(PS.COLOR_WHITE);
 		PS.audioPlay(A.sfx_initial_hint, {path: A.SFX_PATH});
 		//PS.statusText("GO: HACKER");
 
+		/*
 		if(A.bgm_channel == 0){
 			A.bgm_channel = PS.audioPlay(A.bgm, {volume:0.5, loop:true, path: A.SFX_PATH});
-		}
-		L.modulate_difficilty();
+		}*/
+
+		//L.modulate_difficilty();
+
 		// reset data
 		PS.data(PS.ALL, PS.ALL, 0);
 
@@ -343,6 +358,85 @@ var L = { // Level logic, loading, etc.
 		G.currentAttempts = 0;
 
 		//G.allowedAttempts = 5; // current allowed attempts
+
+
+		//L.level = level; // set the level
+		//var num_length = G.minimumLength+ PS.random(2) - 1;
+		//PS.debug(num_length);
+		L.level_length = num_length;
+		//	PS.debug(L.level_length);
+		// PS.debug(num_length);
+		//var level = L.generate_level(false, num_length);
+		var level = the_level
+		var iterator = 0;
+/*
+		for(var i = 0; i < level.length; i++){
+			for(var j = 0; j < level[0].length; j++){
+				L.level[iterator] = level[i][j];
+				iterator++;
+			}
+		}*/
+		L.level = level;
+
+		PS.gridPlane(J.PLANE_FLOOR);
+		PS.borderColor(PS.ALL, PS.ALL, G.COLOR_BG); // temporary until we figure out what background will look like
+
+		var i = 0; // counter for level populator
+		for(var y = 0; y < G.GRID_HEIGHT; y++){
+			for(var x = 0; x < G.GRID_WIDTH; x++){
+				// Check if X or Y are equal to the beads that we care about
+				if(L.x_coords.indexOf(x) != -1){
+					if(L.y_coords.indexOf(y) != -1){
+						// we care
+						PS.data(x, y, L.level[i]);
+						PS.gridPlane(J.PLANE_BEAD);
+						PS.alpha(x, y, 0);
+						J.paint_bead(x, y, "DEFAULT"); // color it white or whatever
+
+						if(L.level[i] != 0){ // zeroes are beads that aren't part of the puzzle
+							L.numSteps++; // increase nusteps by one
+							//PS.color(x, y, PS.COLOR_CYAN); /**FOR DEBUGGING**/
+						}
+
+						//PS.glyph(x, y, i.toString()); /**FOR DEBUGGING**/
+						i++;
+
+					}
+				}
+			}
+		}
+
+		J.show_initial_hint();
+
+		// send start to database
+		PS.dbEvent( "lockhack_db", "1 for Start 2 for End", 1, "Total attempts", 0, "Level Code 0", L.level[0], "Level Code 1", L.level[1], "Level Code 2", L.level[2], "Level Code 3", L.level[3], "Level Code 4", L.level[4], "Level Code 5", L.level[5], "Level Code 6", L.level[6], "Level Code 7", L.level[7], "Level Code 8", L.level[8]);
+
+	},
+
+	load_level: function(){
+		// reset the level attempt and board
+		PS.statusColor(PS.COLOR_WHITE);
+		PS.audioPlay(A.sfx_initial_hint, {path: A.SFX_PATH});
+		//PS.statusText("GO: HACKER");
+
+		if(A.bgm_channel == 0){
+			A.bgm_channel = PS.audioPlay(A.bgm, {volume:0.5, loop:true, path: A.SFX_PATH});
+		}
+
+		L.modulate_difficilty();
+
+		// reset data
+		PS.data(PS.ALL, PS.ALL, 0);
+
+		G.reset_board();
+		G.reset_attempt();
+		G.isDragging = false; // set dragging to false
+		L.numSteps = 0; // set steps to zero initially
+		L.currentStep = 0; // reset step to 0
+		G.currentAttempts = 0;
+
+		//G.allowedAttempts = 5; // current allowed attempts
+
 
 		//L.level = level; // set the level
 		var num_length = G.minimumLength+ PS.random(2) - 1;
@@ -670,9 +764,9 @@ var J = { // Juice
 				PS.alpha(real[0], real[1], 255);
 			}
 
-			if(J.hide_hint_counter == 1){
+			if(J.hide_hint_counter == 2){
 				PS.fade(real[0], real[1], G.show_hint_rate*2);
-				PS.alpha(real[0], real[1], 0);
+				//PS.alpha(real[0], real[1], 0);
 			}
 
 			// switch for the 3 possibilities
@@ -718,7 +812,9 @@ var J = { // Juice
 		G.reset_attempt();
 
 		// make playable again
-		G.isPlayable = true;
+		if(!T.extraHintOn){
+			G.isPlayable = true;
+		}
 
 	},
 
@@ -756,7 +852,7 @@ var J = { // Juice
 
 			if(J.hide_hint_counter == 2){
 				PS.fade(real[0], real[1], G.show_hint_rate*2);
-				PS.alpha(real[0], real[1], 0);
+				//PS.alpha(real[0], real[1], 0);
 				PS.gridPlane(J.PLANE_BEAD);
 				PS.alpha(real[0], real[1], 255);
 				PS.gridPlane(J.PLANE_BEAD_HINT);
@@ -772,7 +868,9 @@ var J = { // Juice
 		if(J.hide_hint_counter == J.hide_hint_counter_max){
 			PS.timerStop(G.show_hint_timer);
 			J.hide_hints();
-			J.refill_attempt_counter();
+			if(!T.isTutorial){
+				J.refill_attempt_counter();
+			}
 		}
 
 		J.hide_hint_counter++;
@@ -928,7 +1026,9 @@ var J = { // Juice
 	error_failure: function(){
 		//PS.debug("Failure");
 		PS.audioPlay(A.sfx_fail, {path: A.SFX_PATH});
-		PS.audioPause(A.bgm_channel);
+		if(A.bgm_channel != 0){
+			PS.audioPause(A.bgm_channel);
+		}
 		G.isPlayable = false;
 		G.isDragging = false;
 		L.totalFailures++;
@@ -956,7 +1056,9 @@ var J = { // Juice
 
 	error_failure_reboot: function(){
 		if(J.failure_step == 0){
-			PS.audioPause(A.bgm_channel);
+			if(A.bgm_channel != 0){
+				PS.audioPause(A.bgm_channel);
+			}
 			J.fade_to_black();
 			PS.statusColor(PS.COLOR_WHITE);
 			S.intel_proper = false;
@@ -989,7 +1091,7 @@ var J = { // Juice
 			if(G.level_attempt[i]>0){
 				var real = G.convert_simple_to_actual(i);
 				if(J.show_win_counter == 0) {
-					PS.fade(real[0], real[1], 15);
+					PS.fade(real[0], real[1], 50);
 					PS.alpha(real[0], real[1], 255);
 					J.paint_bead(real[0], real[1], "CORRECT");
 				}
@@ -1019,14 +1121,47 @@ var J = { // Juice
 	win_board_purple: function(){
 		J.fade_to_black();
 
-		PS.audioPause(A.bgm_channel);
+		if(A.bgm_channel != 0){
+			PS.audioPause(A.bgm_channel);
+		}
 		if(J.win_board_step == J.win_board_max){
-			S.showIntel();
+			if(!T.isTutorial) {
+				S.showIntel();
+			}else{
+				S.showTutorialIntel();
+				T.currentTutorial++;
+				//T.showIntel();
+				//T.nextTutorial();
+			}
 			PS.timerStop(J.win_board_purple_timer);
 
 		}
 
 		J.win_board_step++;
+	},
+
+	hide_rows: function() { // hides top and bottom rows
+		//PS.fade(PS.ALL, PS.ALL, 150);
+		G.isRowsDisabled = true;
+		for(var y = 0; y < G.GRID_HEIGHT; y++){
+			for(var x = 0; x < G.GRID_WIDTH; x++){
+				// Check if X or Y are equal to the beads that we care about
+				if(L.x_coords.indexOf(x) != -1){
+					if(L.y_coords.indexOf(y) != -1){
+						// we care
+						//PS.data(x, y, L.level[i]);
+					//	PS.debug(y + "\n");
+						if((y == 0) || (y == 8)){
+							PS.gridPlane(J.PLANE_INTEL);
+							PS.alpha(x, y, 255);
+							PS.color(x ,y, G.COLOR_BG);
+						}
+
+					}
+				}
+			}
+		}
+
 	}
 
 };
@@ -1081,11 +1216,11 @@ var A = { // Audio
 
 		//PS.audioLoad(A.sfx_trans, {lock:true, path: A.SFX_PATH});
 
-		A.load_timer = PS.timerStart(A.load_timer_rate, A.load_everything);
+		//A.load_timer = PS.timerStart(A.load_timer_rate, A.load_everything); // LOAD EVERYTHING
 	},
 
 	load_everything: function(){
-		PS.timerStop(A.load_timer);
+		//PS.timerStop(A.load_timer);
 
 		J.repaint_board();
 
@@ -1094,13 +1229,216 @@ var A = { // Audio
 
 		J.init_planes();
 		J.init_borders();
-		L.load_level();
+		//L.load_level();
 
 		J.background_shifter();
 	}
 };
 
-var E = { // Editor
+var T = { // Tutorial
+
+	isTutorial: false,
+	canSkip: false,
+	canReallySkip: false,
+	skipped: false,
+	currentTutorial: 0,
+
+	tutorialTimer: 0,
+	tutorialRate: 200,
+
+	tutorial2Timer: 0,
+	tutorial2Rate: 300,
+
+	tutorialOneTimer: 0,
+	tutorialOneRate: 200,
+
+	extraHintTimer: 0,
+	extraHintRate: 200,
+	extraHintStage: 0,
+	extraHintOn : false,
+
+	startTutorial: function(){ // init the tutorial
+		S.updateLine(4, 1, "WELCOME HACKER"); // welcome the player
+		T.tutorialTimer = PS.timerStart(T.tutorialRate, T.tutorialOption);
+	},
+
+	stopTutorial: function(){
+		T.canSkip = false;
+		T.skipped = true;
+		PS.timerStop(T.tutorial2Timer);
+		T.closeTutorial2();
+
+	},
+
+	tutorialOption: function(){ // give player option to skil tutorial
+		PS.timerStop(T.tutorialTimer);
+		S.updateLine(2, 1, "TOUCH TO SKIP TRAINING");
+		T.canSkip = true;
+		T.tutorial2Timer = PS.timerStart(T.tutorial2Rate, T.tutorialOption2);
+	},
+
+	tutorialOption2: function(){
+		PS.timerStop(T.tutorial2Timer);
+		S.updateLine(2, 1, "INITIALIZING HACKER TRAINING...");
+		T.canSkip = false;
+		T.tutorialOneTimer = PS.timerStart(T.tutorialOneRate, T.tutorialOne);
+	},
+
+	nextTutorial: function(){
+		//PS.debug(T.currentTutorial);
+		switch(T.currentTutorial){
+			case 0:
+				//PS.debug("what");
+				break;
+			case 1:
+				T.tutorialOne();
+				break;
+			case 2:
+				T.extraHintStart();
+				break;
+			case 3:
+				T.tutorialThree();
+				break;
+			case 4:
+				T.tutorialFour();
+				break;
+			case 5:
+				T.closeTutorial();
+				break;
+		}
+	},
+
+	extraHintStart: function(){
+		S.updateLine(1, 1, "GREEN PEG : CORRECT");
+		G.isPlayable = false;
+		G.isDragging = false;
+		T.extraHintOn = true;
+		T.extraHintTimer = PS.timerStart(T.extraHintRate, T.extraHint);
+
+	},
+
+	extraHint: function(){
+		T.extraHintStage++;
+
+		switch(T.extraHintStage){
+			case 0:
+				S.updateLine(1, 1, "GREEN PEG : CORRECT");
+				break;
+			case 1:
+				S.updateLine(1, 1, "RED PEG : INCORRECT");
+				break;
+			case 2:
+				S.updateLine(1, 1, "YELLOW PEG : WRONG ORDER");
+				break;
+			case 3:
+				T.extraHintOn = false;
+				G.isPlayable = true;
+				PS.timerStop(T.extraHintTimer);
+				T.tutorialTwo();
+				break;
+		}
+
+	},
+
+	tutorialOne: function(){
+		J.hide_rows();
+		T.isTutorial = true;
+		T.canSkip = false;
+		T.currentTutorial= 1;
+		PS.timerStop(T.tutorialOneTimer);
+		A.load_everything();
+		S.updateLine(1, 1, "SWIPE TO UNLOCK");
+		var tutorial_one =
+			[ 0, 0, 0,
+			1, 2, 3,
+			0, 0, 0];
+		L.load_specialty_level(tutorial_one);
+
+	},
+
+	tutorialTwo: function(){
+		J.hide_rows();
+		T.isTutorial = true;
+		T.currentTutorial= 2;
+		//PS.timerStop(T.tutorialOneTimer);
+		S.updateLine(1, 1, "DOUBLE-BACKING : ENABLED");
+
+		//T.extraHintTimer = PS.timerStart(T.extraHintRate, T.extraHint);
+
+
+		var tutorial_one =
+			[ 0, 0, 0,
+				3, 1, 2,
+				0, 0, 0];
+
+		L.load_specialty_level(tutorial_one);
+
+	},
+
+	tutorialThree: function(){
+		G.isRowsDisabled = false;
+
+		T.isTutorial = true;
+		T.currentTutorial= 3;
+		//PS.timerStop(T.tutorialOneTimer);
+		S.updateLine(1, 1, "DIAGONALS: INITIALIZED");
+
+		var tutorial_one =
+			[ 0, 0, 0,
+				1, 2, 0,
+				0, 0, 3];
+		L.load_specialty_level(tutorial_one);
+
+	},
+
+	tutorialFour: function(){
+		T.currentTutorial= 4;
+		//PS.timerStop(T.tutorialOneTimer);
+		S.updateLine(1, 1, "LONG DIAGONALS: ENABLED");
+
+		var tutorial_one =
+			[ 2, 0, 0,
+				0, 1, 3,
+				0, 0, 0];
+		L.load_specialty_level(tutorial_one);
+
+	},
+
+	closeTutorial: function(){
+		// this is the last one
+		G.isPlayable = false;
+		G.isDragging = false;
+		S.updateLine(1, 1, "INSTRUCTION COMPLETED");
+		T.tutorialTimer = PS.timerStart(T.tutorialRate, T.closeTutorial2);
+	},
+
+	closeTutorial2: function(){
+		if(!T.skipped){
+			PS.timerStop(T.tutorialTimer);
+		}
+		S.updateLine(4, 2, "...");
+		T.tutorialTimer = PS.timerStart(T.tutorialRate, T.closeTutorial3);
+		//T.isTutorial = false;
+		//L.load_level();
+	},
+
+	closeTutorial3: function(){
+		PS.timerStop(T.tutorialTimer);
+		S.updateLine(1, 1, "WORLD PRESIDENT'S PHONE ACQUIRED");
+		T.tutorialTimer = PS.timerStart(T.tutorialRate, T.closeTutorial4);
+
+		//T.isTutorial = false;
+		//L.load_level();
+	},
+
+	closeTutorial4: function(){
+		PS.timerStop(T.tutorialTimer);
+		S.updateLine(1, 1, "GOOD LUCK, HACKER");
+		T.isTutorial = false;
+		L.load_level();
+	}
+
+
 
 };
 
@@ -1128,6 +1466,8 @@ var S = { // Status Line
 
 	intel_hider_timer : 0,
 	intel_hider_rate : 120,
+
+	intel_tutorial_hider_rate : 200,
 
 	updateLine: function(speed, max, message){
 		S.currentMessage = message;
@@ -1163,6 +1503,9 @@ var S = { // Status Line
 			// stop if long enough
 			if((S.messageLength < 0) || (PS.statusText() == S.currentMessage)){
 				PS.timerStop(S.line_update_timer);
+				if(T.canSkip){
+					T.canReallySkip = true;
+				}
 				if(S.intel_proper){ // actually intel
 					S.intel_hider_timer = PS.timerStart(S.intel_hider_rate, S.hideIntel);
 				}
@@ -1229,11 +1572,44 @@ var S = { // Status Line
 		S.intelArray.push("IT IS NOW SAFE TO TURN OFF YOUR ---");
 		S.intelArray.push("APPLE: MICROSOFT: FOREVER");
 		S.intelArray.push("B. GATES NEVER LEFT US");
-		S.intelArray.push("TOP RANK: BILLY MITCHELL");
+		S.intelArray.push("'THANKS, SATAN'");
 		S.intelArray.push("<<REDACTED>>");
+		S.intelArray.push("LASER DISKS WERE A MISTAKE");
+		S.intelArray.push("'A HOTDOG WITH NO BUN'");
+		S.intelArray.push("$50k");
+		S.intelArray.push("'THEY SLIPPED THE SURLY BONDS...'");
+		S.intelArray.push("HIGH PASS FILTER");
+		S.intelArray.push("GEORGE BUSH #41");
+		S.intelArray.push("GET YOUR ASS TO MARS");
+		S.intelArray.push(">IMPLYING");
+		S.intelArray.push("WE LOST ALL THE TANKS");
+		S.intelArray.push("'WHERE ARE THOSE LOST TAPES?'");
+		S.intelArray.push("THE DECLARATION OF INDEPENDENCE");
+		S.intelArray.push("THE FREEMASONS: REAL");
+		S.intelArray.push("THE FREEMASONS: FAKE");
+		S.intelArray.push("ILLUMINATI: ACTUALLY JUST A JOKE");
+		S.intelArray.push("'IT WAS JUST A PRANK'");
+		S.intelArray.push("'DO THE MARIO': YOUTH SLANG?");
+		S.intelArray.push("COMMUNISM MEMES");
+		S.intelArray.push("THE RED SCARE: NOT INTENTIONAL");
+		S.intelArray.push("GUNS: YES");
+		S.intelArray.push("EVERYTHING WILL BE OKAY");
+		S.intelArray.push("'GET A LOAD OF THIS'");
+		S.intelArray.push("WEIRD AL IS A PLANT");
+		S.intelArray.push("'IT'S SO BAD'");
+		S.intelArray.push("OUTRUN NEVER HAPPENED");
 
+	},
 
+	showTutorialIntel : function(){
+		S.currentMessage = "";
+		S.appendMessage = "";
+		S.intel_proper = false;
 
+		var lesson = "LESSON " + T.currentTutorial + " COMPLETE";
+		S.updateLine(2, 1, lesson);
+
+		S.intel_hider_timer = PS.timerStart(S.intel_tutorial_hider_rate, S.hideIntel);
 	},
 
 	showIntel : function() { // outputs intel to status line
@@ -1250,15 +1626,18 @@ var S = { // Status Line
 
 	showIntelContent : function() {
 		PS.timerStop(S.intel_timer);
+		var string = "";
 		var rando = PS.random(S.intelArray.length-1); // generate from 1 to max
+		string = S.intelArray[rando];
 
 		//PS.debug(rando+"\n");
 		// push shown intel to the already read intel array
 		S.intel_proper = true;
 		S.currentMessage = "";
 		S.appendMessage = "";
-		S.readIntel.push(S.intelArray[rando]);
-		S.updateLine(2, 1, S.intelArray[rando]);
+		S.readIntel.push(string);
+
+		S.updateLine(2, 1, string);
 
 
 	},
@@ -1307,7 +1686,7 @@ PS.init = function( system, options ) {
 	PS.dbInit("lockhack_db", false ); // establish database for puzzles, request username input
 
 	S.populateIntel();
-	S.updateLine(4, 1, "WELCOME HACKER");
+	T.startTutorial();
 
 	A.init_sound();
 //	J.init_attempt_counter();
@@ -1319,9 +1698,21 @@ PS.init = function( system, options ) {
 PS.touch = function( x, y, data, options ) {
 	// Uncomment the following line to inspect parameters
 	// PS.debug( "PS.touch() @ " + x + ", " + y + "\n" );
+
+	if(T.canSkip && T.canReallySkip){
+		T.stopTutorial();
+		return;
+	}
+
+	if(G.isRowsDisabled){
+		if((y == 0) || (y == 8)) {
+			return;
+		}
+	}
 	if(!G.isPlayable){
 		return;
 	}
+
 	//G.isDragging = true;  // we are dragging -- MOVED TO INSIDE TOGGLE_BEAD
 	G.toggle_bead(x, y);
 	G.currentLockedBead = [x, y];
@@ -1332,6 +1723,7 @@ PS.touch = function( x, y, data, options ) {
 PS.release = function( x, y, data, options ) {
 	// Uncomment the following line to inspect parameters
 	// PS.debug( "PS.release() @ " + x + ", " + y + "\n" );
+
 	if(!G.isPlayable){
 		return;
 	}
@@ -1350,12 +1742,27 @@ PS.release = function( x, y, data, options ) {
 PS.enter = function( x, y, data, options ) {
 	// Uncomment the following line to inspect parameters
 	// PS.debug( "PS.enter() @ " + x + ", " + y + "\n" );
+
+	var disabled = false;
 	if(!G.isPlayable){
 		return;
 	}
+
+	if(T.extraHintOn){
+		return;
+	}
+
 	if(G.isDragging){
-		G.toggle_bead(x, y);
-		J.draw_line(G.currentLockedBead[0], G.currentLockedBead[1], x, y);
+		if(G.isRowsDisabled){
+			if((y == 0) || (y == 8)) {
+				disabled = true;
+			}
+		}
+
+		if(!disabled){
+			G.toggle_bead(x, y);
+			J.draw_line(G.currentLockedBead[0], G.currentLockedBead[1], x, y);
+		}
 	}
 };
 
@@ -1371,16 +1778,22 @@ PS.exit = function( x, y, data, options ) {
 PS.exitGrid = function( options ) {
 	// Uncomment the following line to verify operation
 	// PS.debug( "PS.exitGrid() called\n" );
-/*
+	//PS.debug(options.touching);
+
 	J.clear_drawn_lines();
 	if(!G.isPlayable){
 		return;
 	}
 	if(G.isDragging){
+		if(A.clack_playing){
+			A.clack_playing = false;
+			PS.audioPause(A.clack_channel);
+			PS.audioPlay(A.sfx_clack_release, {path: A.SFX_PATH});
+		}
 		G.isDragging = false; // we are no longer dragging
 		G.check_attempt();
 	}
-	*/
+
 };
 
 
