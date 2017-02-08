@@ -19,6 +19,54 @@ You may have received a copy of the GNU Lesser General Public License
 along with Perlenspiel. If not, see <http://www.gnu.org/licenses/>.
 */
 
+/**
+ * Threnody
+ * Created by Henry Wheeler-Mackta and David Allen
+ * February 2017
+ *
+ * Background music is...
+ * All sound effects are...
+ **/
+
+var G = {//general game logic
+	GRID_HEIGHT: 32,
+	GRID_WIDTH: 32,
+
+	global_rate: 60,
+	global_timer: 0,
+
+	beat_rate: 0,
+
+
+	tick : function () { // the big global tick
+		PS.debug("tick tock here's the glock");
+	},
+
+	start_global_timer : function() { // starts the global timer
+		G.global_timer = PS.timerStart(G.global_rate, G.tick);
+	}
+};
+
+var L = {//level or chapter logic
+};
+
+var S = { // status line
+
+	};
+
+var J = {//juice
+	COLOR_BACKGROUND: PS.COLOR_BLACK,
+	COLOR_BACKGROUND_GLOW: PS.COLOR_WHITE,
+
+
+
+};
+
+var A = {//audio
+
+};
+
+
 // The "use strict" directive in the following line is important. Don't remove it!
 "use strict";
 

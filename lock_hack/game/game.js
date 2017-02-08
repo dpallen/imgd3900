@@ -1675,6 +1675,9 @@ var S = { // Status Line
 
 // The following comment lines are for JSLint/JSHint. Don't remove them!
 
+/*jslint nomen: true, white: true */
+/*global PS */
+
 PS.init = function( system, options ) {
 	// Use PS.gridSize( x, y ) to set the grid to
 	// the initial dimensions you want (32 x 32 maximum)
