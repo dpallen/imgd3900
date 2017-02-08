@@ -27,19 +27,110 @@ along with Perlenspiel. If not, see <http://www.gnu.org/licenses/>.
  * Background music is...
  * All sound effects are...
  **/
-
+"use strict";
 var G = {//general game logic
 	GRID_HEIGHT: 32,
 	GRID_WIDTH: 32,
 
-	global_rate: 60,
+	global_rate: 1,
 	global_timer: 0,
 
-	beat_rate: 0,
+	beat_rate: 0,	
+	
+	//beats
+	// tick counter divided by the timing variables will trigger the playing of a note
+	tick_per_measure: 192,
+	timing_quarter: 0,
+	timing_eighth: 0,
+	timing_sixteenth: 0,
+	timing_triplet: 0,
 
+	
+	counter: 0,
+
+	init_measure : function() {
+		//quarter
+		if(G.tick_per_measure % 4 === 0){
+			G.timing_quarter = (G.tick_per_measure / 4);
+			
+		} else {
+			PS.debug('TICKS PER MEASURE NOT DIVISIBLE BY 4\n');
+			PS.debug('FAILED ON QUARTER NOTES\n');
+		}
+
+		//eighth
+		if(G.tick_per_measure % 8 === 0){
+			G.timing_eighth = (G.tick_per_measure / 8);
+		} else {
+			PS.debug('TICKS PER MEASURE NOT DIVISIBLE BY 8\n');
+			PS.debug('FAILED ON EIGHTH NOTES\n');
+		}
+
+		//sixteenth
+		if(G.tick_per_measure % 16 === 0){
+			G.timing_sixteenth = (G.tick_per_measure / 16);
+		} else {
+			PS.debug('TICKS PER MEASURE NOT DIVISIBLE BY 16\n');
+			PS.debug('FAILED ON SIXTEENTH NOTES\n');
+		}
+
+		//triplet
+		if(G.tick_per_measure % 12 === 0){
+			G.timing_triplet = (G.tick_per_measure / 12);
+		} else {
+			PS.debug('TICKS PER MEASURE NOT DIVISIBLE BY 12\n');
+			PS.debug('FAILED ON TRIPLETS\n');
+
+		}
+
+		//Counter for the tick
+		// Starts at the tick rate as we want the notes to hit on tick 1  
+		G.counter = G.tick_per_measure;
+
+		// PS.debug("\nquarter\n");
+		// PS.debug(G.timing_quarter);
+		// PS.debug("\neighth\n");
+		// PS.debug(G.timing_eighth);
+		// PS.debug("\nsixteenth\n");
+		// PS.debug(G.timing_sixteenth);
+		// PS.debug("\ntriplet\n");
+		// PS.debug(G.timing_triplet);
+		
+	},
 
 	tick : function () { // the big global tick
-		PS.debug("tick tock here's the glock");
+		PS.color(PS.ALL, PS.ALL, 0xFFFFFF);
+
+		// Play a quarter note
+		if(G.counter % G.timing_quarter === 0){
+			PS.audioPlay( A.tone_quarter, { volume: 0.75 } );
+			PS.color ( 1, 1, 0x0000FF);
+		}
+
+		// Play a eighth note
+		if(G.counter % G.timing_eighth === 0){
+			PS.audioPlay( A.tone_eighth, { volume: 0.75 } );
+			PS.color ( 1, 3, 0x00FF00);
+		}
+
+		// Play a sixteenth note
+		if(G.counter % G.timing_sixteenth === 0){
+			PS.audioPlay( A.tone_sixteenth, { volume: 0.75 } );
+			PS.color ( 1, 5, 0xFF0000);
+		}
+
+		// Play a triplet
+		if(G.counter % G.timing_triplet === 0){
+			PS.audioPlay( A.tone_triplet, { volume: 0.75 } );
+			PS.color ( 1, 7, 0xFF00FF);
+		}
+		// increment
+		G.counter -= 1;
+
+		if(G.counter <=  0){
+			G.counter = G.tick_per_measure; 
+		}
+
 	},
 
 	start_global_timer : function() { // starts the global timer
@@ -64,6 +155,26 @@ var J = {//juice
 
 var A = {//audio
 
+	//sounds 
+	tone_quarter: "perc_drum_snare",
+	tone_eighth: "fx_coin4",
+	tone_sixteenth: "fx_click",
+	tone_triplet: "fx_pop",
+
+	load : function() {
+		// Quarter Notes
+		PS.audioLoad( A.tone_quarter, { lock : true } );
+		
+		// 8th Notes
+		PS.audioLoad( A.tone_eighth , { lock : true } );
+
+		// 16th notes
+		PS.audioLoad( A.tone_sixteenth, { lock : true } );
+
+		// Triplets
+		PS.audioLoad( A.tone_triplet, { lock : true } );
+	}
+	
 };
 
 
@@ -93,6 +204,10 @@ PS.init = function( system, options ) {
 	// Otherwise you will get the default 8x8 grid
 
 	PS.gridSize( 8, 8 );
+
+	A.load();
+	G.init_measure();
+	G.start_global_timer();
 
 	// Add any other initialization code you need here
 };
