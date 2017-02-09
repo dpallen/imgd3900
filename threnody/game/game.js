@@ -39,7 +39,7 @@ var G = {//general game logic
 	
 	//beats
 	// tick counter divided by the timing variables will trigger the playing of a note
-	tick_per_measure: 192,
+	tick_per_measure: 240,
 
 	timing_quarter: 0,
 	timing_eighth: 0,
@@ -50,6 +50,11 @@ var G = {//general game logic
 	counter: 0,
 	measure_counter: 0, 
 	logic_counter: 0,
+
+	isOpportunity: false, // if true, clicking is good!
+	movementType: 0,
+
+	sanityLevel: 0,
 
 	init_measure : function() {
 		//quarter
@@ -107,9 +112,9 @@ var G = {//general game logic
 			var index_q = 4 - (G.counter / G.timing_quarter); //Defines the position in the level array, which is played
 			if(L.level[G.measure_counter][L.INDEX_QUARTER][index_q] === 1){
 				PS.audioPlay( A.tone_quarter, { volume: 0.75 } );
-				PS.color ( 1, 1, 0x0000FF);
+				//PS.color ( 1, 1, 0x0000FF);
 			} else {
-				PS.color ( 1, 1, 0xFFFFFF);
+				//PS.color ( 1, 1, 0xFFFFFF);
 			}
 			
 		}
@@ -119,9 +124,9 @@ var G = {//general game logic
 			var index_e = 8 - (G.counter / G.timing_eighth); //Defines the position in the level array, which is played
 			if(L.level[G.measure_counter][L.INDEX_EIGHTH][index_e] === 1){
 				PS.audioPlay( A.tone_eighth, { volume: 0.75 } );
-				PS.color ( 1, 3, 0x00FF00);
+				//PS.color ( 1, 3, 0x00FF00);
 			} else {
-				PS.color ( 1, 3, 0xFFFFFF);
+				//PS.color ( 1, 3, 0xFFFFFF);
 			}
 		}
 
@@ -131,9 +136,9 @@ var G = {//general game logic
 			sixteenth = true;
 			if(L.level[G.measure_counter][L.INDEX_SIXTEENTH][index_s] === 1){
 				PS.audioPlay( A.tone_sixteenth, { volume: 0.75 } );
-				PS.color ( 1, 5, 0xFF0000);
+				//PS.color ( 1, 5, 0xFF0000);
 			} else {
-				PS.color ( 1, 5, 0xFFFFFF);
+				//PS.color ( 1, 5, 0xFFFFFF);
 			}
 		}
 
@@ -143,19 +148,20 @@ var G = {//general game logic
 			triplet = true;			
 			if(L.level[G.measure_counter][L.INDEX_TRIPLET][index_t] === 1){
 				PS.audioPlay( A.tone_triplet, { volume: 0.75 } );
-				PS.color ( 1, 7, 0xFF00FF);  
+				//PS.color ( 1, 7, 0xFF00FF);
 			} else {
-				PS.color ( 1, 7, 0xFFFFFF);
+				//PS.color ( 1, 7, 0xFFFFFF);
 			}
 		}
 
-		// Call if eligible for prompt
+		// Call if eligible for prompt, 1 = start fadein, 2 = clear because miss, 3 = open opportunity
 		if(triplet || sixteenth){
-			if(L.level[G.measure_counter][L.INDEX_LOGIC][G.logic_counter] === 1){
+			if(L.level[G.measure_counter][L.INDEX_LOGIC][G.logic_counter] != 0){
 				// This would be the command for input sprite drawing
-				PS.color(6, PS.ALL, 0xFFFF00);
+				G.beat_logic(L.level[G.measure_counter][L.INDEX_LOGIC][G.logic_counter]);
+			//	PS.color(6, PS.ALL, 0xFFFF00);
 			} else {
-				PS.color(6, PS.ALL, 0xFFFFFF);
+				//PS.color(6, PS.ALL, 0xFFFFFF);
 			}
 			
 			G.logic_counter += 1;
@@ -171,7 +177,9 @@ var G = {//general game logic
 			G.logic_counter = 0;
 
 			if(G.measure_counter >= (L.max_measures)){
-				PS.timerStop(G.global_timer);
+				// set measure counter back to 0
+				G.measure_counter = 0;
+				//PS.timerStop(G.global_timer);
 			}
 		}
 
@@ -181,8 +189,24 @@ var G = {//general game logic
 		G.global_timer = PS.timerStart(G.global_rate, G.tick);
 	},
 
-	spawn_object_tap : function(fade_time) { // creates a tap object
+	//1 = start fadein, 2 = clear because miss, 3 = open opportunity
+	beat_logic : function(action){
+		//PS.debug(action);
+		switch(action){
+			case 1: // start fadein
+				G.spawn_object_tap(5);
+				break;
+			case 2: // clear because miss
+				G.miss_object();
+				break;
+			case 3: // open opportunity
+				break;
+		}
+	},
 
+	spawn_object_tap : function(fade_time) { // creates a tap object
+		J.object_show_time = fade_time;
+		P.spawn_object("tap");
 	},
 
 	spawn_object_drag : function(fade_time) { // creates a drag object
@@ -195,6 +219,34 @@ var G = {//general game logic
 
 	click : function() {
 
+	},
+
+	hit_object : function(){
+		//PS.debug("hit!");
+		P.delete_object();
+	},
+
+	miss_object : function(){
+		//PS.debug("miss!");
+		G.opportunity_close();
+		P.delete_object();
+	},
+
+	opportunity_open : function(){
+		if(G.isOpportunity){
+			return;
+		}
+		PS.debug("opportunity");
+		G.isOpportunity = true;
+		J.opportunity_glow();
+	},
+
+	opportunity_close : function(){
+		if(!G.isOpportunity){
+			return;
+		}
+		G.isOpportunity = false;
+		J.opportunity_not();
 	}
 };
 
@@ -215,18 +267,18 @@ var L = {//level or chapter logic
 			[
 				[1,            1,            1,            1           ],  //quarter
 				[1,     1,     0,     1,     1,     1,     0,     1    ],  //eighth
-				[1, 1,  0,  1, 1, 0,  0,  0, 1, 1,  0,  1, 1, 0,  0,  0],  //sixteenth
-				[0,   0,  0,   1,   1,  1,   1,   0,  0,   1,   1,  1  ],  //triplet
-				[1, 1,0,0,0,0, 1, 1,0,0,0,0, 1, 1,0,0,0,0, 1, 1,0,0,0,0],  //logic 
+				[0, 0,  0,  0, 0, 0,  0,  0, 0, 0,  0,  0, 0, 0,  0,  0],  //sixteenth
+				[0,   0,  0,   0,   0,  0,   0,   0,  0,   0,   0,  0  ],  //triplet
+				[0, 0,0,0,1,0, 3, 2,0,0,0,0, 0, 0,0,0,1,0, 3, 2,0,0,0,0],  //logic
 			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 				],
 
 			[
-				[1,            0,            1,            0           ],  //quarter
+				[1,            1,            1,            1           ],  //quarter
 				[0,     1,     1,     0,     1,     1,     0,     1    ],  //eighth
-				[1, 1,  0,  1, 1, 0,  0,  0, 1, 1,  0,  1, 1, 0,  0,  0],  //sixteenth
-				[1,   0,  1,   0,   1,  0,   1,   0,  1,   0,   1,  0  ],  //triplet
-				[1, 1,0,0,1,0, 1, 0,0,1,0,0, 1, 1,0,1,0,0, 1, 1,0,1,0,0],  //logic 
+				[0, 0,  0,  0, 0, 0,  0,  0, 0, 0,  0,  0, 0, 0,  0,  0],  //sixteenth
+				[0,   0,  0,   0,   0,  0,   0,   0,  0,   0,   0,  0  ],  //triplet
+				[0, 0,0,0,1,0, 3, 2,0,0,0,0, 0, 0,0,0,1,0, 3, 2,0,0,0,0],  //logic
 			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 				],
 		];
@@ -243,13 +295,18 @@ var S = { // status line
 var J = {//juice
 	COLOR_BACKGROUND: PS.COLOR_BLACK,
 	COLOR_BACKGROUND_GLOW: PS.COLOR_WHITE,
+	COLOR_BACKGROUND_BORDER: PS.COLOR_WHITE,
 
 	LAYER_BACKGROUND: 0,
 	LAYER_OBJECT: 1,
-	LAYER_CLICK: 2,
+	LAYER_OBJECT_HIDE: 2,
+	LAYER_CLICK: 3,
 
-	default_fade_time: 0,
-	object_fade_time: 20,
+	object_show_time: 0,
+	object_hide_time: 0,
+
+	error_timer: 0, // timer for error glow
+	opportunity_glow_timer: 0, // timer for timing grid glow
 
 	init_grid: function(){
 		PS.gridSize(G.GRID_WIDTH, G.GRID_HEIGHT);
@@ -257,26 +314,84 @@ var J = {//juice
 
 		PS.gridPlane(J.LAYER_BACKGROUND); // set to background layer
 		PS.color(PS.ALL, PS.ALL, J.COLOR_BACKGROUND);
+		PS.color(PS.ALL, 0, J.COLOR_BACKGROUND_BORDER);
+		PS.color(PS.ALL, 31, J.COLOR_BACKGROUND_BORDER);
+		PS.color(0, PS.ALL, J.COLOR_BACKGROUND_BORDER);
+		PS.color(31, PS.ALL, J.COLOR_BACKGROUND_BORDER);
+
 		PS.border(PS.ALL, PS.ALL, 0);
+
+		PS.gridPlane(J.LAYER_OBJECT_HIDE);
+		PS.color(PS.ALL, PS.ALL, J.COLOR_BACKGROUND);
+		PS.color(PS.ALL, 0, J.COLOR_BACKGROUND_BORDER);
+		PS.color(PS.ALL, 31, J.COLOR_BACKGROUND_BORDER);
+		PS.color(0, PS.ALL, J.COLOR_BACKGROUND_BORDER);
+		PS.color(31, PS.ALL, J.COLOR_BACKGROUND_BORDER);
+		PS.fade(PS.ALL, PS.ALL, 0);
+		PS.alpha(PS.ALL, PS.ALL, 255);
 	},
 
-	reset_object_layer: function(){
-		PS.gridPlane(J.LAYER_OBJECT);
-		PS.fade(PS.ALL, PS.ALL, J.default_fade_time);
+	show_object: function(){
+		PS.gridPlane(J.LAYER_OBJECT_HIDE);
+		PS.fade(PS.ALL, PS.ALL, J.object_show_time);
+		//PS.fade(0, 0, J.object_show_time, {onEnd: G.opportunity_open});
 		PS.alpha(PS.ALL, PS.ALL, 0);
+	},
+
+	hide_object: function(){
+		PS.gridPlane(J.LAYER_OBJECT_HIDE);
+		PS.fade(PS.ALL, PS.ALL, J.object_hide_time);
+		PS.alpha(PS.ALL, PS.ALL, 255);
+	},
+
+	error_glow: function(){
+		//PS.debug("mistake!");
+	},
+
+	opportunity_glow: function(){
+		PS.gridShadow(true, J.COLOR_BACKGROUND_GLOW);
+	},
+
+	opportunity_not: function(){
+		PS.gridShadow(false, J.COLOR_BACKGROUND);
 	}
-
-
 
 };
 
 var P = { // sPrites
+	SPRITE_PATH: "C:/Users/henry/Documents/GitHub/imgd3900/threnody/game/sprites/",	//where are the sprites?
 
+	spriteX: 11, // where do sprites go
+	spriteY: 11, // where do sprites go
 	current_object: 0, // there is only ever one object
 
-	spawn_object: function(){
+	object_exists: false, // is there an object there?
 
-	}
+	spawn_object: function(type){
+		var loader;
+		loader = function(data){
+			P.current_object = PS.spriteImage(data);
+			PS.spritePlane(P.current_object, J.LAYER_OBJECT);
+			PS.spriteMove(P.current_object, 11, 11);
+		};
+		switch(type){
+			case "tap":
+				PS.imageLoad("sprites/peg_tap.png", loader);
+				break;
+			case "hold":
+				break;
+
+		}
+
+		PS.gridFade(0);
+		P.object_exists = true;
+		J.show_object();
+	},
+
+	delete_object: function(){
+		P.object_exists = false;
+		PS.spriteDelete(P.current_object);
+	},
 };
 
 var A = {//audio
@@ -336,7 +451,11 @@ PS.init = function( system, options ) {
 	G.init_measure();
 	L.one();
 
-	//G.start_global_timer();
+	//G.spawn_object_tap(15);
+
+	G.start_global_timer();
+
+	//G.spawn_object_tap(15);
 
 	// Add any other initialization code you need here
 };
@@ -352,8 +471,20 @@ PS.init = function( system, options ) {
 PS.touch = function( x, y, data, options ) {
 	// Uncomment the following line to inspect parameters
 	// PS.debug( "PS.touch() @ " + x + ", " + y + "\n" );
-
-	// Add code here for mouse clicks/touches over a bead
+	if(G.isOpportunity){
+		switch(G.movementType){
+			case("tap"):
+				J.delete_object();
+				break;
+			case("hold"):
+				break;
+			case("drag"):
+				break;
+		}
+	}else{
+		G.sanityLevel++;
+		J.error_glow();
+	}
 };
 
 // PS.release ( x, y, data, options )
