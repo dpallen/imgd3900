@@ -40,19 +40,19 @@ var G = {//general game logic
 	//beats
 	// tick counter divided by the timing variables will trigger the playing of a note
 	tick_per_measure: 192,
+
 	timing_quarter: 0,
 	timing_eighth: 0,
 	timing_sixteenth: 0,
 	timing_triplet: 0,
 
-	
+
 	counter: 0,
 
 	init_measure : function() {
 		//quarter
 		if(G.tick_per_measure % 4 === 0){
-			G.timing_quarter = (G.tick_per_measure / 4);
-			
+			G.timing_quarter = G.tick_per_measure / 4;
 		} else {
 			PS.debug('TICKS PER MEASURE NOT DIVISIBLE BY 4\n');
 			PS.debug('FAILED ON QUARTER NOTES\n');
@@ -60,7 +60,7 @@ var G = {//general game logic
 
 		//eighth
 		if(G.tick_per_measure % 8 === 0){
-			G.timing_eighth = (G.tick_per_measure / 8);
+			G.timing_eighth = G.tick_per_measure / 8;
 		} else {
 			PS.debug('TICKS PER MEASURE NOT DIVISIBLE BY 8\n');
 			PS.debug('FAILED ON EIGHTH NOTES\n');
@@ -68,7 +68,7 @@ var G = {//general game logic
 
 		//sixteenth
 		if(G.tick_per_measure % 16 === 0){
-			G.timing_sixteenth = (G.tick_per_measure / 16);
+			G.timing_sixteenth = G.tick_per_measure / 16;
 		} else {
 			PS.debug('TICKS PER MEASURE NOT DIVISIBLE BY 16\n');
 			PS.debug('FAILED ON SIXTEENTH NOTES\n');
@@ -76,7 +76,7 @@ var G = {//general game logic
 
 		//triplet
 		if(G.tick_per_measure % 12 === 0){
-			G.timing_triplet = (G.tick_per_measure / 12);
+			G.timing_triplet = G.tick_per_measure / 12;
 		} else {
 			PS.debug('TICKS PER MEASURE NOT DIVISIBLE BY 12\n');
 			PS.debug('FAILED ON TRIPLETS\n');
@@ -99,30 +99,50 @@ var G = {//general game logic
 	},
 
 	tick : function () { // the big global tick
-		PS.color(PS.ALL, PS.ALL, 0xFFFFFF);
 
 		// Play a quarter note
 		if(G.counter % G.timing_quarter === 0){
-			PS.audioPlay( A.tone_quarter, { volume: 0.75 } );
-			PS.color ( 1, 1, 0x0000FF);
+			var index_q = 4 - (G.counter / G.timing_quarter); //Defines the position in the level array, which is played
+			if(L.level[0][index_q] === 1){
+				PS.audioPlay( A.tone_quarter, { volume: 0.75 } );
+				PS.color ( 1, 1, 0x0000FF);
+			} else {
+				PS.color ( 1, 1, 0xFFFFFF);
+			}
+			
 		}
 
 		// Play a eighth note
 		if(G.counter % G.timing_eighth === 0){
-			PS.audioPlay( A.tone_eighth, { volume: 0.75 } );
-			PS.color ( 1, 3, 0x00FF00);
+			var index_e = 8 - (G.counter / G.timing_eighth); //Defines the position in the level array, which is played
+			if(L.level[1][index_e] === 1){
+				PS.audioPlay( A.tone_eighth, { volume: 0.75 } );
+				PS.color ( 1, 3, 0x00FF00);
+			} else {
+				PS.color ( 1, 3, 0xFFFFFF);
+			}
 		}
 
 		// Play a sixteenth note
 		if(G.counter % G.timing_sixteenth === 0){
-			PS.audioPlay( A.tone_sixteenth, { volume: 0.75 } );
-			PS.color ( 1, 5, 0xFF0000);
+			var index_s = 16 - (G.counter / G.timing_sixteenth); //Defines the position in the level array, which is played
+			if(L.level[2][index_s] === 1){
+				PS.audioPlay( A.tone_sixteenth, { volume: 0.75 } );
+				PS.color ( 1, 5, 0xFF0000);
+			} else {
+				PS.color ( 1, 5, 0xFFFFFF);
+			}
 		}
 
 		// Play a triplet
 		if(G.counter % G.timing_triplet === 0){
-			PS.audioPlay( A.tone_triplet, { volume: 0.75 } );
-			PS.color ( 1, 7, 0xFF00FF);
+			var index_t = 12 - (G.counter / G.timing_triplet); //Defines the position in the level array, which is played
+			if(L.level[3][index_t] === 1){
+				PS.audioPlay( A.tone_triplet, { volume: 0.75 } );
+				PS.color ( 1, 7, 0xFF00FF);
+			} else {
+				PS.color ( 1, 7, 0xFFFFFF);
+			}
 		}
 		// increment
 		G.counter -= 1;
@@ -139,6 +159,17 @@ var G = {//general game logic
 };
 
 var L = {//level or chapter logic
+	
+	level: [],
+
+	one : function() {
+		L.level = [
+			[1,          1,          1,          1         ],  //quarter
+			[1,    1,    0,    1,    1,    1,    0,    1   ],  //eighth
+			[1, 1, 0, 1, 1, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0],  //sixteenth
+			[0,  0,  0,  1,  1,  1,  1,  0,  0,  1,  1,  1 ],  //triplet
+		];
+	}
 };
 
 var S = { // status line
@@ -206,7 +237,10 @@ PS.init = function( system, options ) {
 	PS.gridSize( 8, 8 );
 
 	A.load();
+	
 	G.init_measure();
+	L.one();
+
 	G.start_global_timer();
 
 	// Add any other initialization code you need here
