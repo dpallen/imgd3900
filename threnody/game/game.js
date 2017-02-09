@@ -49,6 +49,8 @@ var G = {//general game logic
 
 	counter: 0,
 	measure_counter: 0, 
+	logic_counter: 0,
+
 	init_measure : function() {
 		//quarter
 		if(G.tick_per_measure % 4 === 0){
@@ -99,11 +101,12 @@ var G = {//general game logic
 	},
 
 	tick : function () { // the big global tick
-
+		var sixteenth = false;
+		var triplet = false;
 		// Play a quarter note
 		if(G.counter % G.timing_quarter === 0){
 			var index_q = 4 - (G.counter / G.timing_quarter); //Defines the position in the level array, which is played
-			if(L.level[G.measure_counter][0][index_q] === 1){
+			if(L.level[G.measure_counter][L.INDEX_QUARTER][index_q] === 1){
 				PS.audioPlay( A.tone_quarter, { volume: 0.75 } );
 				PS.color ( 1, 1, 0x0000FF);
 			} else {
@@ -115,7 +118,7 @@ var G = {//general game logic
 		// Play a eighth note
 		if(G.counter % G.timing_eighth === 0){
 			var index_e = 8 - (G.counter / G.timing_eighth); //Defines the position in the level array, which is played
-			if(L.level[G.measure_counter][1][index_e] === 1){
+			if(L.level[G.measure_counter][L.INDEX_EIGHTH][index_e] === 1){
 				PS.audioPlay( A.tone_eighth, { volume: 0.75 } );
 				PS.color ( 1, 3, 0x00FF00);
 			} else {
@@ -126,7 +129,8 @@ var G = {//general game logic
 		// Play a sixteenth note
 		if(G.counter % G.timing_sixteenth === 0){
 			var index_s = 16 - (G.counter / G.timing_sixteenth); //Defines the position in the level array, which is played
-			if(L.level[G.measure_counter][2][index_s] === 1){
+			sixteenth = true;
+			if(L.level[G.measure_counter][L.INDEX_SIXTEENTH][index_s] === 1){
 				PS.audioPlay( A.tone_sixteenth, { volume: 0.75 } );
 				PS.color ( 1, 5, 0xFF0000);
 			} else {
@@ -137,13 +141,27 @@ var G = {//general game logic
 		// Play a triplet
 		if(G.counter % G.timing_triplet === 0){
 			var index_t = 12 - (G.counter / G.timing_triplet); //Defines the position in the level array, which is played
-			if(L.level[G.measure_counter][3][index_t] === 1){
+			triplet = true;			
+			if(L.level[G.measure_counter][L.INDEX_TRIPLET][index_t] === 1){
 				PS.audioPlay( A.tone_triplet, { volume: 0.75 } );
-				PS.color ( 1, 7, 0xFF00FF);
+				PS.color ( 1, 7, 0xFF00FF);  
 			} else {
 				PS.color ( 1, 7, 0xFFFFFF);
 			}
 		}
+
+		// Call if eligible for prompt
+		if(triplet || sixteenth){
+			if(L.level[G.measure_counter][L.INDEX_LOGIC][G.logic_counter] === 1){
+				// This would be the command for input sprite drawing
+				PS.color(6, PS.ALL, 0xFFFF00);
+			} else {
+				PS.color(6, PS.ALL, 0xFFFFFF);
+			}
+			
+			G.logic_counter += 1;
+		}
+
 		// increment
 		G.counter -= 1;
 
@@ -151,6 +169,8 @@ var G = {//general game logic
 			G.counter = G.tick_per_measure;
 
 			G.measure_counter += 1;
+			G.logic_counter = 0;
+
 			if(G.measure_counter >= (L.max_measures)){
 				PS.timerStop(G.global_timer);
 			}
@@ -164,7 +184,13 @@ var G = {//general game logic
 };
 
 var L = {//level or chapter logic
-	
+	INDEX_QUARTER: 0,
+	INDEX_EIGHTH: 1,
+	INDEX_SIXTEENTH: 2,
+	INDEX_TRIPLET: 3,
+
+	INDEX_LOGIC: 4,
+
 	level: [],
 	max_measures: 0,
 
@@ -176,12 +202,18 @@ var L = {//level or chapter logic
 				[1,    1,    0,    1,    1,    1,    0,    1   ],  //eighth
 				[1, 1, 0, 1, 1, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0],  //sixteenth
 				[0,  0,  0,  1,  1,  1,  1,  0,  0,  1,  1,  1 ],  //triplet
+
+				[1, 1,0,0,0,0, 1, 1,0,0,0,0, 1, 1,0,0,0,0, 1, 1,0,0,0,0],  //logic 
+			  //[q, s,t,s,t,s, q, s,t,s,t,s, q, s,t,s,t,s, q, s,t,s,t,s],  //logic key
 				],
 			[
 				[0,          1,          0,          1         ],  //quarter
 				[1,    1,    1,    0,    0,    0,    1,    1   ],  //eighth
 				[1, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 1, 0, 0, 1],  //sixteenth
 				[1,  0,  1,  0,  1,  0,  1,  0,  1,  0,  1,  1 ],  //triplet
+
+				[1, 1,0,1,0,1, 1, 0,1,0,1,0, 1, 1,1,0,1,1, 1, 0,0,1,0,0],  //logic 
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 			]
 		];
 		//The next two lines will go into a generic 'level load' function once we write it
