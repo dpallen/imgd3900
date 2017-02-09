@@ -82,7 +82,6 @@ var G = {//general game logic
 		} else {
 			PS.debug('TICKS PER MEASURE NOT DIVISIBLE BY 12\n');
 			PS.debug('FAILED ON TRIPLETS\n');
-
 		}
 
 		//Counter for the tick
@@ -214,23 +213,22 @@ var L = {//level or chapter logic
 
 		L.level = [
 			[
-				[1,          1,          1,          1         ],  //quarter
-				[1,    1,    0,    1,    1,    1,    0,    1   ],  //eighth
-				[1, 1, 0, 1, 1, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0, 0],  //sixteenth
-				[0,  0,  0,  1,  1,  1,  1,  0,  0,  1,  1,  1 ],  //triplet
-
+				[1,            1,            1,            1           ],  //quarter
+				[1,     1,     0,     1,     1,     1,     0,     1    ],  //eighth
+				[1, 1,  0,  1, 1, 0,  0,  0, 1, 1,  0,  1, 1, 0,  0,  0],  //sixteenth
+				[0,   0,  0,   1,   1,  1,   1,   0,  0,   1,   1,  1  ],  //triplet
 				[1, 1,0,0,0,0, 1, 1,0,0,0,0, 1, 1,0,0,0,0, 1, 1,0,0,0,0],  //logic 
-			  //[q, s,t,s,t,s, q, s,t,s,t,s, q, s,t,s,t,s, q, s,t,s,t,s],  //logic key
-				],
-			[
-				[0,          1,          0,          1         ],  //quarter
-				[1,    1,    1,    0,    0,    0,    1,    1   ],  //eighth
-				[1, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 1, 0, 0, 1],  //sixteenth
-				[1,  0,  1,  0,  1,  0,  1,  0,  1,  0,  1,  1 ],  //triplet
-
-				[1, 1,0,1,0,1, 1, 0,1,0,1,0, 1, 1,1,0,1,1, 1, 0,0,1,0,0],  //logic 
 			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			]
+				],
+
+			[
+				[1,            0,            1,            0           ],  //quarter
+				[0,     1,     1,     0,     1,     1,     0,     1    ],  //eighth
+				[1, 1,  0,  1, 1, 0,  0,  0, 1, 1,  0,  1, 1, 0,  0,  0],  //sixteenth
+				[1,   0,  1,   0,   1,  0,   1,   0,  1,   0,   1,  0  ],  //triplet
+				[1, 1,0,0,1,0, 1, 0,0,1,0,0, 1, 1,0,1,0,0, 1, 1,0,1,0,0],  //logic 
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+				],
 		];
 		//The next two lines will go into a generic 'level load' function once we write it
 		G.measure_counter = 0;
