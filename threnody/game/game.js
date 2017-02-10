@@ -46,15 +46,15 @@ var G = {//general game logic
 	timing_sixteenth: 0,
 	timing_triplet: 0,
 
+
 	counter: 0,
 	measure_counter: 0, 
 	logic_counter: 0,
 
 	isOpportunity: false, // if true, clicking is good!
-	isRhythmBegun: false, // has the rhythm begun?
 	movementType: 0,
 
-	insanityLevel: 0,
+	sanityLevel: 0,
 
 	init_measure : function() {
 		//quarter
@@ -179,17 +179,13 @@ var G = {//general game logic
 			if(G.measure_counter >= (L.max_measures)){
 				// set measure counter back to 0
 				G.measure_counter = 0;
-				/** OR JUST END IT **/
 				//PS.timerStop(G.global_timer);
-				//G.end_game();
-
 			}
 		}
 
 	},
 
 	start_global_timer : function() { // starts the global timer
-		G.isRhythmBegun = true;
 		G.global_timer = PS.timerStart(G.global_rate, G.tick);
 	},
 
@@ -222,81 +218,25 @@ var G = {//general game logic
 	},
 
 	click : function() {
-		// PUT IF STATEMENT HERE, IS IT IN RANGE?!?!?
-		if(true){
-			G.hit_object();
-
-		}else{
-			G.bad_click();
-		}
-	},
-
-	bad_click : function(){
-		PS.dbEvent( "threnody", "hit status: ", "hit at wrong time");
-
-		J.error_glow();
-		G.increase_insanity();
 
 	},
 
-	hit_object : function(){ // successful hit!
+	hit_object : function(){
 		//PS.debug("hit!");
-		PS.dbEvent( "threnody", "hit status: ", "hit");
-		J.hit_glow();
 		P.delete_object();
-
 	},
 
 	miss_object : function(){
 		//PS.debug("miss!");
-		PS.dbEvent( "threnody", "hit status: ", "misssed");
-
-		if(!P.object_exists){
-			return;
-		}
-		//G.opportunity_close();
-		J.error_glow();
+		G.opportunity_close();
 		P.delete_object();
-
-		G.increase_insanity();
-	},
-
-	increase_insanity : function(){
-		G.insanityLevel++;
-	},
-
-	complete_chapter : function(){
-		PS.dbEvent( "threnody", "chapter complete", true);
-	},
-
-	start_chapter : function(number){
-		switch(number){
-			case "one":
-				PS.dbEvent( "threnody", "chapter one begun", true);
-				break;
-			case "two":
-				PS.dbEvent( "threnody", "chapter two begun", true);
-				break;
-			case "three":
-				PS.dbEvent( "threnody", "chapter three begun", true);
-				break;
-		}
-
-	},
-
-	end_game : function(){
-
-		PS.dbEvent( "threnody", "endgame", true );
-
-		// Email the database and discard it
-
-		PS.dbSend( "threnody", "dpallen", { discard : true } );
 	},
 
 	opportunity_open : function(){
 		if(G.isOpportunity){
 			return;
 		}
+		PS.debug("opportunity");
 		G.isOpportunity = true;
 		J.opportunity_glow();
 	},
@@ -396,8 +336,6 @@ var J = {//juice
 		PS.fade(PS.ALL, PS.ALL, J.object_show_time);
 		//PS.fade(0, 0, J.object_show_time, {onEnd: G.opportunity_open});
 		PS.alpha(PS.ALL, PS.ALL, 0);
-
-		PS.gridShadow(false);
 	},
 
 	hide_object: function(){
@@ -406,12 +344,8 @@ var J = {//juice
 		PS.alpha(PS.ALL, PS.ALL, 255);
 	},
 
-	hit_glow: function(){
-		PS.gridShadow(true, PS.COLOR_GREEN);
-	},
-
 	error_glow: function(){
-		PS.gridShadow(true, PS.COLOR_RED);
+		//PS.debug("mistake!");
 	},
 
 	opportunity_glow: function(){
@@ -455,9 +389,6 @@ var P = { // sPrites
 	},
 
 	delete_object: function(){
-		if(!P.object_exists){
-			return;
-		}
 		P.object_exists = false;
 		PS.spriteDelete(P.current_object);
 	},
@@ -466,8 +397,8 @@ var P = { // sPrites
 var A = {//audio
 
 	//sounds 
-	tone_quarter: "xylo_c5",
-	tone_eighth: "xylo_eb5",
+	tone_quarter: "perc_drum_snare",
+	tone_eighth: "fx_coin4",
 	tone_sixteenth: "fx_click",
 	tone_triplet: "fx_pop",
 
@@ -520,12 +451,9 @@ PS.init = function( system, options ) {
 	G.init_measure();
 	L.one();
 
-	PS.dbInit( "threnody", { login : true } );
-
-
 	//G.spawn_object_tap(15);
 
-	//G.start_global_timer();
+	G.start_global_timer();
 
 	//G.spawn_object_tap(15);
 
@@ -543,18 +471,10 @@ PS.init = function( system, options ) {
 PS.touch = function( x, y, data, options ) {
 	// Uncomment the following line to inspect parameters
 	// PS.debug( "PS.touch() @ " + x + ", " + y + "\n" );
-
-	if(!G.isRhythmBegun){
-		PS.statusText("THE PLACEHOLDER SOUNDS");
-		PS.statusColor(PS.COLOR_WHITE);
-		G.start_global_timer();
-	}
-	G.click();
-	/*
 	if(G.isOpportunity){
 		switch(G.movementType){
 			case("tap"):
-				G.click();
+				J.delete_object();
 				break;
 			case("hold"):
 				break;
@@ -565,7 +485,6 @@ PS.touch = function( x, y, data, options ) {
 		G.sanityLevel++;
 		J.error_glow();
 	}
-	*/
 };
 
 // PS.release ( x, y, data, options )
@@ -683,7 +602,6 @@ PS.input = function( sensors, options ) {
 // [options] = an object with optional parameters; see documentation for details
 
 PS.shutdown = function( options ) {
+
 	// Add code here for when Perlenspiel is about to close
-	PS.dbEvent( "threnody", "shutdown", true );
-	PS.dbSend( "threnody", "dpallen" );
 };
