@@ -138,7 +138,7 @@ var G = {//general game logic
 		var new_index = G.logic_counter + 1; //how many indexes away the next action is 
 		var measure = G.measure_counter; //so we can play with measure countign nondestructively
 
-		while((L.level[measure][L.INDEX_LOGIC][G.logic_counter + new_index]) === 0){
+		while((L.level[measure][L.INDEX_LOGIC][new_index]) != goal){
 			new_index += 1; //increment if the next one is a 0
 			if(new_index >= L.LENGTH_LOGIC){
 				measure += 1;
@@ -162,16 +162,16 @@ var G = {//general game logic
 		//number of ticks between 
 		var delta = ((measure - G.measure_counter) * G.tick_per_measure) + G.counter - (G.logic_timings[new_index]);
 
-		 /*PS.debug('max measures  ' + L.max_measures + '\n');
-		 PS.debug('measures  ' + measure + '\n');
-		 PS.debug('current tick  ' + G.counter + '\n');
-		 PS.debug('logic i  ' +  G.logic_counter + '\n');
-		 PS.debug('new index  ' + new_index + '\n');
-		 PS.debug('new tick  ' + G.logic_timings[new_index] + '\n');
-
-		 PS.debug('delta  ' + delta + '\n');
-
-		 PS.debug('\n\n\n\n');*/
+		 //PS.debug('max measures  ' + L.max_measures + '\n');
+		 //PS.debug('measures  ' + measure + '\n');
+		 //PS.debug('current tick  ' + G.counter + '\n');
+		 //PS.debug('logic i  ' +  G.logic_counter + '\n');
+		 //PS.debug('new index  ' + new_index + '\n');
+		 //PS.debug('new tick  ' + G.logic_timings[new_index] + '\n');
+         //
+		 //PS.debug('delta  ' + delta + '\n');
+         //
+		 //PS.debug('\n\n\n\n');
 
 		return delta; 
 
@@ -269,6 +269,7 @@ var G = {//general game logic
 		switch(action){
 			case 1: // start fadein
 				PS.statusText("FADING");
+				G.isOpportunity = true;
 				G.spawn_object_tap(0);
 				break;
 			case 2: // clear because miss
@@ -300,21 +301,47 @@ var G = {//general game logic
 	},
 
 	click : function() {
+		if(!G.isOpportunity){
+			return;
+		}
 		// PUT IF STATEMENT HERE, IS IT IN RANGE?!?!?
 		//PS.debug("delta: " + G.calc_tick_distance());
 		//PS.debug("wiga: " + G.wiggleRoom);
+		G.wiggleRoom = 10;
+		var last_good = G.last_logic_activity;
+		var next_good = G.counter - G.calc_tick_distance(3);
+		var dif_last = last_good - G.counter;
+		var dif_next = G.counter - next_good;
 
-		/*
-		if(G.calc_tick_distance() < G.wiggleRoom){
+		//PS.debug("current tick: " + G.counter + "\n");
+		//PS.debug("last tick: " + G.last_logic_activity + "\n");
+		//PS.debug("next tick: " + next_good + "\n");
+		//PS.debug("dif last: " + dif_last + "\n");
+		//PS.debug("dif next: " + dif_next + "\n");
+
+		var is_close_to_last = false
+		var is_close_to_next = false;
+		if(dif_last < G.wiggleRoom){
+			is_close_to_last = true;
+		}
+		if(dif_next < G.wiggleRoom){
+			is_close_to_next = true;
+		}
+
+		//PS.debug("close last: " + is_close_to_last + "\n");
+		//PS.debug("close next: " + is_close_to_next + "\n");
+
+		if(is_close_to_last || is_close_to_next){
 			G.hit_object();
 
 		}else{
 			G.bad_click();
-		}*/
+		}
 	},
 
 	bad_click : function(){
 		PS.dbEvent( "threnody", "hit status: ", "hit at wrong time");
+		G.isOpportunity = false;
 
 		J.error_glow();
 		G.increase_insanity();
@@ -323,6 +350,8 @@ var G = {//general game logic
 
 	hit_object : function(){
 		//PS.debug("hit!");
+		G.isOpportunity = false;
+
 		PS.dbEvent( "threnody", "hit status: ", "hit");
 		J.hit_glow();
 		P.delete_object();
@@ -331,6 +360,7 @@ var G = {//general game logic
 	miss_object : function(){
 		//PS.debug("miss!");
 		PS.dbEvent( "threnody", "hit status: ", "misssed");
+		G.isOpportunity = false;
 
 		if(!P.object_exists){
 			return;
@@ -465,7 +495,7 @@ var J = {//juice
 		//PS.debug("SHOWING OBJECT\n");
 		J.object_show_time = G.calc_tick_distance(3);
 	//	PS.debug(J.object_show_time);
-		PS.debug("DELTA: " + J.object_show_time + "\n");
+		//PS.debug("DELTA: " + J.object_show_time + "\n");
 		PS.fade(PS.ALL, PS.ALL, J.object_show_time);
 		//PS.fade(0, 0, J.object_show_time, {onEnd: G.opportunity_open});
 		PS.alpha(PS.ALL, PS.ALL, 0);
@@ -504,6 +534,7 @@ var P = { // sPrites
 			P.current_object = PS.spriteImage(data);
 			PS.spritePlane(P.current_object, J.LAYER_OBJECT);
 			PS.spriteMove(P.current_object, 11, 11);
+
 		};
 		switch(type){
 			case "tap":
@@ -520,11 +551,13 @@ var P = { // sPrites
 	},
 
 	delete_object: function(){
-		if(!P.object_exists){
+		if(P.object_exists){
+			PS.spriteDelete(P.current_object);
+			P.object_exists = false;
+			J.hide_object();
 			return;
 		}
-		P.object_exists = false;
-		PS.spriteDelete(P.current_object);
+
 	},
 };
 
