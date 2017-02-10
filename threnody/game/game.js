@@ -53,9 +53,11 @@ var G = {//general game logic
 	logic_timings: [], //kms
 
 	isOpportunity: false, // if true, clicking is good!
+	isRhythmBegun: false, // has the rhythm begun?
 	movementType: 0,
 
-	sanityLevel: 0,
+	insanityLevel: 0,
+	wiggleRoom: 5,
 
 	init_measure : function() {
 		//quarter
@@ -146,7 +148,7 @@ var G = {//general game logic
 			}
 		}
 		//number of ticks between 
-		var delta = (measure * G.tick_per_measure) + G.counter - (G.logic_timings[new_index]);
+		var delta = ((measure - G.measure_counter) * G.tick_per_measure) + G.counter - (G.logic_timings[new_index]);
 		return delta; 
 
 	},
@@ -233,6 +235,7 @@ var G = {//general game logic
 	},
 
 	start_global_timer : function() { // starts the global timer
+		G.isRhythmBegun = true;
 		G.global_timer = PS.timerStart(G.global_rate, G.tick);
 	},
 
@@ -241,7 +244,7 @@ var G = {//general game logic
 		//PS.debug(action);
 		switch(action){
 			case 1: // start fadein
-				G.spawn_object_tap(5);
+				G.spawn_object_tap(0);
 				break;
 			case 2: // clear because miss
 				G.miss_object();
@@ -265,36 +268,75 @@ var G = {//general game logic
 	},
 
 	click : function() {
+		// PUT IF STATEMENT HERE, IS IT IN RANGE?!?!?
+		if(G.calc_tick_distance() < G.wiggleRoom){
+			G.hit_object();
+
+		}else{
+			G.bad_click();
+		}
+	},
+
+	bad_click : function(){
+		PS.dbEvent( "threnody", "hit status: ", "hit at wrong time");
+
+		J.error_glow();
+		G.increase_insanity();
 
 	},
 
 	hit_object : function(){
 		//PS.debug("hit!");
+		PS.dbEvent( "threnody", "hit status: ", "hit");
+		J.hit_glow();
 		P.delete_object();
 	},
 
 	miss_object : function(){
 		//PS.debug("miss!");
-		G.opportunity_close();
+		PS.dbEvent( "threnody", "hit status: ", "misssed");
+
+		if(!P.object_exists){
+			return;
+		}
+		//G.opportunity_close();
+		J.error_glow();
 		P.delete_object();
+
+		G.increase_insanity();
 	},
 
-	opportunity_open : function(){
-		if(G.isOpportunity){
-			return;
-		}
-		PS.debug("opportunity");
-		G.isOpportunity = true;
-		J.opportunity_glow();
+	increase_insanity : function(){
+		G.insanityLevel++;
 	},
 
-	opportunity_close : function(){
-		if(!G.isOpportunity){
-			return;
+	complete_chapter : function(){
+		PS.dbEvent( "threnody", "chapter complete", true);
+	},
+
+	start_chapter : function(number){
+		switch(number){
+			case "one":
+				PS.dbEvent( "threnody", "chapter one begun", true);
+				break;
+			case "two":
+				PS.dbEvent( "threnody", "chapter two begun", true);
+				break;
+			case "three":
+				PS.dbEvent( "threnody", "chapter three begun", true);
+				break;
 		}
-		G.isOpportunity = false;
-		J.opportunity_not();
-	}
+
+	},
+
+	end_game : function(){
+
+		PS.dbEvent( "threnody", "endgame", true );
+
+		// Email the database and discard it
+
+		PS.dbSend( "threnody", "dpallen", { discard : true } );
+	},
 };
 
 var L = {//level or chapter logic
@@ -383,9 +425,14 @@ var J = {//juice
 
 	show_object: function(){
 		PS.gridPlane(J.LAYER_OBJECT_HIDE);
+		// UPDATE THE OBJECT SHOW TIME
+		PS.debug(G.calc_tick_distance());
+		J.object_show_time = G.calc_tick_distance();
+		//J.object_show_time = G.calc_tick_distance();
 		PS.fade(PS.ALL, PS.ALL, J.object_show_time);
 		//PS.fade(0, 0, J.object_show_time, {onEnd: G.opportunity_open});
 		PS.alpha(PS.ALL, PS.ALL, 0);
+		PS.gridShadow(false);
 	},
 
 	hide_object: function(){
@@ -394,17 +441,14 @@ var J = {//juice
 		PS.alpha(PS.ALL, PS.ALL, 255);
 	},
 
+	hit_glow: function(){
+		PS.gridShadow(true, PS.COLOR_GREEN);
+	},
+
 	error_glow: function(){
 		//PS.debug("mistake!");
+		PS.gridShadow(true, PS.COLOR_RED);
 	},
-
-	opportunity_glow: function(){
-		PS.gridShadow(true, J.COLOR_BACKGROUND_GLOW);
-	},
-
-	opportunity_not: function(){
-		PS.gridShadow(false, J.COLOR_BACKGROUND);
-	}
 
 };
 
@@ -439,6 +483,9 @@ var P = { // sPrites
 	},
 
 	delete_object: function(){
+		if(!P.object_exists){
+			return;
+		}
 		P.object_exists = false;
 		PS.spriteDelete(P.current_object);
 	},
@@ -447,8 +494,8 @@ var P = { // sPrites
 var A = {//audio
 
 	//sounds 
-	tone_quarter: "perc_drum_snare",
-	tone_eighth: "fx_coin4",
+	tone_quarter: "xylo_c5",
+	tone_eighth: "xylo_eb5",
 	tone_sixteenth: "fx_click",
 	tone_triplet: "fx_pop",
 
@@ -503,7 +550,10 @@ PS.init = function( system, options ) {
 
 	//G.spawn_object_tap(15);
 
-	G.start_global_timer();
+	//SET TO TRUE BFORE WE'RE DONE
+	PS.dbInit( "threnody", { login : false } );
+
+	//G.start_global_timer();
 
 	//G.spawn_object_tap(15);
 
@@ -521,19 +571,12 @@ PS.init = function( system, options ) {
 PS.touch = function( x, y, data, options ) {
 	// Uncomment the following line to inspect parameters
 	// PS.debug( "PS.touch() @ " + x + ", " + y + "\n" );
-	if(G.isOpportunity){
-		switch(G.movementType){
-			case("tap"):
-				J.delete_object();
-				break;
-			case("hold"):
-				break;
-			case("drag"):
-				break;
-		}
+	if(!G.isRhythmBegun){
+		PS.statusText("THE PLACEHOLDER SOUNDS");
+		PS.statusColor(PS.COLOR_WHITE);
+		G.start_global_timer();
 	}else{
-		G.sanityLevel++;
-		J.error_glow();
+		G.click();
 	}
 };
 
