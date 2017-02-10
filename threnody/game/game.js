@@ -51,6 +51,7 @@ var G = {//general game logic
 	logic_counter: 0, //current index in logic array
 
 	logic_timings: [], //kms
+	last_logic_activity: 0, // used for activities
 
 	isOpportunity: false, // if true, clicking is good!
 	isRhythmBegun: false, // has the rhythm begun?
@@ -132,32 +133,45 @@ var G = {//general game logic
 		G.logic_timings[23] = (G.tick_per_measure - G.timing_quarter * 3) - (G.timing_sixteenth * 3);
 	},
 
-	calc_tick_distance : function(){
+	calc_tick_distance : function(goal){
+	//	PS.debug("CALCULATING!!!\n");
 		var new_index = G.logic_counter + 1; //how many indexes away the next action is 
 		var measure = G.measure_counter; //so we can play with measure countign nondestructively
 
-		while(L.level[measure][L.INDEX_LOGIC][G.logic_counter + new_index] === 0){
+		while((L.level[measure][L.INDEX_LOGIC][G.logic_counter + new_index]) === 0){
 			new_index += 1; //increment if the next one is a 0
-			if(new_index <= L.LENGTH_LOGIC){
+			if(new_index >= L.LENGTH_LOGIC){
 				measure += 1;
 
-				if(measure <= L.max_measures){
+				if(measure >= L.max_measures){
 					//not really sure what to do here.  this will be when there aren't any more non-zero event left in the level.  edge cases, man
-					return 'bad'; 
+					//PS.debug('max measures  ' + L.max_measures + '\n');
+					//PS.debug('measures  ' + measure + '\n');
+                    //
+                    //
+					//PS.debug('current tick  ' + G.counter + '\n');
+					//PS.debug('logic i  ' +  G.logic_counter + '\n');
+					//PS.debug('new index  ' + new_index + '\n');
+					//PS.debug('new tick  ' + G.logic_timings[new_index] + '\n');
+                    //
+					//PS.debug('\n\n\n\n');
+					return "bad";
 				}
 			}
 		}
 		//number of ticks between 
 		var delta = ((measure - G.measure_counter) * G.tick_per_measure) + G.counter - (G.logic_timings[new_index]);
 
-		// PS.debug('current tick  ' + G.counter + '\n');
-		// PS.debug('logic i  ' +  G.logic_counter + '\n');
-		// PS.debug('new index  ' + new_index + '\n');
-		// PS.debug('new tick  ' + G.logic_timings[new_index] + '\n');
+		 /*PS.debug('max measures  ' + L.max_measures + '\n');
+		 PS.debug('measures  ' + measure + '\n');
+		 PS.debug('current tick  ' + G.counter + '\n');
+		 PS.debug('logic i  ' +  G.logic_counter + '\n');
+		 PS.debug('new index  ' + new_index + '\n');
+		 PS.debug('new tick  ' + G.logic_timings[new_index] + '\n');
 
-		// PS.debug('delta  ' + delta + '\n');
+		 PS.debug('delta  ' + delta + '\n');
 
-		// PS.debug('\n\n\n\n');
+		 PS.debug('\n\n\n\n');*/
 
 		return delta; 
 
@@ -254,12 +268,20 @@ var G = {//general game logic
 		//PS.debug(action);
 		switch(action){
 			case 1: // start fadein
+				PS.statusText("FADING");
 				G.spawn_object_tap(0);
 				break;
 			case 2: // clear because miss
+				PS.statusText("");
 				G.miss_object();
 				break;
 			case 3: // open opportunity
+				PS.statusText("CLICK NOW");
+				G.last_logic_activity = G.counter;
+				//PS.debug("LAST LOGIC: " + G.last_logic_activity);
+				//PS.debug("\n");
+				//PS.debug("NEXT LOGIC: " + (G.counter+ G.calc_tick_distance()));
+				//PS.debug("\n");
 				break;
 		}
 	},
@@ -279,12 +301,16 @@ var G = {//general game logic
 
 	click : function() {
 		// PUT IF STATEMENT HERE, IS IT IN RANGE?!?!?
+		//PS.debug("delta: " + G.calc_tick_distance());
+		//PS.debug("wiga: " + G.wiggleRoom);
+
+		/*
 		if(G.calc_tick_distance() < G.wiggleRoom){
 			G.hit_object();
 
 		}else{
 			G.bad_click();
-		}
+		}*/
 	},
 
 	bad_click : function(){
@@ -311,7 +337,7 @@ var G = {//general game logic
 		}
 		//G.opportunity_close();
 		J.error_glow();
-		P.delete_object();
+		J.hide_object();
 
 		G.increase_insanity();
 	},
@@ -370,7 +396,7 @@ var L = {//level or chapter logic
 				[1,     1,     0,     1,     1,     1,     0,     1    ],  //eighth
 				[0, 0,  0,  0, 0, 0,  0,  0, 0, 0,  0,  0, 0, 0,  0,  0],  //sixteenth
 				[0,   0,  0,   0,   0,  0,   0,   0,  0,   0,   0,  0  ],  //triplet
-				[0, 0,0,0,1,0, 3, 2,0,0,0,0, 0, 0,0,0,1,0, 3, 2,0,0,0,0],  //logic
+				[1, 0,0,0,0,0, 3, 0,0,2,0,0, 1, 0,0,0,0,0, 3, 0,0,2,0,0],  //logic
 
 			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 				],
@@ -380,7 +406,7 @@ var L = {//level or chapter logic
 				[0,     1,     1,     0,     1,     1,     0,     1    ],  //eighth
 				[0, 0,  0,  0, 0, 0,  0,  0, 0, 0,  0,  0, 0, 0,  0,  0],  //sixteenth
 				[0,   0,  0,   0,   0,  0,   0,   0,  0,   0,   0,  0  ],  //triplet
-				[0, 0,0,0,1,0, 3, 2,0,0,0,0, 0, 0,0,0,1,0, 3, 2,0,0,0,0],  //logic
+				[1, 0,0,0,0,0, 3, 0,0,2,0,0, 1, 0,0,0,0,0, 3, 0,0,2,0,0],  //logic
 			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 				],
 		];
@@ -436,9 +462,10 @@ var J = {//juice
 	show_object: function(){
 		PS.gridPlane(J.LAYER_OBJECT_HIDE);
 		// UPDATE THE OBJECT SHOW TIME
-		// PS.debug(G.calc_tick_distance());
-		// J.object_show_time = G.calc_tick_distance();
-		//J.object_show_time = G.calc_tick_distance();
+		//PS.debug("SHOWING OBJECT\n");
+		J.object_show_time = G.calc_tick_distance(3);
+	//	PS.debug(J.object_show_time);
+		PS.debug("DELTA: " + J.object_show_time + "\n");
 		PS.fade(PS.ALL, PS.ALL, J.object_show_time);
 		//PS.fade(0, 0, J.object_show_time, {onEnd: G.opportunity_open});
 		PS.alpha(PS.ALL, PS.ALL, 0);
@@ -447,7 +474,7 @@ var J = {//juice
 
 	hide_object: function(){
 		PS.gridPlane(J.LAYER_OBJECT_HIDE);
-		PS.fade(PS.ALL, PS.ALL, J.object_hide_time);
+		PS.fade(PS.ALL, PS.ALL, 0);
 		PS.alpha(PS.ALL, PS.ALL, 255);
 	},
 
@@ -583,7 +610,7 @@ PS.touch = function( x, y, data, options ) {
 	// PS.debug( "PS.touch() @ " + x + ", " + y + "\n" );
 
 	// TEMP 
-	var d = G.calc_tick_distance();
+	//var d = G.calc_tick_distance();
 
 	if(!G.isRhythmBegun){
 		PS.statusText("THE PLACEHOLDER SOUNDS");
