@@ -46,10 +46,11 @@ var G = {//general game logic
 	timing_sixteenth: 0,
 	timing_triplet: 0,
 
+	counter: 0, //current tick
+	measure_counter: 0, //current measure
+	logic_counter: 0, //current index in logic array
 
-	counter: 0,
-	measure_counter: 0, 
-	logic_counter: 0,
+	logic_timings: [], //kms
 
 	isOpportunity: false, // if true, clicking is good!
 	movementType: 0,
@@ -89,19 +90,65 @@ var G = {//general game logic
 			PS.debug('FAILED ON TRIPLETS\n');
 		}
 
+		//populate distance array
+		G.populate_distance();
+
 		//Counter for the tick
 		// Starts at the tick rate as we want the notes to hit on tick 1  
 		G.counter = G.tick_per_measure;
-
-		// PS.debug("\nquarter\n");
-		// PS.debug(G.timing_quarter);
-		// PS.debug("\neighth\n");
-		// PS.debug(G.timing_eighth);
-		// PS.debug("\nsixteenth\n");
-		// PS.debug(G.timing_sixteenth);
-		// PS.debug("\ntriplet\n");
-		// PS.debug(G.timing_triplet);
 		
+	},
+
+	//calculate at what tick possible inputs happen
+	populate_distance : function(){
+		G.logic_timings[0] = G.tick_per_measure;
+		G.logic_timings[1] = G.tick_per_measure - G.timing_sixteenth;
+		G.logic_timings[2] = G.tick_per_measure - G.timing_triplet;
+		G.logic_timings[3] = G.tick_per_measure - (G.timing_sixteenth * 2);
+		G.logic_timings[4] = G.tick_per_measure - (G.timing_triplet * 2);
+		G.logic_timings[5] = G.tick_per_measure - (G.timing_sixteenth * 3);
+
+		G.logic_timings[6] = G.tick_per_measure - G.timing_quarter;
+		G.logic_timings[7] = (G.tick_per_measure - G.timing_quarter) - G.timing_sixteenth;
+		G.logic_timings[8] = (G.tick_per_measure - G.timing_quarter) - G.timing_triplet;
+		G.logic_timings[9] = (G.tick_per_measure - G.timing_quarter) - (G.timing_sixteenth * 2);
+		G.logic_timings[10] = (G.tick_per_measure - G.timing_quarter) - (G.timing_triplet * 2);
+		G.logic_timings[11] = (G.tick_per_measure - G.timing_quarter) - (G.timing_sixteenth * 3);
+
+		G.logic_timings[12] = G.tick_per_measure - (G.timing_quarter * 2);
+		G.logic_timings[13] = (G.tick_per_measure - (G.timing_quarter * 2)) - G.timing_sixteenth;
+		G.logic_timings[14] = (G.tick_per_measure - (G.timing_quarter * 2)) - G.timing_triplet;
+		G.logic_timings[15] = (G.tick_per_measure - (G.timing_quarter * 2)) - (G.timing_sixteenth * 2);
+		G.logic_timings[16] = (G.tick_per_measure - (G.timing_quarter * 2)) - (G.timing_triplet * 2);
+		G.logic_timings[17] = (G.tick_per_measure - G.timing_quarter * 2) -(G.timing_sixteenth * 3);
+
+		G.logic_timings[18] = G.tick_per_measure - (G.timing_quarter * 3);
+		G.logic_timings[19] = (G.tick_per_measure - (G.timing_quarter * 3)) - G.timing_sixteenth;
+		G.logic_timings[20] = (G.tick_per_measure - (G.timing_quarter * 3)) - G.timing_triplet;
+		G.logic_timings[21] = (G.tick_per_measure - (G.timing_quarter * 3)) - (G.timing_sixteenth * 2);
+		G.logic_timings[22] = (G.tick_per_measure - (G.timing_quarter * 3)) - (G.timing_triplet * 2);
+		G.logic_timings[23] = (G.tick_per_measure - G.timing_quarter * 3) - (G.timing_sixteenth * 3);
+	},
+
+	calc_tick_distance : function(){
+		var new_index = G.logic_counter + 1; //how many indexes away the next action is 
+		var measure = G.measure_counter; //so we can play with measure countign nondestructively
+
+		while(L.level[measure][L.INDEX_LOGIC][G.logic_counter + new_index] === 0){
+			new_index += 1; //increment if the next one is a 0
+			if(new_index <= L.LENGTH_LOGIC){
+				measure += 1;
+
+				if(measure <= L.max_measures){
+					//not really sure what to hear.  this will be when there aren't any more non-zero event left in the level.  edge cases, man
+					return -1; 
+				}
+			}
+		}
+		//number of ticks between 
+		var delta = (measure * G.tick_per_measure) + G.counter - (G.logic_timings[new_index]);
+		return delta; 
+
 	},
 
 	tick : function () { // the big global tick
@@ -156,7 +203,7 @@ var G = {//general game logic
 
 		// Call if eligible for prompt, 1 = start fadein, 2 = clear because miss, 3 = open opportunity
 		if(triplet || sixteenth){
-			if(L.level[G.measure_counter][L.INDEX_LOGIC][G.logic_counter] != 0){
+			if(L.level[G.measure_counter][L.INDEX_LOGIC][G.logic_counter] !== 0){
 				// This would be the command for input sprite drawing
 				G.beat_logic(L.level[G.measure_counter][L.INDEX_LOGIC][G.logic_counter]);
 			//	PS.color(6, PS.ALL, 0xFFFF00);
@@ -258,6 +305,8 @@ var L = {//level or chapter logic
 
 	INDEX_LOGIC: 4,
 
+	LENGTH_LOGIC: 24,
+
 	level: [],
 	max_measures: 0,
 
@@ -270,6 +319,7 @@ var L = {//level or chapter logic
 				[0, 0,  0,  0, 0, 0,  0,  0, 0, 0,  0,  0, 0, 0,  0,  0],  //sixteenth
 				[0,   0,  0,   0,   0,  0,   0,   0,  0,   0,   0,  0  ],  //triplet
 				[0, 0,0,0,1,0, 3, 2,0,0,0,0, 0, 0,0,0,1,0, 3, 2,0,0,0,0],  //logic
+
 			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 				],
 
