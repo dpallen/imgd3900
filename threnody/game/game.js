@@ -142,13 +142,23 @@ var G = {//general game logic
 				measure += 1;
 
 				if(measure <= L.max_measures){
-					//not really sure what to hear.  this will be when there aren't any more non-zero event left in the level.  edge cases, man
-					return -1; 
+					//not really sure what to do here.  this will be when there aren't any more non-zero event left in the level.  edge cases, man
+					return 'bad'; 
 				}
 			}
 		}
 		//number of ticks between 
 		var delta = ((measure - G.measure_counter) * G.tick_per_measure) + G.counter - (G.logic_timings[new_index]);
+
+		// PS.debug('current tick  ' + G.counter + '\n');
+		// PS.debug('logic i  ' +  G.logic_counter + '\n');
+		// PS.debug('new index  ' + new_index + '\n');
+		// PS.debug('new tick  ' + G.logic_timings[new_index] + '\n');
+
+		// PS.debug('delta  ' + delta + '\n');
+
+		// PS.debug('\n\n\n\n');
+
 		return delta; 
 
 	},
@@ -426,8 +436,8 @@ var J = {//juice
 	show_object: function(){
 		PS.gridPlane(J.LAYER_OBJECT_HIDE);
 		// UPDATE THE OBJECT SHOW TIME
-		PS.debug(G.calc_tick_distance());
-		J.object_show_time = G.calc_tick_distance();
+		// PS.debug(G.calc_tick_distance());
+		// J.object_show_time = G.calc_tick_distance();
 		//J.object_show_time = G.calc_tick_distance();
 		PS.fade(PS.ALL, PS.ALL, J.object_show_time);
 		//PS.fade(0, 0, J.object_show_time, {onEnd: G.opportunity_open});
@@ -571,6 +581,10 @@ PS.init = function( system, options ) {
 PS.touch = function( x, y, data, options ) {
 	// Uncomment the following line to inspect parameters
 	// PS.debug( "PS.touch() @ " + x + ", " + y + "\n" );
+
+	// TEMP 
+	var d = G.calc_tick_distance();
+
 	if(!G.isRhythmBegun){
 		PS.statusText("THE PLACEHOLDER SOUNDS");
 		PS.statusColor(PS.COLOR_WHITE);
