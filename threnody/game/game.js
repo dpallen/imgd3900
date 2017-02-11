@@ -289,7 +289,8 @@ var G = {//general game logic
 
 	spawn_object_tap : function(fade_time) { // creates a tap object
 		J.object_show_time = fade_time;
-		P.spawn_object("tap");
+		P.SPRITE_LOCATION = "/sprites/tap_shrink";
+		P.spawn_object("peg_tap_shrink");
 	},
 
 	spawn_object_drag : function(fade_time) { // creates a drag object
@@ -613,6 +614,10 @@ var J = {//juice
 	object_show_time: 0,
 	object_hide_time: 0,
 
+	object_show_counter: 16,
+	object_show_rate: 0,
+	object_show_timer: 0,
+
 	error_timer: 0, // timer for error glow
 	opportunity_glow_timer: 0, // timer for timing grid glow
 
@@ -639,17 +644,25 @@ var J = {//juice
 		PS.alpha(PS.ALL, PS.ALL, 255);
 	},
 
-	show_object: function(){
+	show_object: function(type){
 		PS.gridPlane(J.LAYER_OBJECT_HIDE);
 		// UPDATE THE OBJECT SHOW TIME
 		//PS.debug("SHOWING OBJECT\n");
+
+		PS.debug(type);
+		J.current_object_type = type;
 		J.object_show_time = G.calc_tick_distance(3);
-	//	PS.debug(J.object_show_time);
+		J.object_show_counter = 16; // default???
+		J.object_show_rate = J.object_show_time / J.object_show_counter;
+
+		//PS.debug(J.object_show_time);
 		//PS.debug("DELTA: " + J.object_show_time + "\n");
-		PS.fade(PS.ALL, PS.ALL, J.object_show_time);
+		//PS.fade(PS.ALL, PS.ALL, J.object_show_time);
 		//PS.fade(0, 0, J.object_show_time, {onEnd: G.opportunity_open});
-		PS.alpha(PS.ALL, PS.ALL, 0);
+		//PS.alpha(PS.ALL, PS.ALL, 0);
 		PS.gridShadow(false);
+
+		J.object_show_timer = PS.timerStart(J.object_show_rate, P.show_object_helper);
 	},
 
 	hide_object: function(){
@@ -671,14 +684,22 @@ var J = {//juice
 
 var P = { // sPrites
 	SPRITE_PATH: "C:/Users/henry/Documents/GitHub/imgd3900/threnody/game/sprites/",	//where are the sprites?
+	SPRITE_LOCATION: "",
 
 	spriteX: 11, // where do sprites go
 	spriteY: 11, // where do sprites go
 	current_object: 0, // there is only ever one object
+	current_object_type: "",
 
 	object_exists: false, // is there an object there?
 
 	spawn_object: function(type){
+		PS.gridFade(0);
+		P.object_exists = true;
+		J.show_object(type);
+	},
+
+	show_object_helper: function(){
 		var loader;
 		loader = function(data){
 			P.current_object = PS.spriteImage(data);
@@ -686,18 +707,18 @@ var P = { // sPrites
 			PS.spriteMove(P.current_object, 11, 11);
 
 		};
-		switch(type){
-			case "tap":
-				PS.imageLoad("sprites/peg_tap.png", loader);
-				break;
-			case "hold":
-				break;
 
+		var theImage = J.current_object_type + J.object_show_counter;
+		theImage = P.SPRITE_LOCATION + theImage + ".png";
+
+		PS.debug("\n" + theImage + "\n");
+
+		PS.imageLoad("sprites/peg_tap.png", loader);
+		J.object_show_counter--;
+		if(J.object_show_counter<0){
+			PS.timerStop(J.object_show_timer);
 		}
 
-		PS.gridFade(0);
-		P.object_exists = true;
-		J.show_object();
 	},
 
 	delete_object: function(){
