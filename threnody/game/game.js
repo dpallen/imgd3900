@@ -143,15 +143,8 @@ var G = {//general game logic
 		// Call if eligible for prompt, 1 = start fadein, 2 = clear because miss, 3 = open opportunity
 		if((G.counter % G.timing_triplet === 0) || (G.counter % G.timing_sixteenth === 0)){
 			if(L.level[G.measure_counter][L.INDEX_LOGIC][G.logic_counter] !== 0){
-				// HENRY make this work
-				var hit = G.beat_logic(L.level[G.measure_counter][L.INDEX_LOGIC][G.logic_counter]);
+				G.beat_logic(L.level[G.measure_counter][L.INDEX_LOGIC][G.logic_counter]);
 
-				if(hit){
-					A.play_beat();
-				}
-
-			} else {
-				//failed attempt
 			}
 			
 			G.logic_counter += 1;
@@ -292,6 +285,7 @@ var G = {//general game logic
 		G.isOpportunity = false;
 
 		PS.dbEvent( "threnody", "hit status: ", "hit");
+		A.play_beat();
 		J.hit_glow();
 		P.delete_object();
 	},
@@ -491,7 +485,7 @@ var J = {//juice
 		PS.color(0, PS.ALL, J.COLOR_BACKGROUND_BORDER);
 		PS.color(31, PS.ALL, J.COLOR_BACKGROUND_BORDER);
 		PS.fade(PS.ALL, PS.ALL, 0);
-		PS.alpha(PS.ALL, PS.ALL, 255);
+		//PS.alpha(PS.ALL, PS.ALL, 255);
 	},
 
 	show_object: function(type){
@@ -499,20 +493,18 @@ var J = {//juice
 		// UPDATE THE OBJECT SHOW TIME
 		//PS.debug("SHOWING OBJECT\n");
 
-		PS.debug(type);
 		J.current_object_type = type;
 		J.object_show_time = G.calc_tick_distance(3);
 		J.object_show_counter = 16; // default???
 		J.object_show_rate = J.object_show_time / J.object_show_counter;
-
-		//PS.debug(J.object_show_time);
+		PS.debug(J.object_show_time);
 		//PS.debug("DELTA: " + J.object_show_time + "\n");
 		//PS.fade(PS.ALL, PS.ALL, J.object_show_time);
 		//PS.fade(0, 0, J.object_show_time, {onEnd: G.opportunity_open});
 		//PS.alpha(PS.ALL, PS.ALL, 0);
 		PS.gridShadow(false);
 
-		J.object_show_timer = PS.timerStart(J.object_show_rate, P.show_object_helper);
+		//J.object_show_timer = PS.timerStart(J.object_show_rate, P.show_object_helper);
 	},
 
 	hide_object: function(){
@@ -597,8 +589,8 @@ var A = {//audio
 		var tone = L.level[G.measure_counter][L.INDEX_LOGIC][G.logic_counter];
 
 		//these things don't have sounds.  if they 
-		if(A.TONE[tone] !== "NULL"){
-			PS.audioPlay(A.TONE[tone]);
+		if(A.TONES[tone] !== "NULL"){
+			PS.audioPlay(A.TONES[tone]);
 		}	
 	},
 
@@ -609,7 +601,9 @@ var A = {//audio
 		A.TONES[L.ACT_CLICK] = A.TONE_CLICK;
 
 		for(var i = 0; i < A.TONES.length; i++){
-			PS.audioLoad(A.TONES[0]);
+			if(A.TONES[i] !== "NULL") {
+				PS.audioLoad(A.TONES[i]);
+			}
 		}
 	}
 	
