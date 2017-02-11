@@ -131,7 +131,15 @@ var G = {//general game logic
 				}
 			}
 		}
-		//number of ticks between 
+		//number of ticks between
+
+		PS.debug("\n" + measure +"\n");
+		PS.debug(G.measure_counter +"\n");
+		PS.debug(G.tick_per_measure +"\n");
+		PS.debug(G.counter +"\n");
+		PS.debug(new_index);
+		PS.debug(G.logic_timings[new_index] +"\n");
+
 		var delta = ((measure - G.measure_counter) * G.tick_per_measure) + G.counter - (G.logic_timings[new_index]);
 
 		return delta; 
@@ -497,7 +505,7 @@ var J = {//juice
 		J.object_show_time = G.calc_tick_distance(3);
 		J.object_show_counter = 16; // default???
 		J.object_show_rate = J.object_show_time / J.object_show_counter;
-		PS.debug(J.object_show_time);
+		//PS.debug(J.object_show_time);
 		//PS.debug("DELTA: " + J.object_show_time + "\n");
 		//PS.fade(PS.ALL, PS.ALL, J.object_show_time);
 		//PS.fade(0, 0, J.object_show_time, {onEnd: G.opportunity_open});
@@ -553,7 +561,7 @@ var P = { // sPrites
 		var theImage = J.current_object_type + J.object_show_counter;
 		theImage = P.SPRITE_LOCATION + theImage + ".png";
 
-		PS.debug("\n" + theImage + "\n");
+		//PS.debug("\n" + theImage + "\n");
 
 		PS.imageLoad("sprites/peg_tap.png", loader);
 		J.object_show_counter--;
