@@ -41,6 +41,7 @@ var G = {//general game logic
 	// tick counter divided by the timing variables will trigger the playing of a note
 	tick_per_measure: 240,
 
+	timing_quarter: 0, 
 	timing_sixteenth: 0,
 	timing_triplet: 0,
 
@@ -60,6 +61,13 @@ var G = {//general game logic
 
 	init_measure : function() {
 		
+		if(G.tick_per_measure % 4 === 0){
+			G.timing_quarter = G.tick_per_measure / 4;
+		} else {
+			PS.debug('TICKS PER MEASURE NOT DIVISIBLE BY 4\n');
+			PS.debug('FAILED ON QUARTER NOTES\n');
+		}
+
 		//sixteenth
 		if(G.tick_per_measure % 16 === 0){
 			G.timing_sixteenth = G.tick_per_measure / 16;
@@ -144,9 +152,12 @@ var G = {//general game logic
 		if((G.counter % G.timing_triplet === 0) || (G.counter % G.timing_sixteenth === 0)){
 			if(L.level[G.measure_counter][L.INDEX_LOGIC][G.logic_counter] !== 0){
 				G.beat_logic(L.level[G.measure_counter][L.INDEX_LOGIC][G.logic_counter]);
-
 			}
-			
+			if(L.level[G.measure_counter][L.INDEX_LOGIC][G.logic_counter] === L.ACT_FADE_IN || 
+				L.level[G.measure_counter][L.INDEX_LOGIC][G.logic_counter] === L.ACT_FADE_OUT){
+				A.play_beat();
+			}
+
 			G.logic_counter += 1;
 		}
 
@@ -579,9 +590,9 @@ var A = {//audio
 	//sounds 
 
 	TONE_NULL: "NULL",
-	TONE_FADE_IN: "fx_pop",
+	TONE_FADE_IN: "fx_hoot",
 	TONE_FADE_OUT: "NULL",
-	TONE_CLICK: "fx_hoot",
+	TONE_CLICK: "fx_pop",
 
 	TONES: [],
 
