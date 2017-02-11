@@ -41,8 +41,6 @@ var G = {//general game logic
 	// tick counter divided by the timing variables will trigger the playing of a note
 	tick_per_measure: 240,
 
-	timing_quarter: 0,
-	timing_eighth: 0,
 	timing_sixteenth: 0,
 	timing_triplet: 0,
 
@@ -61,22 +59,7 @@ var G = {//general game logic
 	wiggleRoom: 5,
 
 	init_measure : function() {
-		//quarter
-		if(G.tick_per_measure % 4 === 0){
-			G.timing_quarter = G.tick_per_measure / 4;
-		} else {
-			PS.debug('TICKS PER MEASURE NOT DIVISIBLE BY 4\n');
-			PS.debug('FAILED ON QUARTER NOTES\n');
-		}
-
-		//eighth
-		if(G.tick_per_measure % 8 === 0){
-			G.timing_eighth = G.tick_per_measure / 8;
-		} else {
-			PS.debug('TICKS PER MEASURE NOT DIVISIBLE BY 8\n');
-			PS.debug('FAILED ON EIGHTH NOTES\n');
-		}
-
+		
 		//sixteenth
 		if(G.tick_per_measure % 16 === 0){
 			G.timing_sixteenth = G.tick_per_measure / 16;
@@ -144,17 +127,6 @@ var G = {//general game logic
 				measure += 1;
 
 				if(measure >= L.max_measures){
-					//not really sure what to do here.  this will be when there aren't any more non-zero event left in the level.  edge cases, man
-					//PS.debug('max measures  ' + L.max_measures + '\n');
-					//PS.debug('measures  ' + measure + '\n');
-                    //
-                    //
-					//PS.debug('current tick  ' + G.counter + '\n');
-					//PS.debug('logic i  ' +  G.logic_counter + '\n');
-					//PS.debug('new index  ' + new_index + '\n');
-					//PS.debug('new tick  ' + G.logic_timings[new_index] + '\n');
-                    //
-					//PS.debug('\n\n\n\n');
 					return "bad";
 				}
 			}
@@ -162,79 +134,24 @@ var G = {//general game logic
 		//number of ticks between 
 		var delta = ((measure - G.measure_counter) * G.tick_per_measure) + G.counter - (G.logic_timings[new_index]);
 
-		 //PS.debug('max measures  ' + L.max_measures + '\n');
-		 //PS.debug('measures  ' + measure + '\n');
-		 //PS.debug('current tick  ' + G.counter + '\n');
-		 //PS.debug('logic i  ' +  G.logic_counter + '\n');
-		 //PS.debug('new index  ' + new_index + '\n');
-		 //PS.debug('new tick  ' + G.logic_timings[new_index] + '\n');
-         //
-		 //PS.debug('delta  ' + delta + '\n');
-         //
-		 //PS.debug('\n\n\n\n');
-
 		return delta; 
 
 	},
 
 	tick : function () { // the big global tick
-		var sixteenth = false;
-		var triplet = false;
-		// Play a quarter note
-		if(G.counter % G.timing_quarter === 0){
-			var index_q = 4 - (G.counter / G.timing_quarter); //Defines the position in the level array, which is played
-			if(L.level[G.measure_counter][L.INDEX_QUARTER][index_q] === 1){
-				PS.audioPlay( A.tone_quarter, { volume: 0.75 } );
-				//PS.color ( 1, 1, 0x0000FF);
-			} else {
-				//PS.color ( 1, 1, 0xFFFFFF);
-			}
-			
-		}
-
-		// Play a eighth note
-		if(G.counter % G.timing_eighth === 0){
-			var index_e = 8 - (G.counter / G.timing_eighth); //Defines the position in the level array, which is played
-			if(L.level[G.measure_counter][L.INDEX_EIGHTH][index_e] === 1){
-				PS.audioPlay( A.tone_eighth, { volume: 0.75 } );
-				//PS.color ( 1, 3, 0x00FF00);
-			} else {
-				//PS.color ( 1, 3, 0xFFFFFF);
-			}
-		}
-
-		// Play a sixteenth note
-		if(G.counter % G.timing_sixteenth === 0){
-			var index_s = 16 - (G.counter / G.timing_sixteenth); //Defines the position in the level array, which is played
-			sixteenth = true;
-			if(L.level[G.measure_counter][L.INDEX_SIXTEENTH][index_s] === 1){
-				PS.audioPlay( A.tone_sixteenth, { volume: 0.75 } );
-				//PS.color ( 1, 5, 0xFF0000);
-			} else {
-				//PS.color ( 1, 5, 0xFFFFFF);
-			}
-		}
-
-		// Play a triplet
-		if(G.counter % G.timing_triplet === 0){
-			var index_t = 12 - (G.counter / G.timing_triplet); //Defines the position in the level array, which is played
-			triplet = true;			
-			if(L.level[G.measure_counter][L.INDEX_TRIPLET][index_t] === 1){
-				PS.audioPlay( A.tone_triplet, { volume: 0.75 } );
-				//PS.color ( 1, 7, 0xFF00FF);
-			} else {
-				//PS.color ( 1, 7, 0xFFFFFF);
-			}
-		}
-
+		
 		// Call if eligible for prompt, 1 = start fadein, 2 = clear because miss, 3 = open opportunity
-		if(triplet || sixteenth){
+		if((G.counter % G.timing_triplet === 0) || (G.counter % G.timing_sixteenth === 0)){
 			if(L.level[G.measure_counter][L.INDEX_LOGIC][G.logic_counter] !== 0){
-				// This would be the command for input sprite drawing
-				G.beat_logic(L.level[G.measure_counter][L.INDEX_LOGIC][G.logic_counter]);
-			//	PS.color(6, PS.ALL, 0xFFFF00);
+				// HENRY make this work
+				var hit = G.beat_logic(L.level[G.measure_counter][L.INDEX_LOGIC][G.logic_counter]);
+
+				if(hit){
+					A.play_beat();
+				}
+
 			} else {
-				//PS.color(6, PS.ALL, 0xFFFFFF);
+				//failed attempt
 			}
 			
 			G.logic_counter += 1;
@@ -428,12 +345,13 @@ var G = {//general game logic
 };
 
 var L = {//level or chapter logic
-	INDEX_QUARTER: 0,
-	INDEX_EIGHTH: 1,
-	INDEX_SIXTEENTH: 2,
-	INDEX_TRIPLET: 3,
+	
+	ACT_NULL: 0,
+	ACT_FADE_IN: 1,
+	ACT_FADE_OUT: 2,
+	ACT_CLICK: 3,
 
-	INDEX_LOGIC: 4,
+	INDEX_LOGIC: 0,
 
 	LENGTH_LOGIC: 24,
 
@@ -444,149 +362,81 @@ var L = {//level or chapter logic
 
 		L.level = [
 			[
-				[1,            1,            1,            1           ],  //quarter
-				[1,     1,     0,     1,     1,     1,     0,     1    ],  //eighth
-				[1, 0,  0,  0, 0, 0,  0,  0, 1, 0,  0,  0, 0, 0,  0,  0],  //sixteenth
-				[0,   0,  0,   1,   0,  0,   0,   0,  0,   1,   0,  0  ],  //triplet
-				[1, 0,0,0,0,0, 3, 0,0,2,0,0, 1, 0,0,0,0,0, 3, 0,0,2,0,0],  //logic
-
+				[1, 0,0,0,0,0, 3, 0,0,2,0,0, 1, 0,0,0,0,0, 3, 0,0,2,0,0]  //logic
 			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 				],
 
 			[
-				[1,            1,            1,            1           ],  //quarter
-				[0,     1,     1,     0,     1,     1,     0,     1    ],  //eighth
-				[0, 0,  0,  0, 0, 0,  0,  0, 0, 0,  0,  0, 0, 0,  0,  0],  //sixteenth
-				[0,   0,  0,   1,   0,  0,   0,   0,  0,   1,   0,  0  ],  //triplet
-				[1, 0,0,0,0,0, 3, 0,0,2,0,0, 1, 0,0,0,0,0, 3, 0,0,2,0,0],  //logic
+				[1, 0,0,0,0,0, 3, 0,0,2,0,0, 1, 0,0,0,0,0, 3, 0,0,2,0,0]  //logic
 			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 				],
 
 			[
-				[1,            1,            1,            1           ],  //quarter
-				[1,     1,     0,     1,     1,     1,     0,     1    ],  //eighth
-				[1, 0,  0,  0, 0, 0,  0,  0, 0, 0,  1,  0, 0, 0,  0,  0],  //sixteenth
-				[0,   0,  0,   1,   0,  0,   0,   0,  0,   1,   0,  0  ],  //triplet
-				[1, 0,0,0,0,0, 3, 0,0,2,0,0, 0, 0,0,1,0,0, 3, 0,0,2,0,0],  //logic
+				
+				[1, 0,0,0,0,0, 3, 0,0,2,0,0, 0, 0,0,1,0,0, 3, 0,0,2,0,0] //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+				],
+			[
+				[1, 0,0,0,0,0, 3, 0,0,2,0,0, 0, 0,0,1,0,0, 3, 0,0,2,0,0]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+				],
+
+			[
+				[0, 0,0,1,0,0, 3, 0,0,2,0,0, 0, 0,0,1,0,0, 3, 0,0,2,0,0]  //logic
 			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 				],
 				
 			[
-				[1,            1,            1,            1           ],  //quarter
-				[0,     1,     1,     0,     1,     1,     0,     1    ],  //eighth
-				[1, 0,  0,  0, 0, 0,  0,  0, 0, 0,  1,  0, 0, 0,  0,  0],  //sixteenth
-				[0,   0,  0,   1,   0,  0,   0,   0,  0,   1,   0,  0  ],  //triplet
-				[1, 0,0,0,0,0, 3, 0,0,2,0,0, 0, 0,0,1,0,0, 3, 0,0,2,0,0],  //logic
+				[0, 0,0,1,0,0, 3, 0,0,2,0,0, 0, 0,0,1,0,0, 3, 0,0,2,0,0]  //logic
 			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 				],
 
 			[
-				[1,            1,            1,            1           ],  //quarter
-				[1,     1,     0,     1,     1,     1,     0,     1    ],  //eighth
-				[0, 0,  1,  0, 0, 0,  0,  0, 0, 0,  1,  0, 0, 0,  0,  0],  //sixteenth
-				[0,   0,  0,   1,   0,  0,   0,   0,  0,   1,   0,  0  ],  //triplet
-				[0, 0,0,1,0,0, 3, 0,0,2,0,0, 0, 0,0,1,0,0, 3, 0,0,2,0,0],  //logic
+				[1, 0,0,0,0,0, 0, 0,0,3,0,0, 2, 0,0,1,0,0, 3, 0,0,2,0,0]  //logic
 			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 				],
 				
 			[
-				[1,            1,            1,            1           ],  //quarter
-				[0,     1,     1,     0,     1,     1,     0,     1    ],  //eighth
-				[0, 0,  1,  0, 0, 0,  0,  0, 0, 0,  1,  0, 0, 0,  0,  0],  //sixteenth
-				[0,   0,  0,   1,   0,  0,   0,   0,  0,   1,   0,  0  ],  //triplet
-				[0, 0,0,1,0,0, 3, 0,0,2,0,0, 0, 0,0,1,0,0, 3, 0,0,2,0,0],  //logic
+				[1, 0,0,3,0,2, 1, 0,0,3,0,2, 1, 0,0,3,0,2, 1, 0,0,3,0,2]  //logic
 			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 				],
-
 			[
-				[1,            1,            1,            1           ],  //quarter
-				[1,     1,     0,     1,     1,     1,     0,     1    ],  //eighth
-				[1, 0,  0,  0, 0, 0,  1,  0, 0, 0,  1,  0, 1, 0,  0,  0],  //sixteenth
-				[0,   0,  0,   0,   0,  0,   0,   0,  0,   1,   0,  0  ],  //triplet
-				[1, 0,0,0,0,0, 0, 0,0,3,0,0, 2, 0,0,1,0,0, 3, 0,0,2,0,0],  //logic
+				[1, 0,0,0,0,0, 0, 0,0,3,0,0, 2, 0,0,1,0,0, 3, 0,0,2,0,0]  //logic
 			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 				],
 				
 			[
-				[1,            1,            1,            1           ],  //quarter
-				[0,     1,     0,     1,     0,     1,     0,     1    ],  //eighth
-				[1, 0,  1,  0, 1, 0,  1,  0, 1, 0,  1,  0, 1, 0,  1,  0],  //sixteenth
-				[1,   0,  0,   1,   0,  0,   1,   0,  0,   1,   0,  0  ],  //triplet
-				[1, 0,0,3,0,2, 1, 0,0,3,0,2, 1, 0,0,3,0,2, 1, 0,0,3,0,2],  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-				],
-			[
-				[1,            1,            1,            1           ],  //quarter
-				[1,     1,     0,     1,     1,     1,     0,     1    ],  //eighth
-				[1, 0,  0,  0, 0, 0,  1,  0, 0, 0,  1,  0, 1, 0,  0,  0],  //sixteenth
-				[0,   0,  0,   0,   0,  0,   0,   0,  0,   1,   0,  0  ],  //triplet
-				[1, 0,0,0,0,0, 0, 0,0,3,0,0, 2, 0,0,1,0,0, 3, 0,0,2,0,0],  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-				],
-				
-			[
-				[1,            1,            1,            1           ],  //quarter
-				[0,     1,     0,     1,     0,     1,     0,     1    ],  //eighth
-				[1, 0,  1,  0, 1, 0,  1,  0, 1, 0,  1,  0, 1, 0,  1,  0],  //sixteenth
-				[1,   0,  0,   1,   0,  0,   1,   0,  0,   1,   0,  0  ],  //triplet
-				[1, 0,0,3,0,2, 1, 0,0,3,0,2, 1, 0,0,3,0,2, 1, 0,0,3,0,2],  //logic
+				[1, 0,0,3,0,2, 1, 0,0,3,0,2, 1, 0,0,3,0,2, 1, 0,0,3,0,2]  //logic
 			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 				],
 
 			[
-				[1,            1,            1,            1           ],  //quarter
-				[0,     0,     1,     0,     1,     0,     1,     0    ],  //eighth
-				[1, 0,  0,  0, 1, 0,  0,  0, 1, 0,  0,  0, 1, 0,  0,  0],  //sixteenth
-				[0,   0,  0,   1,   0,  0,   1,   0,  0,   1,   0,  0  ],  //triplet
-				[1, 0,0,0,0,0, 3, 0,0,2,0,0, 1, 0,0,0,0,0, 3, 0,0,2,0,0],  //logic
-
+				[1, 0,0,0,0,0, 3, 0,0,2,0,0, 1, 0,0,0,0,0, 3, 0,0,2,0,0] //logic
 			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 				],
 
 			[
-				[1,            1,            1,            1           ],  //quarter
-				[0,     0,     1,     0,     1,     1,     0,     1    ],  //eighth
-				[1, 0,  0,  0, 1, 0,  0,  0, 0, 0,  0,  0, 0, 0,  0,  0],  //sixteenth
-				[1,   1,  1,   1,   0,  0,   0,   0,  0,   1,   0,  0  ],  //triplet
-				[1, 0,3,2,1,0, 3, 0,0,2,0,0, 1, 0,0,0,0,0, 3, 0,0,2,0,0],  //logic
+				[1, 0,3,2,1,0, 3, 0,0,2,0,0, 1, 0,0,0,0,0, 3, 0,0,2,0,0]  //logic
 			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 				],
 
 			[
-				[1,            1,            1,            1           ],  //quarter
-				[0,     0,     1,     0,     1,     0,     1,     0    ],  //eighth
-				[1, 0,  0,  0, 1, 0,  0,  0, 1, 0,  0,  0, 1, 0,  0,  0],  //sixteenth
-				[0,   0,  0,   1,   0,  0,   1,   0,  0,   1,   0,  0  ],  //triplet
-				[1, 0,0,0,0,0, 3, 0,0,2,0,0, 1, 0,0,0,0,0, 3, 0,0,2,0,0],  //logic
-
+				[1, 0,0,0,0,0, 3, 0,0,2,0,0, 1, 0,0,0,0,0, 3, 0,0,2,0,0]  //logic
 			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 				],
 
 			[
-				[1,            1,            1,            1           ],  //quarter
-				[0,     0,     1,     0,     1,     1,     0,     1    ],  //eighth
-				[1, 0,  0,  0, 1, 0,  0,  0, 0, 0,  0,  0, 0, 0,  0,  0],  //sixteenth
-				[1,   1,  1,   1,   0,  0,   0,   0,  0,   1,   0,  0  ],  //triplet
-				[1, 0,3,2,1,0, 3, 0,0,2,0,0, 1, 0,0,0,0,0, 3, 0,0,2,0,0],  //logic
+				[1, 0,3,2,1,0, 3, 0,0,2,0,0, 1, 0,0,0,0,0, 3, 0,0,2,0,0]  //logic
 			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 				],
 
 			[
-				[1,            1,            1,            1           ],  //quarter
-				[1,     1,     0,     1,     1,     1,     0,     1    ],  //eighth
-				[1, 0,  0,  0, 0, 0,  0,  0, 1, 0,  0,  0, 0, 0,  0,  0],  //sixteenth
-				[0,   0,  0,   1,   0,  0,   0,   0,  0,   1,   0,  0  ],  //triplet
-				[1, 0,0,0,0,0, 3, 0,0,2,0,0, 1, 0,0,0,0,0, 3, 0,0,2,0,0],  //logic
-
+				[1, 0,0,0,0,0, 3, 0,0,2,0,0, 1, 0,0,0,0,0, 3, 0,0,2,0,0]  //logic
 			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 				],
 
 			[
-				[1,            1,            1,            1           ],  //quarter
-				[0,     1,     1,     0,     1,     1,     0,     1    ],  //eighth
-				[0, 0,  0,  0, 0, 0,  0,  0, 0, 0,  0,  0, 0, 0,  0,  0],  //sixteenth
-				[0,   0,  0,   1,   0,  0,   0,   0,  0,   1,   0,  0  ],  //triplet
-				[1, 0,0,0,0,0, 3, 0,0,2,0,0, 1, 0,0,0,0,0, 3, 0,0,2,0,0],  //logic
+				[1, 0,0,0,0,0, 3, 0,0,2,0,0, 1, 0,0,0,0,0, 3, 0,0,2,0,0]  //logic
 			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 				]
 				
@@ -735,23 +585,32 @@ var P = { // sPrites
 var A = {//audio
 
 	//sounds 
-	tone_quarter: "xylo_c5",
-	tone_eighth: "xylo_eb5",
-	tone_sixteenth: "fx_click",
-	tone_triplet: "fx_pop",
+
+	TONE_NULL: "NULL",
+	TONE_FADE_IN: "fx_pop",
+	TONE_FADE_OUT: "NULL",
+	TONE_CLICK: "fx_hoot",
+
+	TONES: [],
+
+	play_beat: function(){
+		var tone = L.level[G.measure_counter][L.INDEX_LOGIC][G.logic_counter];
+
+		//these things don't have sounds.  if they 
+		if(A.TONE[tone] !== "NULL"){
+			PS.audioPlay(A.TONE[tone]);
+		}	
+	},
 
 	load : function() {
-		// Quarter Notes
-		PS.audioLoad( A.tone_quarter, { lock : true } );
-		
-		// 8th Notes
-		PS.audioLoad( A.tone_eighth , { lock : true } );
+		A.TONES[L.ACT_NULL] = A.TONE_NULL;
+		A.TONES[L.ACT_FADE_IN] = A.TONE_FADE_IN;
+		A.TONES[L.ACT_FADE_OUT] = A.TONE_FADE_OUT;
+		A.TONES[L.ACT_CLICK] = A.TONE_CLICK;
 
-		// 16th notes
-		PS.audioLoad( A.tone_sixteenth, { lock : true } );
-
-		// Triplets
-		PS.audioLoad( A.tone_triplet, { lock : true } );
+		for(var i = 0; i < A.TONES.length; i++){
+			PS.audioLoad(A.TONES[0]);
+		}
 	}
 	
 };
