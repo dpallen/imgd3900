@@ -268,7 +268,7 @@ var G = {//general game logic
 		//PS.debug(action);
 		switch(action){
 			case 1: // start fadein
-				PS.statusText("FADING");
+				//PS.statusText("FADING");
 				G.isOpportunity = true;
 				G.spawn_object_tap(0);
 				break;
@@ -277,7 +277,7 @@ var G = {//general game logic
 				G.miss_object();
 				break;
 			case 3: // open opportunity
-				PS.statusText("CLICK NOW");
+				//PS.statusText("CLICK NOW");
 				G.last_logic_activity = G.counter;
 				//PS.debug("LAST LOGIC: " + G.last_logic_activity);
 				//PS.debug("\n");
@@ -300,28 +300,37 @@ var G = {//general game logic
 
 	},
 
-	click : function() {
-		if(!G.isOpportunity){
-			return;
-		}
-		// PUT IF STATEMENT HERE, IS IT IN RANGE?!?!?
-		//PS.debug("delta: " + G.calc_tick_distance());
-		//PS.debug("wiga: " + G.wiggleRoom);
-		G.wiggleRoom = 10;
+	is_wiggle_room : function(){
+		G.wiggleRoom = 10; // set waggle room
+
 		var last_good = G.last_logic_activity;
 		var next_good = G.counter - G.calc_tick_distance(3);
 		var dif_last = last_good - G.counter;
 		var dif_next = G.counter - next_good;
 
-		//PS.debug("current tick: " + G.counter + "\n");
-		//PS.debug("last tick: " + G.last_logic_activity + "\n");
-		//PS.debug("next tick: " + next_good + "\n");
-		//PS.debug("dif last: " + dif_last + "\n");
-		//PS.debug("dif next: " + dif_next + "\n");
 
-		var is_close_to_last = false
+		var is_close_to_last = false;
 		var is_close_to_next = false;
-		if(dif_last < G.wiggleRoom){
+
+		/*PS.debug("current tick: " + G.counter + "\n");
+		PS.debug("last tick: " + G.last_logic_activity + "\n");
+		PS.debug("next tick: " + next_good + "\n");
+		PS.debug("dif last: " + dif_last + "\n");
+		PS.debug("dif next: " + dif_next + "\n");*/
+
+		/*current tick: 218
+		last tick: 0
+		next tick: 180
+		dif last: -218
+		dif next: 38*/
+		/*current tick: 233
+		 last tick: 60
+		 next tick: 180
+		 dif last: -173
+		 dif next: 53
+*/
+
+		if((dif_last < G.wiggleRoom) && (last_good > G.counter)){
 			is_close_to_last = true;
 		}
 		if(dif_next < G.wiggleRoom){
@@ -332,6 +341,18 @@ var G = {//general game logic
 		//PS.debug("close next: " + is_close_to_next + "\n");
 
 		if(is_close_to_last || is_close_to_next){
+			return true;
+		}
+
+		return false;
+	},
+
+	click : function() {
+		if(!G.isOpportunity){
+			return;
+		}
+
+		if(G.is_wiggle_room()){
 			G.hit_object();
 
 		}else{
