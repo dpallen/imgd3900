@@ -141,12 +141,12 @@ var G = {//general game logic
 		}
 		//number of ticks between
 
-		PS.debug("\n" + measure +"\n");
-		PS.debug(G.measure_counter +"\n");
-		PS.debug(G.tick_per_measure +"\n");
-		PS.debug(G.counter +"\n");
-		PS.debug(new_index);
-		PS.debug(G.logic_timings[new_index] +"\n");
+		//PS.debug("\n" + measure +"\n");
+		//PS.debug(G.measure_counter +"\n");
+		//PS.debug(G.tick_per_measure +"\n");
+		//PS.debug(G.counter +"\n");
+		//PS.debug(new_index);
+		//PS.debug(G.logic_timings[new_index] +"\n");
 
 		var delta = ((measure - G.measure_counter) * G.tick_per_measure) + G.counter - (G.logic_timings[new_index]);
 
@@ -218,7 +218,7 @@ var G = {//general game logic
 
 	spawn_object_tap : function(fade_time) { // creates a tap object
 		J.object_show_time = fade_time;
-		P.SPRITE_LOCATION = "/sprites/tap_shrink";
+		P.SPRITE_LOCATION = "sprites/tap_shrink/";
 		P.spawn_object("peg_tap_shrink");
 	},
 
@@ -510,11 +510,11 @@ var J = {//juice
 	show_object: function(type){
 		PS.gridPlane(J.LAYER_OBJECT_HIDE);
 		// UPDATE THE OBJECT SHOW TIME
-		//PS.debug("SHOWING OBJECT\n");
+	//PS.debug("SHOWING OBJECT\n");
 
 		J.current_object_type = type;
 		J.object_show_time = G.calc_tick_distance(3);
-		J.object_show_counter = 16; // default???
+		J.object_show_counter = 14; // default???
 		J.object_show_rate = J.object_show_time / J.object_show_counter;
 		//PS.debug(J.object_show_time);
 		//PS.debug("DELTA: " + J.object_show_time + "\n");
@@ -523,13 +523,13 @@ var J = {//juice
 		//PS.alpha(PS.ALL, PS.ALL, 0);
 		PS.gridShadow(false);
 
-		//J.object_show_timer = PS.timerStart(J.object_show_rate, P.show_object_helper);
+		J.object_show_timer = PS.timerStart(J.object_show_rate, P.show_object_helper);
 	},
 
 	hide_object: function(){
-		PS.gridPlane(J.LAYER_OBJECT_HIDE);
-		PS.fade(PS.ALL, PS.ALL, 0);
-		PS.alpha(PS.ALL, PS.ALL, 255);
+	//	PS.gridPlane(J.LAYER_OBJECT_HIDE);
+		//PS.fade(PS.ALL, PS.ALL, 0);
+		//PS.alpha(PS.ALL, PS.ALL, 255);
 	},
 
 	hit_glow: function(){
@@ -561,24 +561,30 @@ var P = { // sPrites
 	},
 
 	show_object_helper: function(){
+
 		var loader;
 		loader = function(data){
 			P.current_object = PS.spriteImage(data);
 			PS.spritePlane(P.current_object, J.LAYER_OBJECT);
-			PS.spriteMove(P.current_object, 11, 11);
+			PS.spriteMove(P.current_object, 1, 11);
 
 		};
 
-		var theImage = J.current_object_type + J.object_show_counter;
+		if(J.object_show_counter < 10){
+			var theImage = J.current_object_type + "0" + J.object_show_counter;
+		}else{
+			var theImage = J.current_object_type + J.object_show_counter;
+		}
 		theImage = P.SPRITE_LOCATION + theImage + ".png";
 
-		//PS.debug("\n" + theImage + "\n");
-
-		PS.imageLoad("sprites/peg_tap.png", loader);
+		PS.imageLoad(theImage, loader);
 		J.object_show_counter--;
 		if(J.object_show_counter<0){
+			theImage = "sprites/peg_tap_ready.png";
+			PS.imageLoad(theImage, loader);
 			PS.timerStop(J.object_show_timer);
 		}
+
 
 	},
 
