@@ -331,7 +331,7 @@ var G = {//general game logic
 		G.isOpportunity = false;
 
 		PS.dbEvent( "threnody", "hit status: ", "hit");
-		A.play_beat();
+		A.play_action_sound();
 		J.hit_glow();
 		//P.delete_object();
 	},
@@ -644,6 +644,7 @@ var J = {//juice
 
 	error_glow: function(){
 		//PS.debug("mistake!");
+		P.delete_object();
 		PS.gridShadow(true, PS.COLOR_RED);
 		P.object_missed = true; // we are in miss state
 		J.current_object_type = "peg_tap_miss";
@@ -743,7 +744,7 @@ var P = { // sPrites
 
 	hold_object_helper: function(){
 		if(!G.isHolding){
-			PS.debug("HOLD OH NO");
+			//PS.debug("HOLD OH NO");
 			PS.timerStop(J.object_hold_timer);
 			P.hold_object_miss();
 			P.delete_object();
@@ -828,15 +829,32 @@ var A = {//audio
 	TONE_FADE_OUT: "NULL",
 	TONE_CLICK: "fx_pop",
 
+	SONG_BGM_0: "bgm_level_0",
+	SOUND_PATH: "audio/",
+
+
 	TONES: [],
+	TAP_ARRAY: [],
 
 	play_beat: function(){
 		var tone = L.level[G.measure_counter][L.INDEX_LOGIC][G.logic_counter];
 
 		//these things don't have sounds.  if they 
 		if(A.TONES[tone] !== "NULL"){
+			//PS.debug("why");
 			PS.audioPlay(A.TONES[tone]);
 		}	
+	},
+
+	play_action_sound: function(){
+		//PS.debug("please");
+		switch(G.actionType){
+			case L.ACT_FADE_IN_TAP:
+				var rando = PS.random(A.TAP_ARRAY.length-1); // generate from 1 to max
+				PS.audioPlay(A.TAP_ARRAY[rando], {path: A.SOUND_PATH});
+				break;
+		}
+		//PS.audioPlay(A.TONES[L.ACT_CLICK]);
 	},
 
 	load : function() {
@@ -859,6 +877,12 @@ var A = {//audio
 				PS.audioLoad(A.TONES[i]);
 			}
 		}
+
+		PS.audioLoad(A.SONG_BGM_0, {lock:true, path: A.SOUND_PATH});
+	},
+
+	play_bgm: function(){
+		PS.audioPlay(A.SONG_BGM_0, {volume:0.5, path: A.SOUND_PATH});
 	}
 	
 };
@@ -927,6 +951,7 @@ PS.touch = function( x, y, data, options ) {
 	if(!G.isRhythmBegun){
 		PS.statusText("THE PLACEHOLDER SOUNDS");
 		PS.statusColor(PS.COLOR_WHITE);
+		A.play_bgm();
 		G.start_global_timer();
 	}else{
 		if(G.isOnPeg(x, y)){
