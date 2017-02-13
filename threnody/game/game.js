@@ -32,6 +32,9 @@ var G = {//general game logic
 	GRID_HEIGHT: 32,
 	GRID_WIDTH: 32,
 
+	peg_width: 10,
+	peg_height: 10,
+
 	global_rate: 1,
 	global_timer: 0,
 
@@ -54,7 +57,8 @@ var G = {//general game logic
 
 	isOpportunity: false, // if true, clicking is good!
 	isRhythmBegun: false, // has the rhythm begun?
-	movementType: 0,
+	isHolding: false, // are we holding?
+	actionType: 0, // 1 for tap, 2 for hold, [amount] for direction
 
 	insanityLevel: 0,
 	wiggleRoom: 5,
@@ -125,7 +129,6 @@ var G = {//general game logic
 	},
 
 	calc_tick_distance : function(goal){
-	//	PS.debug("CALCULATING!!!\n");
 		var new_index = G.logic_counter + 1; //how many indexes away the next action is 
 		var measure = G.measure_counter; //so we can play with measure countign nondestructively
 
@@ -161,7 +164,14 @@ var G = {//general game logic
 			if(L.level[G.measure_counter][L.INDEX_LOGIC][G.logic_counter] !== 0){
 				G.beat_logic(L.level[G.measure_counter][L.INDEX_LOGIC][G.logic_counter]);
 			}
-			if(L.level[G.measure_counter][L.INDEX_LOGIC][G.logic_counter] === L.ACT_FADE_IN || 
+			if(L.level[G.measure_counter][L.INDEX_LOGIC][G.logic_counter] === L.ACT_FADE_IN_TAP ||
+				L.level[G.measure_counter][L.INDEX_LOGIC][G.logic_counter] === L.ACT_FADE_IN_HOLD ||
+				L.level[G.measure_counter][L.INDEX_LOGIC][G.logic_counter] === L.ACT_FADE_IN_DRAG_MtoB ||
+				L.level[G.measure_counter][L.INDEX_LOGIC][G.logic_counter] === L.ACT_FADE_IN_DRAG_MtoL ||
+				L.level[G.measure_counter][L.INDEX_LOGIC][G.logic_counter] === L.ACT_FADE_IN_DRAG_MtoLR ||
+				L.level[G.measure_counter][L.INDEX_LOGIC][G.logic_counter] === L.ACT_FADE_IN_DRAG_MtoR ||
+				L.level[G.measure_counter][L.INDEX_LOGIC][G.logic_counter] === L.ACT_FADE_IN_DRAG_MtoU ||
+				L.level[G.measure_counter][L.INDEX_LOGIC][G.logic_counter] === L.ACT_FADE_IN_DRAG_MtoUB ||
 				L.level[G.measure_counter][L.INDEX_LOGIC][G.logic_counter] === L.ACT_FADE_OUT){
 				A.play_beat();
 			}
@@ -194,51 +204,61 @@ var G = {//general game logic
 
 	//1 = start fadein, 2 = clear because miss, 3 = open opportunity
 	beat_logic : function(action){
-		//PS.debug(action);
 		switch(action){
-			case 1: // start fadein
-				//PS.statusText("FADING");
+			case L.ACT_FADE_IN_TAP: // start fadein
 				G.isOpportunity = true;
-				G.spawn_object_tap(0);
+				L.actionType = L.ACT_FADE_IN_TAP; // set the action to the current fade in style
+				G.spawn_object_tap();
 				break;
-			case 2: // clear because miss
+			case L.ACT_FADE_IN_HOLD:
+				G.isOpportunity = true;
+				L.actionType = L.ACT_FADE_IN_HOLD;
+				G.spawn_object_hold();
+				break;
+			case L.ACT_FADE_IN_DRAG_MtoB:
+				break;
+			case L.ACT_FADE_IN_DRAG_MtoL: // clear because miss
+				break;
+			case L.ACT_FADE_IN_DRAG_MtoLR: // open opportunity
+				break;
+			case L.ACT_FADE_IN_DRAG_MtoR:
+				break;
+			case L.ACT_FADE_IN_DRAG_MtoU:
+				break;
+			case L.ACT_FADE_IN_DRAG_MtoUB:
+				break;
+			case L.ACT_CLICK: // open opportunity
+				G.last_logic_activity = G.counter;
+				break;
+			case L.ACT_FADE_OUT: // clear because miss
 				PS.statusText("");
 				G.miss_object();
 				break;
-			case 3: // open opportunity
-				//PS.statusText("CLICK NOW");
-				G.last_logic_activity = G.counter;
-				//PS.debug("LAST LOGIC: " + G.last_logic_activity);
-				//PS.debug("\n");
-				//PS.debug("NEXT LOGIC: " + (G.counter+ G.calc_tick_distance()));
-				//PS.debug("\n");
-				break;
-			case 4: // clear because miss
-				break;
-			case 5: // open opportunity
 
 		}
 	},
 
-	spawn_object_tap : function(fade_time) { // creates a tap object
-		J.object_show_time = fade_time;
+	spawn_object_tap : function() { // creates a tap object
+		G.actionType = L.ACT_FADE_IN_TAP;
 		P.SPRITE_LOCATION = "sprites/tap_shrink/";
 		P.spawn_object("peg_tap_shrink");
 	},
 
-	spawn_object_drag : function(fade_time) { // creates a drag object
+	spawn_object_drag : function() { // creates a drag object
 
 	},
 
-	spawn_object_hold : function(fade_time) {
-
+	spawn_object_hold : function() {
+		G.actionType = L.ACT_FADE_IN_HOLD;
+		P.SPRITE_LOCATION = "sprites/hold_shrink/";
+		P.spawn_object("hold_shrink");
 	},
 
 	is_wiggle_room : function(){
 		G.wiggleRoom = 10; // set waggle room
 
 		var last_good = G.last_logic_activity;
-		var next_good = G.counter - G.calc_tick_distance(3);
+		var next_good = G.counter - G.calc_tick_distance(L.ACT_CLICK);
 		var dif_last = last_good - G.counter;
 		var dif_next = G.counter - next_good;
 
@@ -252,27 +272,12 @@ var G = {//general game logic
 		PS.debug("dif last: " + dif_last + "\n");
 		PS.debug("dif next: " + dif_next + "\n");*/
 
-		/*current tick: 218
-		last tick: 0
-		next tick: 180
-		dif last: -218
-		dif next: 38*/
-		/*current tick: 233
-		 last tick: 60
-		 next tick: 180
-		 dif last: -173
-		 dif next: 53
-*/
-
 		if((dif_last < G.wiggleRoom) && (last_good > G.counter)){
 			is_close_to_last = true;
 		}
 		if(dif_next < G.wiggleRoom){
 			is_close_to_next = true;
 		}
-
-		//PS.debug("close last: " + is_close_to_last + "\n");
-		//PS.debug("close next: " + is_close_to_next + "\n");
 
 		if(is_close_to_last || is_close_to_next){
 			return true;
@@ -287,17 +292,35 @@ var G = {//general game logic
 		}
 
 		if(G.is_wiggle_room()){
-			G.hit_object();
+			// what kind of interaction?
+			if(G.actionType == L.ACT_FADE_IN_TAP){
+				G.hit_object();
+			}
+			if(G.actionType == L.ACT_FADE_IN_HOLD){
+				G.hold_object();
+			}
 
 		}else{
 			G.bad_click();
 		}
 	},
 
+	isOnPeg : function(x, y){ // are we on the peg?
+		if(x > 10 && x < 21){
+			if(y > 10 && y < 21){
+				return true;
+			}
+		}
+
+		return false;
+	},
+
 	bad_click : function(){
 		PS.dbEvent( "threnody", "hit status: ", "hit at wrong time");
 		G.isOpportunity = false;
-
+		if(P.object_missed){
+			return;
+		}
 		J.error_glow();
 		G.increase_insanity();
 
@@ -313,6 +336,13 @@ var G = {//general game logic
 		//P.delete_object();
 	},
 
+	hold_object : function(){
+		PS.dbEvent( "threnody", "hit status: ", "hold start");
+		A.play_beat();
+		J.hold_glow();
+
+	},
+
 	miss_object : function(){
 		//PS.debug("miss!");
 		PS.dbEvent( "threnody", "hit status: ", "misssed");
@@ -321,10 +351,12 @@ var G = {//general game logic
 		if(!P.object_exists){
 			return;
 		}
-		//G.opportunity_close();
+		if(P.object_missed){
+			return;
+		}
+
 		J.error_glow();
 		J.hide_object();
-
 		G.increase_insanity();
 	},
 
@@ -364,9 +396,16 @@ var G = {//general game logic
 var L = {//level or chapter logic
 	
 	ACT_NULL: 0,
-	ACT_FADE_IN: 1, // was 1 originally
-	ACT_FADE_OUT: 2, // was 2 originally
-	ACT_CLICK: 3, // was 3 originally
+	ACT_FADE_IN_TAP: 1, // was 1 originally
+	ACT_FADE_IN_HOLD: 2,
+	ACT_FADE_IN_DRAG_MtoL: 3,
+	ACT_FADE_IN_DRAG_MtoR: 4,
+	ACT_FADE_IN_DRAG_MtoLR: 5,
+	ACT_FADE_IN_DRAG_MtoU: 6,
+	ACT_FADE_IN_DRAG_MtoB: 7,
+	ACT_FADE_IN_DRAG_MtoUB: 8,
+	ACT_FADE_OUT: 9, // was 2 originally
+	ACT_CLICK: 10, // was 3 originally
 
 	INDEX_LOGIC: 0,
 
@@ -379,81 +418,81 @@ var L = {//level or chapter logic
 
 		L.level = [
 			[
-				[1, 0,0,0,0,0, 3, 0,0,2,0,0, 1, 0,0,0,0,0, 3, 0,0,2,0,0]  //logic
+				[1, 0,0,0,0,0, 10, 0,0,9,0,0, 1, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
 			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 				],
 
 			[
-				[1, 0,0,0,0,0, 3, 0,0,2,0,0, 1, 0,0,0,0,0, 3, 0,0,2,0,0]  //logic
+				[1, 0,0,0,0,0, 10, 0,0,9,0,0, 1, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
 			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 				],
 
 			[
 				
-				[1, 0,0,0,0,0, 3, 0,0,2,0,0, 0, 0,0,1,0,0, 3, 0,0,2,0,0] //logic
+				[2, 0,0,0,0,0, 10, 0,0,9,0,0, 0, 0,0,2,0,0, 10, 0,0,9,0,0] //logic
 			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 				],
 			[
-				[1, 0,0,0,0,0, 3, 0,0,2,0,0, 0, 0,0,1,0,0, 3, 0,0,2,0,0]  //logic
+				[2, 0,0,0,0,0, 10, 0,0,9,0,0, 0, 0,0,1,0,0, 10, 0,0,9,0,0]  //logic
 			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 				],
 
 			[
-				[0, 0,0,1,0,0, 3, 0,0,2,0,0, 0, 0,0,1,0,0, 3, 0,0,2,0,0]  //logic
+				[0, 0,0,1,0,0, 10, 0,0,9,0,0, 0, 0,0,2,0,0, 10, 0,0,9,0,0]  //logic
 			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 				],
 				
 			[
-				[0, 0,0,1,0,0, 3, 0,0,2,0,0, 0, 0,0,1,0,0, 3, 0,0,2,0,0]  //logic
+				[0, 0,0,2,0,0, 10, 0,0,9,0,0, 0, 0,0,1,0,0, 10, 0,0,9,0,0]  //logic
 			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 				],
 
 			[
-				[1, 0,0,0,0,0, 0, 0,0,3,0,0, 2, 0,0,1,0,0, 3, 0,0,2,0,0]  //logic
+				[1, 0,0,0,0,0, 0, 0,0,10,0,0, 9, 0,0,1,0,0, 10, 0,0,9,0,0]  //logic
 			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 				],
 				
 			[
-				[1, 0,0,3,0,2, 1, 0,0,3,0,2, 1, 0,0,3,0,2, 1, 0,0,3,0,2]  //logic
+				[1, 0,0,10,0,9, 1, 0,0,10,0,9, 1, 0,0,10,0,9, 1, 0,0,10,0,9]  //logic
 			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 				],
 			[
-				[1, 0,0,0,0,0, 0, 0,0,3,0,0, 2, 0,0,1,0,0, 3, 0,0,2,0,0]  //logic
+				[1, 0,0,0,0,0, 0, 0,0,10,0,0, 9, 0,0,1,0,0, 10, 0,0,9,0,0]  //logic
 			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 				],
 				
 			[
-				[1, 0,0,3,0,2, 1, 0,0,3,0,2, 1, 0,0,3,0,2, 1, 0,0,3,0,2]  //logic
+				[1, 0,0,10,0,9, 1, 0,0,10,0,9, 1, 0,0,10,0,9, 1, 0,0,10,0,9]  //logic
 			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 				],
 
 			[
-				[1, 0,0,0,0,0, 3, 0,0,2,0,0, 1, 0,0,0,0,0, 3, 0,0,2,0,0] //logic
+				[1, 0,0,0,0,0, 10, 0,0,9,0,0, 1, 0,0,0,0,0, 10, 0,0,9,0,0] //logic
 			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 				],
 
 			[
-				[1, 0,3,2,1,0, 3, 0,0,2,0,0, 1, 0,0,0,0,0, 3, 0,0,2,0,0]  //logic
+				[1, 0,10,9,1,0, 10, 0,0,9,0,0, 1, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
 			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 				],
 
 			[
-				[1, 0,0,0,0,0, 3, 0,0,2,0,0, 1, 0,0,0,0,0, 3, 0,0,2,0,0]  //logic
+				[1, 0,0,0,0,0, 10, 0,0,9,0,0, 1, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
 			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 				],
 
 			[
-				[1, 0,3,2,1,0, 3, 0,0,2,0,0, 1, 0,0,0,0,0, 3, 0,0,2,0,0]  //logic
+				[1, 0,10,9,1,0, 10, 0,0,9,0,0, 1, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
 			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 				],
 
 			[
-				[1, 0,0,0,0,0, 3, 0,0,2,0,0, 1, 0,0,0,0,0, 3, 0,0,2,0,0]  //logic
+				[1, 0,0,0,0,0, 10, 0,0,9,0,0, 1, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
 			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 				],
 
 			[
-				[1, 0,0,0,0,0, 3, 0,0,2,0,0, 1, 0,0,0,0,0, 3, 0,0,2,0,0]  //logic
+				[1, 0,0,0,0,0, 10, 0,0,9,0,0, 1, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
 			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 				]
 				
@@ -473,6 +512,8 @@ var J = {//juice
 	COLOR_BACKGROUND_GLOW: PS.COLOR_WHITE,
 	COLOR_BACKGROUND_BORDER: PS.COLOR_WHITE,
 
+	COLOR_HOLD: PS.COLOR_BROWN,
+
 	LAYER_BACKGROUND: 0,
 	LAYER_OBJECT: 1,
 	LAYER_OBJECT_HIDE: 2,
@@ -481,9 +522,12 @@ var J = {//juice
 	object_show_time: 0,
 	object_hide_time: 0,
 	object_hit_time: 1,
-	object_miss_time: 1,
+	object_hold_time: 3,
+	object_miss_time: 3,
 
 	hit_total_sprites: 0,
+	hold_total_sprites: 0,
+	miss_total_sprites: 0,
 
 	object_show_counter: 16,
 	object_show_rate: 0,
@@ -492,6 +536,10 @@ var J = {//juice
 	object_hit_counter: 6,
 	object_hit_rate: 0,
 	object_hit_timer: 0,
+
+	object_hold_counter: 5,
+	object_hold_rate: 0,
+	object_hold_timer: 0,
 
 	object_miss_counter: 6,
 	object_miss_rate: 0,
@@ -529,7 +577,7 @@ var J = {//juice
 	  //PS.debug("SHOWING OBJECT\n");
 
 		J.current_object_type = type;
-		J.object_show_time = G.calc_tick_distance(3);
+		J.object_show_time = G.calc_tick_distance(L.ACT_CLICK); // time until opportuity
 
 		J.object_show_counter = 14; // default???
 		J.object_show_rate = J.object_show_time / J.object_show_counter;
@@ -538,11 +586,24 @@ var J = {//juice
 		//PS.fade(PS.ALL, PS.ALL, J.object_show_time);
 		//PS.fade(0, 0, J.object_show_time, {onEnd: G.opportunity_open});
 		//PS.alpha(PS.ALL, PS.ALL, 0);
-		PS.gridShadow(false);
+		//PS.gridShadow(false);
 
 		J.object_is_growing = true;
 
-		J.object_show_timer = PS.timerStart(J.object_show_rate, P.show_object_helper);
+		switch(G.actionType){
+			case L.ACT_FADE_IN_TAP:
+				P.ready_sprite = "sprites/peg_tap_ready.png";
+				P.move_x = 1;
+				P.move_y = 11;
+				J.object_show_timer = PS.timerStart(J.object_show_rate, P.show_object_helper);
+				break;
+			case L.ACT_FADE_IN_HOLD:
+				P.ready_sprite = "sprites/peg_hold_ready.png";
+				P.move_x = 11;
+				P.move_y = 1;
+				J.object_show_timer = PS.timerStart(J.object_show_rate, P.show_object_helper);
+				break;
+		}
 	},
 
 	hide_object: function(){
@@ -566,19 +627,35 @@ var J = {//juice
 		J.object_hit_timer = PS.timerStart(J.object_hit_rate, P.hit_object_helper);
 	},
 
+	hold_glow: function(){
+		PS.gridShadow(true, J.COLOR_HOLD);
+		J.current_object_type = "peg_hold_hit";
+		J.object_hold_counter = 0;
+		J.object_hold_rate = J.object_hold_time;
+		J.hold_total_sprites = 5;
+
+		P.SPRITE_LOCATION = "sprites/hold_hit/";
+		if(J.object_is_growing){
+			PS.timerStop(J.object_show_timer);
+		}
+		J.object_hold_timer = PS.timerStart(J.object_hold_rate, P.hold_object_helper);
+
+	},
+
 	error_glow: function(){
 		//PS.debug("mistake!");
 		PS.gridShadow(true, PS.COLOR_RED);
+		P.object_missed = true; // we are in miss state
 		J.current_object_type = "peg_tap_miss";
-		J.object_hit_counter = 0;
+		J.object_miss_counter = 0;
 		J.object_miss_rate = J.object_miss_time;
-		J.hit_total_sprites = 4;
+		J.miss_total_sprites = 5;
 
 		P.SPRITE_LOCATION = "sprites/tap_miss/";
 		if(J.object_is_growing){
 			PS.timerStop(J.object_show_timer);
 		}
-		J.object_hit_timer = PS.timerStart(J.object_miss_rate, P.hit_object_helper);
+		J.object_miss_timer = PS.timerStart(J.object_miss_rate, P.miss_object_helper);
 	},
 
 };
@@ -592,8 +669,14 @@ var P = { // sPrites
 	current_object: 0, // there is only ever one object
 	current_object_type: "",
 
+	ready_sprite: "", // the ready sprite
+
 	object_exists: false, // is there an object there?
 	object_is_growing: false,
+	object_missed: false,
+
+	move_x: 0,
+	move_y: 0,
 
 	spawn_object: function(type){
 		PS.gridFade(0);
@@ -607,7 +690,8 @@ var P = { // sPrites
 		loader = function(data){
 			P.current_object = PS.spriteImage(data);
 			PS.spritePlane(P.current_object, J.LAYER_OBJECT);
-			PS.spriteMove(P.current_object, 1, 11);
+
+			PS.spriteMove(P.current_object, P.move_x, P.move_y);
 
 		};
 
@@ -621,7 +705,7 @@ var P = { // sPrites
 		PS.imageLoad(theImage, loader);
 		J.object_show_counter--;
 		if(J.object_show_counter<0){
-			theImage = "sprites/peg_tap_ready.png";
+			theImage = P.ready_sprite;
 			PS.imageLoad(theImage, loader);
 			J.object_is_growing = false;
 			PS.timerStop(J.object_show_timer);
@@ -640,13 +724,12 @@ var P = { // sPrites
 
 		};
 
-		if(J.object_hit_counter < J.hit_total_sprites+1){
+		if(J.object_hit_counter < 10){
 			var theImage = J.current_object_type + "0" + J.object_hit_counter;
 		}else{
 			var theImage = J.current_object_type + J.object_hit_counter;
 		}
 		theImage = P.SPRITE_LOCATION + theImage + ".png";
-		//PS.debug(theImage + "\n");
 
 		PS.imageLoad(theImage, loader);
 		J.object_hit_counter++;
@@ -654,6 +737,73 @@ var P = { // sPrites
 			//theImage = "sprites/peg_tap_ready.png";
 			//PS.imageLoad(theImage, loader);
 			PS.timerStop(J.object_hit_timer);
+			P.delete_object();
+		}
+	},
+
+	hold_object_helper: function(){
+		if(!G.isHolding){
+			PS.debug("HOLD OH NO");
+			PS.timerStop(J.object_hold_timer);
+			P.hold_object_miss();
+			P.delete_object();
+		}
+		var loader;
+		loader = function(data){
+			P.current_object = PS.spriteImage(data);
+			PS.spritePlane(P.current_object, J.LAYER_OBJECT);
+			PS.spriteMove(P.current_object, 11, 1);
+
+		};
+
+
+		if(J.object_hold_counter < 10){
+			var theImage = J.current_object_type + "0" + J.object_hold_counter;
+		}else{
+			var theImage = J.current_object_type + J.object_hold_counter;
+		}
+		theImage = P.SPRITE_LOCATION + theImage + ".png";
+
+		PS.imageLoad(theImage, loader);
+		J.object_hold_counter++;
+		if(J.object_hold_counter > J.hold_total_sprites){
+			//theImage = "sprites/peg_tap_ready.png";
+			//PS.imageLoad(theImage, loader);
+			PS.timerStop(J.object_hold_timer);
+			PS.gridShadow(true, PS.COLOR_GREEN);
+			P.delete_object();
+		}
+	},
+
+	hold_object_miss: function(){
+		PS.gridPlane(J.LAYER_OBJECT);
+		PS.gridShadow(true, PS.COLOR_RED);
+	},
+
+	miss_object_helper: function(){
+
+		var loader;
+		loader = function(data){
+			P.current_object = PS.spriteImage(data);
+			PS.spritePlane(P.current_object, J.LAYER_OBJECT);
+			PS.spriteMove(P.current_object, 1, 11);
+
+		};
+
+		if(J.object_miss_counter < 10){
+			var theImage = J.current_object_type + "0" + J.object_miss_counter;
+		}else{
+			var theImage = J.current_object_type + J.object_miss_counter;
+		}
+		theImage = P.SPRITE_LOCATION + theImage + ".png";
+
+		PS.imageLoad(theImage, loader);
+		J.object_miss_counter++;
+		if(J.object_miss_counter > J.miss_total_sprites){
+			//theImage = "sprites/peg_tap_ready.png";
+			//PS.imageLoad(theImage, loader);
+			PS.timerStop(J.object_miss_timer);
+			P.object_missed = false;
 			P.delete_object();
 		}
 	},
@@ -691,7 +841,16 @@ var A = {//audio
 
 	load : function() {
 		A.TONES[L.ACT_NULL] = A.TONE_NULL;
-		A.TONES[L.ACT_FADE_IN] = A.TONE_FADE_IN;
+		A.TONES[L.ACT_FADE_IN_TAP] = A.TONE_FADE_IN;
+		A.TONES[L.ACT_FADE_IN_HOLD] = A.TONE_FADE_IN;
+		A.TONES[L.ACT_FADE_IN_DRAG_MtoB] = A.TONE_FADE_IN;
+		A.TONES[L.ACT_FADE_IN_DRAG_MtoL] = A.TONE_FADE_IN;
+		A.TONES[L.ACT_FADE_IN_DRAG_MtoLR] = A.TONE_FADE_IN;
+		A.TONES[L.ACT_FADE_IN_DRAG_MtoR] = A.TONE_FADE_IN;
+		A.TONES[L.ACT_FADE_IN_DRAG_MtoU] = A.TONE_FADE_IN;
+		A.TONES[L.ACT_FADE_IN_DRAG_MtoUB] = A.TONE_FADE_IN;
+
+
 		A.TONES[L.ACT_FADE_OUT] = A.TONE_FADE_OUT;
 		A.TONES[L.ACT_CLICK] = A.TONE_CLICK;
 
@@ -763,13 +922,16 @@ PS.touch = function( x, y, data, options ) {
 
 	// TEMP 
 	//var d = G.calc_tick_distance();
+	G.isHolding = true;
 
 	if(!G.isRhythmBegun){
 		PS.statusText("THE PLACEHOLDER SOUNDS");
 		PS.statusColor(PS.COLOR_WHITE);
 		G.start_global_timer();
 	}else{
-		G.click();
+		if(G.isOnPeg(x, y)){
+			G.click();
+		}
 	}
 };
 
@@ -786,6 +948,7 @@ PS.release = function( x, y, data, options ) {
 	// PS.debug( "PS.release() @ " + x + ", " + y + "\n" );
 
 	// Add code here for when the mouse button/touch is released over a bead
+	G.isHolding = false;
 };
 
 // PS.enter ( x, y, button, data, options )
