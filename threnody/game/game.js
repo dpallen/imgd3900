@@ -213,6 +213,10 @@ var G = {//general game logic
 				//PS.debug("NEXT LOGIC: " + (G.counter+ G.calc_tick_distance()));
 				//PS.debug("\n");
 				break;
+			case 4: // clear because miss
+				break;
+			case 5: // open opportunity
+
 		}
 	},
 
@@ -306,7 +310,7 @@ var G = {//general game logic
 		PS.dbEvent( "threnody", "hit status: ", "hit");
 		A.play_beat();
 		J.hit_glow();
-		P.delete_object();
+		//P.delete_object();
 	},
 
 	miss_object : function(){
@@ -360,9 +364,9 @@ var G = {//general game logic
 var L = {//level or chapter logic
 	
 	ACT_NULL: 0,
-	ACT_FADE_IN: 1,
-	ACT_FADE_OUT: 2,
-	ACT_CLICK: 3,
+	ACT_FADE_IN: 1, // was 1 originally
+	ACT_FADE_OUT: 2, // was 2 originally
+	ACT_CLICK: 3, // was 3 originally
 
 	INDEX_LOGIC: 0,
 
@@ -476,10 +480,22 @@ var J = {//juice
 
 	object_show_time: 0,
 	object_hide_time: 0,
+	object_hit_time: 1,
+	object_miss_time: 1,
+
+	hit_total_sprites: 0,
 
 	object_show_counter: 16,
 	object_show_rate: 0,
 	object_show_timer: 0,
+
+	object_hit_counter: 6,
+	object_hit_rate: 0,
+	object_hit_timer: 0,
+
+	object_miss_counter: 6,
+	object_miss_rate: 0,
+	object_miss_timer: 0,
 
 	error_timer: 0, // timer for error glow
 	opportunity_glow_timer: 0, // timer for timing grid glow
@@ -510,10 +526,11 @@ var J = {//juice
 	show_object: function(type){
 		PS.gridPlane(J.LAYER_OBJECT_HIDE);
 		// UPDATE THE OBJECT SHOW TIME
-	//PS.debug("SHOWING OBJECT\n");
+	  //PS.debug("SHOWING OBJECT\n");
 
 		J.current_object_type = type;
 		J.object_show_time = G.calc_tick_distance(3);
+
 		J.object_show_counter = 14; // default???
 		J.object_show_rate = J.object_show_time / J.object_show_counter;
 		//PS.debug(J.object_show_time);
@@ -522,6 +539,8 @@ var J = {//juice
 		//PS.fade(0, 0, J.object_show_time, {onEnd: G.opportunity_open});
 		//PS.alpha(PS.ALL, PS.ALL, 0);
 		PS.gridShadow(false);
+
+		J.object_is_growing = true;
 
 		J.object_show_timer = PS.timerStart(J.object_show_rate, P.show_object_helper);
 	},
@@ -534,11 +553,32 @@ var J = {//juice
 
 	hit_glow: function(){
 		PS.gridShadow(true, PS.COLOR_GREEN);
+		J.current_object_type = "peg_tap_hit";
+		J.object_hit_counter = 0;
+		J.object_hit_rate = J.object_hit_time;
+		J.hit_total_sprites = 8;
+		//PS.debug("\n" + J.object_hit_rate + "\n");
+
+		P.SPRITE_LOCATION = "sprites/tap_hit/";
+		if(J.object_is_growing){
+			PS.timerStop(J.object_show_timer);
+		}
+		J.object_hit_timer = PS.timerStart(J.object_hit_rate, P.hit_object_helper);
 	},
 
 	error_glow: function(){
 		//PS.debug("mistake!");
 		PS.gridShadow(true, PS.COLOR_RED);
+		J.current_object_type = "peg_tap_miss";
+		J.object_hit_counter = 0;
+		J.object_miss_rate = J.object_miss_time;
+		J.hit_total_sprites = 4;
+
+		P.SPRITE_LOCATION = "sprites/tap_miss/";
+		if(J.object_is_growing){
+			PS.timerStop(J.object_show_timer);
+		}
+		J.object_hit_timer = PS.timerStart(J.object_miss_rate, P.hit_object_helper);
 	},
 
 };
@@ -553,6 +593,7 @@ var P = { // sPrites
 	current_object_type: "",
 
 	object_exists: false, // is there an object there?
+	object_is_growing: false,
 
 	spawn_object: function(type){
 		PS.gridFade(0);
@@ -582,10 +623,39 @@ var P = { // sPrites
 		if(J.object_show_counter<0){
 			theImage = "sprites/peg_tap_ready.png";
 			PS.imageLoad(theImage, loader);
+			J.object_is_growing = false;
 			PS.timerStop(J.object_show_timer);
 		}
 
 
+	},
+
+	hit_object_helper: function(){
+
+		var loader;
+		loader = function(data){
+			P.current_object = PS.spriteImage(data);
+			PS.spritePlane(P.current_object, J.LAYER_OBJECT);
+			PS.spriteMove(P.current_object, 1, 11);
+
+		};
+
+		if(J.object_hit_counter < J.hit_total_sprites+1){
+			var theImage = J.current_object_type + "0" + J.object_hit_counter;
+		}else{
+			var theImage = J.current_object_type + J.object_hit_counter;
+		}
+		theImage = P.SPRITE_LOCATION + theImage + ".png";
+		//PS.debug(theImage + "\n");
+
+		PS.imageLoad(theImage, loader);
+		J.object_hit_counter++;
+		if(J.object_hit_counter > J.hit_total_sprites){
+			//theImage = "sprites/peg_tap_ready.png";
+			//PS.imageLoad(theImage, loader);
+			PS.timerStop(J.object_hit_timer);
+			P.delete_object();
+		}
 	},
 
 	delete_object: function(){
