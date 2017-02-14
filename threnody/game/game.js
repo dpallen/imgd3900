@@ -55,6 +55,7 @@ var G = {//general game logic
 	logic_timings: [], //kms
 	last_logic_activity: 0, // used for activities
 
+	isPlayable: true,
 	isOpportunity: false, // if true, clicking is good!
 	isRhythmBegun: false, // has the rhythm begun?
 	isHolding: false, // are we holding?
@@ -199,6 +200,7 @@ var G = {//general game logic
 
 	start_global_timer : function() { // starts the global timer
 		G.isRhythmBegun = true;
+		G.isPlayable = true;
 		G.global_timer = PS.timerStart(G.global_rate, G.tick);
 	},
 
@@ -240,7 +242,9 @@ var G = {//general game logic
 
 	spawn_object_tap : function() { // creates a tap object
 		G.actionType = L.ACT_FADE_IN_TAP;
+		P.object_is_hit = false;
 		P.SPRITE_LOCATION = "sprites/tap_shrink/";
+		S.show_message("GET READY TO TAP");
 		P.spawn_object("peg_tap_shrink");
 	},
 
@@ -250,7 +254,9 @@ var G = {//general game logic
 
 	spawn_object_hold : function() {
 		G.actionType = L.ACT_FADE_IN_HOLD;
+		P.object_is_hit = false;
 		P.SPRITE_LOCATION = "sprites/hold_shrink/";
+		S.show_message("GET READY TO HOLD");
 		P.spawn_object("hold_shrink");
 	},
 
@@ -318,9 +324,7 @@ var G = {//general game logic
 	bad_click : function(){
 		PS.dbEvent( "threnody", "hit status: ", "hit at wrong time");
 		G.isOpportunity = false;
-		if(P.object_is_missed){
-			return;
-		}
+
 		J.error_glow();
 		G.increase_insanity();
 
@@ -329,8 +333,11 @@ var G = {//general game logic
 	hit_object : function(){
 		//PS.debug("hit!");
 		G.isOpportunity = false;
+		P.object_is_hit = true;
 
 		PS.dbEvent( "threnody", "hit status: ", "hit");
+		S.show_message("HIT");
+
 		A.play_action_sound();
 		J.hit_glow();
 		//P.delete_object();
@@ -338,6 +345,9 @@ var G = {//general game logic
 
 	hold_object : function(){
 		PS.dbEvent( "threnody", "hit status: ", "hold start");
+		S.show_message("HOLDING");
+
+		P.object_is_hit = true;
 		A.play_beat();
 		J.hold_glow();
 
@@ -348,10 +358,8 @@ var G = {//general game logic
 		PS.dbEvent( "threnody", "hit status: ", "misssed");
 		G.isOpportunity = false;
 
-		if(!P.object_exists){
-			return;
-		}
-		if(P.object_is_missed){
+
+		if(P.object_is_missed || P.object_is_hit){
 			return;
 		}
 
@@ -479,9 +487,14 @@ var L = {//level or chapter logic
 var S = { // status line and chapter control
 	welcome_array: [],
 	welcome_timer: 0,
-	welcome_rate: 30,
+	welcome_rate: 15,
 	welcome_counter: 0,
 	welcome_text_counter: 0,
+
+	show_message: function(text){
+		PS.statusColor(PS.COLOR_WHITE);
+		PS.statusText(text);
+	},
 
 	populate_welcome_array: function(){
 		S.welcome_array[0] = "July 16, 1923";
@@ -493,9 +506,11 @@ var S = { // status line and chapter control
 	welcome_statement: function(){
 		PS.statusColor(PS.COLOR_BLACK);
 		PS.statusFade(5);
+		G.isPlayable = false;
 		S.welcome_timer = PS.timerStart(S.welcome_rate, S.welcome_statement_helper);
 	},
 	welcome_statement_helper: function(){
+		//PS.debug(S.welcome_counter);
 		if(S.welcome_counter%2 == 0){ // every other should be a message update
 			if(!A.bgm_is_playing){
 				A.play_bgm();
@@ -509,8 +524,8 @@ var S = { // status line and chapter control
 			PS.statusColor(PS.COLOR_BLACK);
 		}
 
-		P.welcome_counter++;
-		if(S.welcome_text_counter > S.welcome_array.length && S.welcome_counter % 2 === 0){
+		S.welcome_counter++;
+		if(S.welcome_text_counter > S.welcome_array.length){
 			//PS.debug("stopping");
 			PS.statusColor(PS.COLOR_BLACK);
 			//PS.statusFade(0);
@@ -634,7 +649,8 @@ var J = {//juice
 		//PS.alpha(PS.ALL, PS.ALL, 0);
 		//PS.gridShadow(false);
 
-		J.object_is_growing = true;
+		P.object_is_appearing = true;
+		P.object_is_missed = false;
 
 		switch(G.actionType){
 			case L.ACT_FADE_IN_TAP:
@@ -667,7 +683,7 @@ var J = {//juice
 		//PS.debug("\n" + J.object_hit_rate + "\n");
 
 		P.SPRITE_LOCATION = "sprites/tap_hit/";
-		if(J.object_is_growing){
+		if(P.object_is_appearing){
 			PS.timerStop(J.object_show_timer);
 		}
 		J.object_hit_timer = PS.timerStart(J.object_hit_rate, P.hit_object_helper);
@@ -683,7 +699,7 @@ var J = {//juice
 		J.hold_total_sprites = 5;
 
 		P.SPRITE_LOCATION = "sprites/hold_hit/";
-		if(J.object_is_growing){
+		if(J.object_is_appearing){
 			PS.timerStop(J.object_show_timer);
 		}
 		J.object_hold_timer = PS.timerStart(J.object_hold_rate, P.hold_object_helper);
@@ -693,8 +709,19 @@ var J = {//juice
 	error_glow: function(){
 		//PS.debug("mistake!");
 		P.delete_object();
+		S.show_message("MISS");
+		// stop appearing
+		if(P.object_is_appearing){
+			P.object_is_appearing = false;
+			PS.timerStop(J.object_show_timer);
+		}
+
+		if(P.object_is_missed){ // do not miss if we are already misisng
+			return;
+		}
+
 		PS.gridShadow(true, PS.COLOR_RED);
-		P.object_missed = true; // we are in miss state
+		P.object_is_missed = true; // we are in miss state
 
 		J.current_object_type = "peg_tap_miss";
 		J.object_miss_counter = 0;
@@ -702,9 +729,6 @@ var J = {//juice
 		J.miss_total_sprites = 5;
 
 		P.SPRITE_LOCATION = "sprites/tap_miss/";
-		if(J.object_is_growing){
-			PS.timerStop(J.object_show_timer);
-		}
 		J.object_miss_timer = PS.timerStart(J.object_miss_rate, P.miss_object_helper);
 	},
 
@@ -717,14 +741,17 @@ var P = { // sPrites
 	spriteX: 11, // where do sprites go
 	spriteY: 11, // where do sprites go
 	current_object: 0, // there is only ever one object
+	current_miss: 0,
+	current_hit: 0,
 	current_object_type: "",
 
 	ready_sprite: "", // the ready sprite
 
 	object_exists: false, // is there an object there?
-	object_is_growing: false,
-	object_is_missed: false,
-	object_is_held: false,
+	object_is_appearing: false, // is the object appearing?
+	object_is_missed: false, // is the object missed?
+	object_is_held: false, // is the object in held state?
+	object_is_hit: false, // is the object in hit state?
 
 	move_x: 0,
 	move_y: 0,
@@ -733,10 +760,10 @@ var P = { // sPrites
 
 		P.delete_object();
 
-		P.current_object = 0;
-		P.current_object_type = "nothing";
-		J.object_show_counter = "nothing";
-		P.ready_sprite = "nothing";
+		//P.current_object = 0;
+		//P.current_object_type = "nothing";
+		//J.object_show_counter = "nothing";
+		//P.ready_sprite = "nothing";
 
 	},
 
@@ -752,7 +779,6 @@ var P = { // sPrites
 		loader = function(data){
 			P.current_object = PS.spriteImage(data);
 			PS.spritePlane(P.current_object, J.LAYER_OBJECT);
-
 			PS.spriteMove(P.current_object, P.move_x, P.move_y);
 
 		};
@@ -769,9 +795,9 @@ var P = { // sPrites
 		if(J.object_show_counter<0){
 			theImage = P.ready_sprite;
 			PS.imageLoad(theImage, loader);
-			J.object_is_growing = false;
 			PS.timerStop(J.object_show_timer);
-			P.reset_sprite();
+			P.object_is_appearing = false;
+			//P.reset_sprite();
 		}
 
 
@@ -780,9 +806,9 @@ var P = { // sPrites
 	hit_object_helper: function(){
 		var loader;
 		loader = function(data){
-			P.current_object = PS.spriteImage(data);
-			PS.spritePlane(P.current_object, J.LAYER_OBJECT);
-			PS.spriteMove(P.current_object, 1, 11);
+			P.current_hit = PS.spriteImage(data);
+			PS.spritePlane(P.current_hit, J.LAYER_OBJECT);
+			PS.spriteMove(P.current_hit, 1, 11);
 
 		};
 
@@ -799,12 +825,12 @@ var P = { // sPrites
 			//theImage = "sprites/peg_tap_ready.png";
 			//PS.imageLoad(theImage, loader);
 			PS.timerStop(J.object_hit_timer);
-			P.reset_sprite();
+			//P.reset_sprite();
 		}
 	},
 
 	hold_object_helper: function(){
-		if(!G.isHolding || !P.object_is_held){
+		if(!G.isHolding){
 			//PS.debug("HOLD OH NO");
 			PS.timerStop(J.object_hold_timer);
 			P.object_is_held = false;
@@ -831,34 +857,31 @@ var P = { // sPrites
 		if(J.object_hold_counter > J.hold_total_sprites){
 			//theImage = "sprites/peg_tap_ready.png";
 			//PS.imageLoad(theImage, loader);
-
-			if(P.object_is_held){
 				PS.timerStop(J.object_hold_timer);
 				P.object_is_held = false;
 				PS.gridShadow(true, PS.COLOR_GREEN);
 				P.reset_sprite();
-			}
 		}
+	},
+
+	release_object: function(){
+
 	},
 
 	hold_object_miss: function(){
 
-		P.reset_sprite();
+		//P.reset_sprite();
 		PS.gridPlane(J.LAYER_OBJECT);
 		PS.gridShadow(true, PS.COLOR_RED);
 	},
 
 	miss_object_helper: function(){
-		if(!P.object_is_missed){
-			PS.timerStop(J.object_miss_timer);
-			P.reset_sprite();
-		}
 
 		var loader;
 		loader = function(data){
-			P.current_object = PS.spriteImage(data);
-			PS.spritePlane(P.current_object, J.LAYER_OBJECT);
-			PS.spriteMove(P.current_object, 1, 11);
+			P.current_miss = PS.spriteImage(data);
+			PS.spritePlane(P.current_miss, J.LAYER_OBJECT);
+			PS.spriteMove(P.current_miss, 1, 11);
 
 		};
 
@@ -875,8 +898,7 @@ var P = { // sPrites
 			//theImage = "sprites/peg_tap_ready.png";
 			//PS.imageLoad(theImage, loader);
 			PS.timerStop(J.object_miss_timer);
-			P.object_is_missed = false;
-			P.reset_sprite();
+			//P.reset_sprite();
 		}
 	},
 
@@ -1039,7 +1061,10 @@ PS.touch = function( x, y, data, options ) {
 
 	// TEMP 
 	//var d = G.calc_tick_distance();
-	G.isHolding = true;
+	G.isHolding = true
+	if(!G.isPlayable){
+		return;
+	}
 
 	if(!G.isRhythmBegun){
 		//PS.statusText("THE PLACEHOLDER SOUNDS");
@@ -1065,6 +1090,9 @@ PS.touch = function( x, y, data, options ) {
 PS.release = function( x, y, data, options ) {
 	// Uncomment the following line to inspect parameters
 	// PS.debug( "PS.release() @ " + x + ", " + y + "\n" );
+	if(!G.isPlayable){
+		return;
+	}
 
 	// Add code here for when the mouse button/touch is released over a bead
 	G.isHolding = false;
