@@ -797,6 +797,14 @@ var P = { // sPrites
 
 		PS.imageLoad(theImage, loader);
 		J.object_show_counter--;
+
+		//sound stuff
+		if(G.actionType == L.ACT_FADE_IN_TAP){
+			A.play_appear_horiz();
+		}
+		if(G.actionType == L.ACT_FADE_IN_HOLD){
+			A.play_appear_vert();
+		}
 		if(J.object_show_counter<0){
 			theImage = P.ready_sprite;
 			PS.imageLoad(theImage, loader);
@@ -934,11 +942,53 @@ var A = {//audio
 	TONE_TAP_3: "sfx_hit_3",
 	TONE_TAP_4: "sfx_hit_4",
 
+	TONE_APPEAR_HORIZ_0: "sfx_fade_horizontal_0",
+	TONE_APPEAR_HORIZ_1: "sfx_fade_horizontal_1",
+	TONE_APPEAR_HORIZ_2: "sfx_fade_horizontal_2",
+	TONE_APPEAR_HORIZ_3: "sfx_fade_horizontal_3",
+	TONE_APPEAR_HORIZ_4: "sfx_fade_horizontal_4",
+	TONE_APPEAR_HORIZ_5: "sfx_fade_horizontal_5",
+	TONE_APPEAR_HORIZ_6: "sfx_fade_horizontal_6",
+	TONE_APPEAR_HORIZ_7: "sfx_fade_horizontal_7",
+	TONE_APPEAR_HORIZ_8: "sfx_fade_horizontal_8",
+	TONE_APPEAR_HORIZ_9: "sfx_fade_horizontal_9",
+	TONE_APPEAR_HORIZ_10: "sfx_fade_horizontal_10",
+	TONE_APPEAR_HORIZ_11: "sfx_fade_horizontal_11",
+	TONE_APPEAR_HORIZ_12: "sfx_fade_horizontal_12",
+	TONE_APPEAR_HORIZ_13: "sfx_fade_horizontal_13",
+	TONE_APPEAR_HORIZ_14: "sfx_fade_horizontal_14",
+	TONE_APPEAR_HORIZ_15: "sfx_fade_horizontal_15",
+
+	TONE_APPEAR_VERT_0: "sfx_fade_vertical_0",
+	TONE_APPEAR_VERT_1: "sfx_fade_vertical_1",
+	TONE_APPEAR_VERT_2: "sfx_fade_vertical_2",
+	TONE_APPEAR_VERT_3: "sfx_fade_vertical_3",
+	TONE_APPEAR_VERT_4: "sfx_fade_vertical_4",
+	TONE_APPEAR_VERT_5: "sfx_fade_vertical_5",
+	TONE_APPEAR_VERT_6: "sfx_fade_vertical_6",
+	TONE_APPEAR_VERT_7: "sfx_fade_vertical_7",
+	TONE_APPEAR_VERT_8: "sfx_fade_vertical_8",
+	TONE_APPEAR_VERT_9: "sfx_fade_vertical_9",
+	TONE_APPEAR_VERT_10: "sfx_fade_vertical_10",
+	TONE_APPEAR_VERT_11: "sfx_fade_vertical_11",
+	TONE_APPEAR_VERT_12: "sfx_fade_vertical_12",
+	TONE_APPEAR_VERT_13: "sfx_fade_vertical_13",
+	TONE_APPEAR_VERT_14: "sfx_fade_vertical_14",
+	TONE_APPEAR_VERT_15: "sfx_fade_vertical_15",
+
+
+
+
 	SOUND_PATH: "audio/",
+	TONES_GROW_PATH: "audio/fadein/",
 
 
 	TONES: [],
+	TONES_HORIZ:[],
+	TONES_VERT: [],
 	TAP_ARRAY: [],
+
+	appear_counter: 0,
 
 	bgm_is_playing: false,
 
@@ -981,6 +1031,40 @@ var A = {//audio
 		A.TAP_ARRAY[3] = A.TONE_TAP_3;
 		A.TAP_ARRAY[4] = A.TONE_TAP_4;
 
+		A.TONES_HORIZ[0] = A.TONE_APPEAR_HORIZ_0;
+		A.TONES_HORIZ[1] = A.TONE_APPEAR_HORIZ_1;
+		A.TONES_HORIZ[2] = A.TONE_APPEAR_HORIZ_2;
+		A.TONES_HORIZ[3] = A.TONE_APPEAR_HORIZ_3;
+		A.TONES_HORIZ[4] = A.TONE_APPEAR_HORIZ_4;
+		A.TONES_HORIZ[5] = A.TONE_APPEAR_HORIZ_5;
+		A.TONES_HORIZ[6] = A.TONE_APPEAR_HORIZ_6;
+		A.TONES_HORIZ[7] = A.TONE_APPEAR_HORIZ_7;
+		A.TONES_HORIZ[8] = A.TONE_APPEAR_HORIZ_8;
+		A.TONES_HORIZ[9] = A.TONE_APPEAR_HORIZ_9;
+		A.TONES_HORIZ[10] = A.TONE_APPEAR_HORIZ_10;
+		A.TONES_HORIZ[11] = A.TONE_APPEAR_HORIZ_11;
+		A.TONES_HORIZ[12] = A.TONE_APPEAR_HORIZ_12;
+		A.TONES_HORIZ[13] = A.TONE_APPEAR_HORIZ_13;
+		A.TONES_HORIZ[14] = A.TONE_APPEAR_HORIZ_14;
+		A.TONES_HORIZ[15] = A.TONE_APPEAR_HORIZ_15;
+
+		A.TONES_VERT[0] = A.TONE_APPEAR_VERT_0;
+		A.TONES_VERT[1] = A.TONE_APPEAR_VERT_1;
+		A.TONES_VERT[2] = A.TONE_APPEAR_VERT_2;
+		A.TONES_VERT[3] = A.TONE_APPEAR_VERT_3;
+		A.TONES_VERT[4] = A.TONE_APPEAR_VERT_4;
+		A.TONES_VERT[5] = A.TONE_APPEAR_VERT_5;
+		A.TONES_VERT[6] = A.TONE_APPEAR_VERT_6;
+		A.TONES_VERT[7] = A.TONE_APPEAR_VERT_7;
+		A.TONES_VERT[8] = A.TONE_APPEAR_VERT_8;
+		A.TONES_VERT[9] = A.TONE_APPEAR_VERT_9;
+		A.TONES_VERT[10] = A.TONE_APPEAR_VERT_10;
+		A.TONES_VERT[11] = A.TONE_APPEAR_VERT_11;
+		A.TONES_VERT[12] = A.TONE_APPEAR_VERT_12;
+		A.TONES_VERT[13] = A.TONE_APPEAR_VERT_13;
+		A.TONES_VERT[14] = A.TONE_APPEAR_VERT_14;
+		A.TONES_VERT[15] = A.TONE_APPEAR_VERT_15;
+
 
 		A.TONES[L.ACT_FADE_OUT] = A.TONE_FADE_OUT;
 		A.TONES[L.ACT_CLICK] = A.TONE_CLICK;
@@ -997,6 +1081,29 @@ var A = {//audio
 		PS.audioLoad(A.TAP_ARRAY[2], {lock:true, path: A.SOUND_PATH});
 		PS.audioLoad(A.TAP_ARRAY[3], {lock:true, path: A.SOUND_PATH});
 		PS.audioLoad(A.TAP_ARRAY[4], {lock:true, path: A.SOUND_PATH});
+
+		for(var i = 0; i < A.TONES_HORIZ.length; i++){
+			PS.audioLoad(A.TONES_HORIZ[i], {lock:true, path: A.TONES_GROW_PATH});
+		}
+	},
+
+	play_appear_horiz: function(){
+		//PS.debug(A.appear_counter + "\n");
+		PS.audioPlay(A.TONES_HORIZ[A.appear_counter], {volume:0.05, path: A.TONES_GROW_PATH});
+		A.appear_counter++;
+		if(A.appear_counter > 14){
+			//PS.debug("yes");
+			A.appear_counter = 0;
+		}
+	},
+
+	play_appear_vert: function(){
+		PS.audioPlay(A.TONES_VERT[A.appear_counter], {volume:0.05, path: A.TONES_GROW_PATH});
+		A.appear_counter++;
+		if(A.appear_counter > 14){
+			//PS.debug("yes");
+			A.appear_counter = 0;
+		}
 	},
 
 	play_bgm: function(){
