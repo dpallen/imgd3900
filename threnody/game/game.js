@@ -490,7 +490,7 @@ var L = {//level or chapter logic
 var S = { // status line and chapter control
 	welcome_array: [],
 	welcome_timer: 0,
-	welcome_rate: 15,
+	welcome_rate: 14.5,
 	welcome_counter: 0,
 	welcome_text_counter: 0,
 
@@ -715,6 +715,8 @@ var J = {//juice
 		//PS.debug("mistake!");
 		P.delete_object();
 		S.show_message("MISS");
+		// audio stuff
+		A.play_miss();
 		// stop appearing
 		if(P.object_is_appearing){
 			P.object_is_appearing = false;
@@ -935,6 +937,8 @@ var A = {//audio
 	TONE_FADE_OUT: "NULL",
 	TONE_CLICK: "fx_pop",
 
+	TONE_MISS: "sfx_miss",
+
 	SONG_BGM_0: "bgm_level_0_drum",
 	TONE_TAP_0: "sfx_hit_0",
 	TONE_TAP_1: "sfx_hit_1",
@@ -1082,9 +1086,15 @@ var A = {//audio
 		PS.audioLoad(A.TAP_ARRAY[3], {lock:true, path: A.SOUND_PATH});
 		PS.audioLoad(A.TAP_ARRAY[4], {lock:true, path: A.SOUND_PATH});
 
+		PS.audioLoad(A.TONE_MISS, {lock:true, path: A.SOUND_PATH});
+
 		for(var i = 0; i < A.TONES_HORIZ.length; i++){
 			PS.audioLoad(A.TONES_HORIZ[i], {lock:true, path: A.TONES_GROW_PATH});
 		}
+	},
+
+	play_miss: function(){
+		PS.audioPlay(A.TONE_MISS, {volume:0.1, path: A.SOUND_PATH});
 	},
 
 	play_appear_horiz: function(){
@@ -1107,7 +1117,7 @@ var A = {//audio
 	},
 
 	play_bgm: function(){
-		PS.audioPlay(A.SONG_BGM_0, {volume:0.25, path: A.SOUND_PATH});
+		PS.audioPlay(A.SONG_BGM_0, {loop: false, volume:0.25, path: A.SOUND_PATH});
 		A.bgm_is_playing = true;
 	}
 	
@@ -1266,6 +1276,28 @@ PS.keyDown = function( key, shift, ctrl, options ) {
 	//	PS.debug( "DOWN: key = " + key + ", shift = " + shift + "\n" );
 
 	// Add code here for when a key is pressed
+	if(key != 32){
+		return;
+	}else{
+		G.isHolding = true
+		if(!G.isPlayable){
+			return;
+		}
+
+		if(!G.isRhythmBegun){
+			//PS.statusText("THE PLACEHOLDER SOUNDS");
+			//PS.statusColor(PS.COLOR_WHITE);
+			//A.play_bgm();
+			//G.start_global_timer();
+			S.welcome_statement();
+		}else{
+			//if(G.isOnPeg(x, y)){
+				G.click();
+			//}
+		}
+	}
+
+
 };
 
 // PS.keyUp ( key, shift, ctrl, options )
@@ -1282,6 +1314,18 @@ PS.keyUp = function( key, shift, ctrl, options ) {
 	// PS.debug( "PS.keyUp(): key = " + key + ", shift = " + shift + ", ctrl = " + ctrl + "\n" );
 
 	// Add code here for when a key is released
+	if(key != 32){
+		return;
+	}else{
+		if(!G.isPlayable){
+			return;
+		}
+
+		// Add code here for when the mouse button/touch is released over a bead
+		G.isHolding = false;
+	}
+
+
 };
 
 // PS.input ( sensors, options )
