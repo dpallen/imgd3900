@@ -351,7 +351,7 @@ var G = {//general game logic
 		S.show_message("HOLDING");
 
 		P.object_is_hit = true;
-		A.play_beat();
+		A.play_hold();
 		J.hold_glow();
 
 	},
@@ -890,6 +890,7 @@ var P = { // sPrites
 		//P.reset_sprite();
 		PS.gridPlane(J.LAYER_OBJECT);
 		PS.gridShadow(true, PS.COLOR_RED);
+		A.pause_hold();
 		A.play_miss();
 	},
 
@@ -933,6 +934,9 @@ var P = { // sPrites
 
 var A = {//audio
 
+	// channels
+	hold_channel: 0,
+	bgm_channel: 0,
 	//sounds 
 
 	TONE_NULL: "NULL",
@@ -941,6 +945,7 @@ var A = {//audio
 	TONE_CLICK: "fx_pop",
 
 	TONE_MISS: "sfx_miss",
+	TONE_HOLD: "sfx_hold",
 
 	SONG_BGM_0: "bgm_level_0",
 	TONE_TAP_0: "sfx_hit_0",
@@ -1090,6 +1095,7 @@ var A = {//audio
 		PS.audioLoad(A.TAP_ARRAY[4], {lock:true, path: A.SOUND_PATH});
 
 		PS.audioLoad(A.TONE_MISS, {lock:true, path: A.SOUND_PATH});
+		PS.audioLoad(A.TONE_HOLD, {lock:true, path: A.SOUND_PATH});
 
 		for(var i = 0; i < A.TONES_HORIZ.length; i++){
 			PS.audioLoad(A.TONES_HORIZ[i], {lock:true, path: A.TONES_GROW_PATH});
@@ -1120,8 +1126,16 @@ var A = {//audio
 	},
 
 	play_bgm: function(){
-		PS.audioPlay(A.SONG_BGM_0, {loop: false, volume:0.25, path: A.SOUND_PATH});
+		A.bgm_channel = PS.audioPlay(A.SONG_BGM_0, {loop: false, volume:0.25, path: A.SOUND_PATH});
 		A.bgm_is_playing = true;
+	},
+
+	play_hold: function(){
+		A.hold_channel = PS.audioPlay(A.TONE_HOLD, {loop: false, volume: 0.5, path: A.SOUND_PATH});
+	},
+
+	pause_hold: function(){
+		PS.audioStop(A.hold_channel);
 	}
 	
 };
