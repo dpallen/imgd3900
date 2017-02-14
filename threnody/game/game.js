@@ -318,7 +318,7 @@ var G = {//general game logic
 	bad_click : function(){
 		PS.dbEvent( "threnody", "hit status: ", "hit at wrong time");
 		G.isOpportunity = false;
-		if(P.object_missed){
+		if(P.object_is_missed){
 			return;
 		}
 		J.error_glow();
@@ -351,7 +351,7 @@ var G = {//general game logic
 		if(!P.object_exists){
 			return;
 		}
-		if(P.object_missed){
+		if(P.object_is_missed){
 			return;
 		}
 
@@ -629,6 +629,8 @@ var J = {//juice
 
 	hold_glow: function(){
 		PS.gridShadow(true, J.COLOR_HOLD);
+		P.object_is_held = true;
+
 		J.current_object_type = "peg_hold_hit";
 		J.object_hold_counter = 0;
 		J.object_hold_rate = J.object_hold_time;
@@ -647,6 +649,7 @@ var J = {//juice
 		P.delete_object();
 		PS.gridShadow(true, PS.COLOR_RED);
 		P.object_missed = true; // we are in miss state
+
 		J.current_object_type = "peg_tap_miss";
 		J.object_miss_counter = 0;
 		J.object_miss_rate = J.object_miss_time;
@@ -674,10 +677,22 @@ var P = { // sPrites
 
 	object_exists: false, // is there an object there?
 	object_is_growing: false,
-	object_missed: false,
+	object_is_missed: false,
+	object_is_held: false,
 
 	move_x: 0,
 	move_y: 0,
+
+	reset_sprite: function(){
+
+		P.delete_object();
+
+		P.current_object = 0;
+		P.current_object_type = "nothing";
+		J.object_show_counter = "nothing";
+		P.ready_sprite = "nothing";
+
+	},
 
 	spawn_object: function(type){
 		PS.gridFade(0);
@@ -710,13 +725,13 @@ var P = { // sPrites
 			PS.imageLoad(theImage, loader);
 			J.object_is_growing = false;
 			PS.timerStop(J.object_show_timer);
+			P.reset_sprite();
 		}
 
 
 	},
 
 	hit_object_helper: function(){
-
 		var loader;
 		loader = function(data){
 			P.current_object = PS.spriteImage(data);
@@ -738,16 +753,16 @@ var P = { // sPrites
 			//theImage = "sprites/peg_tap_ready.png";
 			//PS.imageLoad(theImage, loader);
 			PS.timerStop(J.object_hit_timer);
-			P.delete_object();
+			P.reset_sprite();
 		}
 	},
 
 	hold_object_helper: function(){
-		if(!G.isHolding){
+		if(!G.isHolding || !P.object_is_held){
 			//PS.debug("HOLD OH NO");
 			PS.timerStop(J.object_hold_timer);
+			P.object_is_held = false;
 			P.hold_object_miss();
-			P.delete_object();
 		}
 		var loader;
 		loader = function(data){
@@ -770,18 +785,28 @@ var P = { // sPrites
 		if(J.object_hold_counter > J.hold_total_sprites){
 			//theImage = "sprites/peg_tap_ready.png";
 			//PS.imageLoad(theImage, loader);
-			PS.timerStop(J.object_hold_timer);
-			PS.gridShadow(true, PS.COLOR_GREEN);
-			P.delete_object();
+
+			if(P.object_is_held){
+				PS.timerStop(J.object_hold_timer);
+				P.object_is_held = false;
+				PS.gridShadow(true, PS.COLOR_GREEN);
+				P.reset_sprite();
+			}
 		}
 	},
 
 	hold_object_miss: function(){
+
+		P.reset_sprite();
 		PS.gridPlane(J.LAYER_OBJECT);
 		PS.gridShadow(true, PS.COLOR_RED);
 	},
 
 	miss_object_helper: function(){
+		if(!P.object_is_missed){
+			PS.timerStop(J.object_miss_timer);
+			P.reset_sprite();
+		}
 
 		var loader;
 		loader = function(data){
@@ -804,8 +829,8 @@ var P = { // sPrites
 			//theImage = "sprites/peg_tap_ready.png";
 			//PS.imageLoad(theImage, loader);
 			PS.timerStop(J.object_miss_timer);
-			P.object_missed = false;
-			P.delete_object();
+			P.object_is_missed = false;
+			P.reset_sprite();
 		}
 	},
 
@@ -830,6 +855,12 @@ var A = {//audio
 	TONE_CLICK: "fx_pop",
 
 	SONG_BGM_0: "bgm_level_0",
+	TONE_TAP_0: "sfx_hit_0",
+	TONE_TAP_1: "sfx_hit_1",
+	TONE_TAP_2: "sfx_hit_2",
+	TONE_TAP_3: "sfx_hit_3",
+	TONE_TAP_4: "sfx_hit_4",
+
 	SOUND_PATH: "audio/",
 
 
@@ -851,7 +882,7 @@ var A = {//audio
 		switch(G.actionType){
 			case L.ACT_FADE_IN_TAP:
 				var rando = PS.random(A.TAP_ARRAY.length-1); // generate from 1 to max
-				PS.audioPlay(A.TAP_ARRAY[rando], {path: A.SOUND_PATH});
+				PS.audioPlay(A.TAP_ARRAY[rando], {volume: 0.5, path: A.SOUND_PATH});
 				break;
 		}
 		//PS.audioPlay(A.TONES[L.ACT_CLICK]);
@@ -869,6 +900,13 @@ var A = {//audio
 		A.TONES[L.ACT_FADE_IN_DRAG_MtoUB] = A.TONE_FADE_IN;
 
 
+		A.TAP_ARRAY[0] = A.TONE_TAP_0;
+		A.TAP_ARRAY[1] = A.TONE_TAP_1;
+		A.TAP_ARRAY[2] = A.TONE_TAP_2;
+		A.TAP_ARRAY[3] = A.TONE_TAP_3;
+		A.TAP_ARRAY[4] = A.TONE_TAP_4;
+
+
 		A.TONES[L.ACT_FADE_OUT] = A.TONE_FADE_OUT;
 		A.TONES[L.ACT_CLICK] = A.TONE_CLICK;
 
@@ -879,10 +917,16 @@ var A = {//audio
 		}
 
 		PS.audioLoad(A.SONG_BGM_0, {lock:true, path: A.SOUND_PATH});
+		PS.audioLoad(A.TAP_ARRAY[0], {lock:true, path: A.SOUND_PATH});
+		PS.audioLoad(A.TAP_ARRAY[1], {lock:true, path: A.SOUND_PATH});
+		PS.audioLoad(A.TAP_ARRAY[2], {lock:true, path: A.SOUND_PATH});
+		PS.audioLoad(A.TAP_ARRAY[3], {lock:true, path: A.SOUND_PATH});
+		PS.audioLoad(A.TAP_ARRAY[4], {lock:true, path: A.SOUND_PATH});
+
 	},
 
 	play_bgm: function(){
-		PS.audioPlay(A.SONG_BGM_0, {volume:0.5, path: A.SOUND_PATH});
+		//PS.audioPlay(A.SONG_BGM_0, {volume:0.25, path: A.SOUND_PATH});
 	}
 	
 };
