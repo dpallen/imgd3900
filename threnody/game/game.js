@@ -921,7 +921,7 @@ var A = {//audio
 		//these things don't have sounds.  if they 
 		if(A.TONES[tone] !== "NULL"){
 			//PS.debug("why");
-			PS.audioPlay(A.TONES[tone]);
+			//PS.audioPlay(A.TONES[tone]);
 		}	
 	},
 
