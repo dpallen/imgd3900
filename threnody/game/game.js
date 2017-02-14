@@ -62,7 +62,7 @@ var G = {//general game logic
 	actionType: 0, // 1 for tap, 2 for hold, [amount] for direction
 
 	insanityLevel: 0,
-	wiggleRoom: 5,
+	wiggleRoom: 15,
 
 	init_measure : function() {
 		
@@ -478,7 +478,67 @@ var L = {//level or chapter logic
 			[
 				[1, 0,0,0,0,0, 10, 0,0,9,0,0, 1, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
 			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-				]
+				],
+			[
+				[2, 0,0,0,0,0, 10, 0,0,9,0,0, 1, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[2, 0,0,0,0,0, 10, 0,0,9,0,0, 1, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[1, 0,0,0,0,0, 10, 0,0,9,0,0, 1, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[1, 0,0,0,0,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[1, 0,10,9,2,0, 10, 0,0,9,0,0, 1, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[2, 0,0,10,0,9, 1, 0,0,10,0,9, 1, 0,0,10,0,9, 2, 0,0,10,0,9]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[2, 0,0,0,0,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[2, 0,0,0,0,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[2, 0,0,0,0,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[2, 0,0,0,0,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[2, 0,0,0,0,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[2, 0,0,0,0,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[2, 0,0,0,0,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[2, 0,0,0,0,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[1, 0,10,9,1,0, 10, 0,0,9,0,0, 1, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			]
 				
 		];
 		//The next two lines will go into a generic 'level load' function once we write it
@@ -1177,7 +1237,7 @@ PS.init = function( system, options ) {
 	//G.spawn_object_tap(15);
 
 	//SET TO TRUE BFORE WE'RE DONE
-	PS.dbInit( "threnody", { login : false } );
+	PS.dbInit( "threnody", { login : true } );
 
 	//G.start_global_timer();
 

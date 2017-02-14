@@ -1,6 +1,6 @@
 // game.js for Perlenspiel 3.2
 
-var A = { //audio
+var A = { //audioTOAD_PATH: "http://users.wpi.edu/~hjwheelermackta/Frauds/Frosch%20Spiel/froggame/",	//TODO INTEGRATE
 	SHINE_PATH: "http://users.wpi.edu/~hjwheelermackta/Frauds/Frosch%20Spiel/froggame/" ,
 
 	TOAD_PATH: "http://users.wpi.edu/~hjwheelermackta/Frauds/Frosch%20Spiel/froggame/",	//TODO INTEGRATE
@@ -351,6 +351,7 @@ var S = {
 
 		PS.imageLoad("menu_button_0.png", loader);
 	},
+
 	place_frog : function(){
 
 		loader = function (data) {
