@@ -364,33 +364,6 @@ var G = {//general game logic
 		G.insanityLevel++;
 	},
 
-	complete_chapter : function(){
-		PS.dbEvent( "threnody", "chapter complete", true);
-	},
-
-	start_chapter : function(number){
-		switch(number){
-			case "one":
-				PS.dbEvent( "threnody", "chapter one begun", true);
-				break;
-			case "two":
-				PS.dbEvent( "threnody", "chapter two begun", true);
-				break;
-			case "three":
-				PS.dbEvent( "threnody", "chapter three begun", true);
-				break;
-		}
-
-	},
-
-	end_game : function(){
-
-		PS.dbEvent( "threnody", "endgame", true );
-
-		// Email the database and discard it
-
-		PS.dbSend( "threnody", "dpallen", { discard : true } );
-	},
 };
 
 var L = {//level or chapter logic
@@ -503,9 +476,82 @@ var L = {//level or chapter logic
 	}
 };
 
-var S = { // status line
+var S = { // status line and chapter control
+	welcome_array: [],
+	welcome_timer: 0,
+	welcome_rate: 30,
+	welcome_counter: 0,
+	welcome_text_counter: 0,
 
-	};
+	populate_welcome_array: function(){
+		S.welcome_array[0] = "July 16, 1923";
+		S.welcome_array[1] = "Exham Priory, England";
+		S.welcome_array[2] = "I am a Delapore";
+		S.welcome_array[3] = "This is my estate";
+
+	},
+	welcome_statement: function(){
+		PS.statusColor(PS.COLOR_BLACK);
+		PS.statusFade(5);
+		S.welcome_timer = PS.timerStart(S.welcome_rate, S.welcome_statement_helper);
+	},
+	welcome_statement_helper: function(){
+		if(S.welcome_counter%2 == 0){ // every other should be a message update
+			if(!A.bgm_is_playing){
+				A.play_bgm();
+			}
+			PS.statusColor(PS.COLOR_WHITE);
+
+			PS.statusText(S.welcome_array[S.welcome_text_counter]);
+			S.welcome_text_counter++;
+
+		}else{
+			PS.statusColor(PS.COLOR_BLACK);
+		}
+
+		P.welcome_counter++;
+		if(S.welcome_text_counter > S.welcome_array.length && S.welcome_counter % 2 === 0){
+			//PS.debug("stopping");
+			PS.statusColor(PS.COLOR_BLACK);
+			//PS.statusFade(0);
+			//PS.statusText("MEME");
+			//PS.statusColor(PS.COLOR_WHITE);
+			PS.timerStop(S.welcome_timer);
+			S.start_chapter("one");
+		}
+	},
+
+	complete_chapter : function(){
+		PS.dbEvent( "threnody", "chapter complete", true);
+	},
+
+	start_chapter : function(number){
+		switch(number){
+			case "one":
+				PS.dbEvent( "threnody", "chapter one begun", true);
+				PS.statusColor(PS.COLOR_WHITE);
+				PS.statusText("CHAPTER ONE");
+				G.start_global_timer();
+				break;
+			case "two":
+				PS.dbEvent( "threnody", "chapter two begun", true);
+				break;
+			case "three":
+				PS.dbEvent( "threnody", "chapter three begun", true);
+				break;
+		}
+
+	},
+
+	end_game : function(){
+
+		PS.dbEvent( "threnody", "endgame", true );
+
+		// Email the database and discard it
+
+		PS.dbSend( "threnody", "dpallen", { discard : true } );
+	},
+};
 
 var J = {//juice
 	COLOR_BACKGROUND: PS.COLOR_BLACK,
@@ -867,6 +913,8 @@ var A = {//audio
 	TONES: [],
 	TAP_ARRAY: [],
 
+	bgm_is_playing: false,
+
 	play_beat: function(){
 		var tone = L.level[G.measure_counter][L.INDEX_LOGIC][G.logic_counter];
 
@@ -922,11 +970,11 @@ var A = {//audio
 		PS.audioLoad(A.TAP_ARRAY[2], {lock:true, path: A.SOUND_PATH});
 		PS.audioLoad(A.TAP_ARRAY[3], {lock:true, path: A.SOUND_PATH});
 		PS.audioLoad(A.TAP_ARRAY[4], {lock:true, path: A.SOUND_PATH});
-
 	},
 
 	play_bgm: function(){
-		//PS.audioPlay(A.SONG_BGM_0, {volume:0.25, path: A.SOUND_PATH});
+		PS.audioPlay(A.SONG_BGM_0, {volume:0.25, path: A.SOUND_PATH});
+		A.bgm_is_playing = true;
 	}
 	
 };
@@ -963,6 +1011,7 @@ PS.init = function( system, options ) {
 	
 	G.init_measure();
 	L.one();
+	S.populate_welcome_array();
 
 	//G.spawn_object_tap(15);
 
@@ -993,10 +1042,11 @@ PS.touch = function( x, y, data, options ) {
 	G.isHolding = true;
 
 	if(!G.isRhythmBegun){
-		PS.statusText("THE PLACEHOLDER SOUNDS");
-		PS.statusColor(PS.COLOR_WHITE);
-		A.play_bgm();
-		G.start_global_timer();
+		//PS.statusText("THE PLACEHOLDER SOUNDS");
+		//PS.statusColor(PS.COLOR_WHITE);
+		//A.play_bgm();
+		//G.start_global_timer();
+		S.welcome_statement();
 	}else{
 		if(G.isOnPeg(x, y)){
 			G.click();
