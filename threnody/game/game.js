@@ -191,8 +191,11 @@ var G = {//general game logic
 
 			if(G.measure_counter >= (L.max_measures)){
 				// set measure counter back to 0
-				G.measure_counter = 0;
-				//PS.timerStop(G.global_timer);
+				//G.measure_counter = 0;
+				PS.timerStop(G.global_timer);
+
+				// game over
+				S.end_game();
 			}
 		}
 
@@ -560,6 +563,8 @@ var S = { // status line and chapter control
 
 	end_game : function(){
 
+		S.show_message("DEMO OVER");
+
 		PS.dbEvent( "threnody", "endgame", true );
 
 		// Email the database and discard it
@@ -922,7 +927,7 @@ var A = {//audio
 	TONE_FADE_OUT: "NULL",
 	TONE_CLICK: "fx_pop",
 
-	SONG_BGM_0: "bgm_level_0",
+	SONG_BGM_0: "bgm_level_0_drum",
 	TONE_TAP_0: "sfx_hit_0",
 	TONE_TAP_1: "sfx_hit_1",
 	TONE_TAP_2: "sfx_hit_2",
