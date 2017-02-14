@@ -441,22 +441,22 @@ var L = {//level or chapter logic
 			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 				],
 			[
-				[1, 0,0,0,0,0, 0, 0,0,10,0,0, 9, 0,0,1,0,0, 10, 0,0,9,0,0]  //logic
+				[2, 0,0,0,0,0, 0, 0,0,10,0,0, 9, 0,0,2,0,0, 10, 0,0,9,0,0]  //logic
 			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 				],
 				
 			[
-				[1, 0,0,10,0,9, 1, 0,0,10,0,9, 1, 0,0,10,0,9, 1, 0,0,10,0,9]  //logic
+				[1, 0,0,10,0,9, 2, 0,0,10,0,9, 1, 0,0,10,0,9, 2, 0,0,10,0,9]  //logic
 			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 				],
 
 			[
-				[1, 0,0,0,0,0, 10, 0,0,9,0,0, 1, 0,0,0,0,0, 10, 0,0,9,0,0] //logic
+				[1, 0,0,0,0,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0] //logic
 			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 				],
 
 			[
-				[1, 0,10,9,1,0, 10, 0,0,9,0,0, 1, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+				[1, 0,10,9,1,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
 			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 				],
 
@@ -466,7 +466,7 @@ var L = {//level or chapter logic
 				],
 
 			[
-				[1, 0,10,9,1,0, 10, 0,0,9,0,0, 1, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+				[1, 0,10,9,1,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
 			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 				],
 
@@ -872,10 +872,12 @@ var P = { // sPrites
 		if(J.object_hold_counter > J.hold_total_sprites){
 			//theImage = "sprites/peg_tap_ready.png";
 			//PS.imageLoad(theImage, loader);
+			if(P.object_is_held) {
 				PS.timerStop(J.object_hold_timer);
 				P.object_is_held = false;
 				PS.gridShadow(true, PS.COLOR_GREEN);
-				P.reset_sprite();
+				//P.reset_sprite();
+			}
 		}
 	},
 
@@ -888,6 +890,7 @@ var P = { // sPrites
 		//P.reset_sprite();
 		PS.gridPlane(J.LAYER_OBJECT);
 		PS.gridShadow(true, PS.COLOR_RED);
+		A.play_miss();
 	},
 
 	miss_object_helper: function(){
@@ -939,7 +942,7 @@ var A = {//audio
 
 	TONE_MISS: "sfx_miss",
 
-	SONG_BGM_0: "bgm_level_0_drum",
+	SONG_BGM_0: "bgm_level_0",
 	TONE_TAP_0: "sfx_hit_0",
 	TONE_TAP_1: "sfx_hit_1",
 	TONE_TAP_2: "sfx_hit_2",
