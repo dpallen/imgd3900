@@ -42,12 +42,15 @@ var G = {//general game logic
 	
 	//beats
 	// tick counter divided by the timing variables will trigger the playing of a note
-	tick_per_measure: 240,
+	// viable values: 48 | 96 | 144 | 192 | 240 | 288 | 336 | 384 | 432 | 480
+	tick_per_measure: 240,// 240, 60 bpm
+	tempo_array: [],
 
 	timing_quarter: 0, 
 	timing_sixteenth: 0,
 	timing_triplet: 0,
 
+	testcounter: 0,
 	counter: 0, //current tick
 	measure_counter: 0, //current measure
 	logic_counter: 0, //current index in logic array
@@ -59,10 +62,28 @@ var G = {//general game logic
 	isOpportunity: false, // if true, clicking is good!
 	isRhythmBegun: false, // has the rhythm begun?
 	isHolding: false, // are we holding?
+	isDragging: false, // are we dragging?
 	actionType: 0, // 1 for tap, 2 for hold, [amount] for direction
 
+	currentDragX: 0,
+	currentDragY: 0,
+	dragXThreshold: 26,
+	dragYThreshold: 5,
+
+	dragUp: false,
+	dragLeft: false,
+	dragRight: false,
+	dangerDirection: 0, // can be 0 for nothing, 1 for is left, 2 for up, 3 for right
+
 	insanityLevel: 0,
+	tempoLevel: 0,
+	insanityTimer: 0,
+	insanityRate: 200, // rate for modulating insanity
 	wiggleRoom: 15,
+
+	successfulTap: false,
+	successfulHold: false,
+	successfulDrag: false,
 
 	init_measure : function() {
 		
@@ -99,6 +120,13 @@ var G = {//general game logic
 	},
 
 	//calculate at what tick possible inputs happen
+	populate_tempo_array : function(){
+		G.tempo_array[0] = 240;
+		G.tempo_array[1] = 192 ;
+		G.tempo_array[2] = 144;
+		G.tempo_array[3] = 96;
+	},
+
 	populate_distance : function(){
 		G.logic_timings[0] = G.tick_per_measure;
 		G.logic_timings[1] = G.tick_per_measure - G.timing_sixteenth;
@@ -144,14 +172,14 @@ var G = {//general game logic
 			}
 		}
 		//number of ticks between
-
-		//PS.debug("\n" + measure +"\n");
-		//PS.debug(G.measure_counter +"\n");
-		//PS.debug(G.tick_per_measure +"\n");
-		//PS.debug(G.counter +"\n");
-		//PS.debug(new_index);
-		//PS.debug(G.logic_timings[new_index] +"\n");
-
+/*
+		PS.debug("\n" + measure +"\n");
+		PS.debug(G.measure_counter +"\n");
+		PS.debug(G.tick_per_measure +"\n");
+		PS.debug(G.counter +"\n");
+		PS.debug(new_index);
+		PS.debug(G.logic_timings[new_index] +"\n");
+*/
 		var delta = ((measure - G.measure_counter) * G.tick_per_measure) + G.counter - (G.logic_timings[new_index]);
 
 		return delta; 
@@ -159,6 +187,7 @@ var G = {//general game logic
 	},
 
 	tick : function () { // the big global tick
+		G.testcounter++;
 		
 		// Call if eligible for prompt, 1 = start fadein, 2 = clear because miss, 3 = open opportunity
 		if((G.counter % G.timing_triplet === 0) || (G.counter % G.timing_sixteenth === 0)){
@@ -187,6 +216,17 @@ var G = {//general game logic
 			G.counter = G.tick_per_measure;
 
 			G.measure_counter += 1;
+			/* DO LOGIC FOR MESSAGE SHOWING */
+			//24, 18, 12, 6
+			if((G.measure_counter == 6)||
+				(G.measure_counter == 12)||
+				(G.measure_counter == 18)||
+				(G.measure_counter == 24)){
+				S.load_message();
+			}
+
+
+
 			G.logic_counter = 0;
 
 			if(G.measure_counter >= (L.max_measures)){
@@ -195,7 +235,7 @@ var G = {//general game logic
 				PS.timerStop(G.global_timer);
 
 				// game over
-				S.end_game();
+				S.complete_chapter();
 			}
 		}
 
@@ -205,6 +245,12 @@ var G = {//general game logic
 		G.isRhythmBegun = true;
 		G.isPlayable = true;
 		G.global_timer = PS.timerStart(G.global_rate, G.tick);
+	},
+
+	stop_global_timer : function(){
+		G.isRhythmBegun = false;
+		G.isPlayable = false;
+		PS.timerStop(G.global_timer);
 	},
 
 	//1 = start fadein, 2 = clear because miss, 3 = open opportunity
@@ -220,23 +266,17 @@ var G = {//general game logic
 				L.actionType = L.ACT_FADE_IN_HOLD;
 				G.spawn_object_hold();
 				break;
-			case L.ACT_FADE_IN_DRAG_MtoB:
-				break;
-			case L.ACT_FADE_IN_DRAG_MtoL: // clear because miss
-				break;
-			case L.ACT_FADE_IN_DRAG_MtoLR: // open opportunity
-				break;
-			case L.ACT_FADE_IN_DRAG_MtoR:
-				break;
-			case L.ACT_FADE_IN_DRAG_MtoU:
-				break;
-			case L.ACT_FADE_IN_DRAG_MtoUB:
+			case L.ACT_FADE_IN_DRAG:
+				G.isOpportunity = true;
+				L.actionType = L.ACT_FADE_IN_DRAG;
+				G.spawn_object_drag();
 				break;
 			case L.ACT_CLICK: // open opportunity
+				//PS.statusText(G.testcounter);
 				G.last_logic_activity = G.counter;
 				break;
 			case L.ACT_FADE_OUT: // clear because miss
-				PS.statusText("");
+				//PS.statusText("");
 				G.miss_object();
 				break;
 
@@ -247,29 +287,54 @@ var G = {//general game logic
 		G.actionType = L.ACT_FADE_IN_TAP;
 		P.object_is_hit = false;
 		P.SPRITE_LOCATION = "sprites/tap_shrink/";
-		S.show_message("GET READY TO TAP");
+		//S.show_message("GET READY TO TAP");
+		if(!G.successfulTap){
+			S.message_fade = 25;
+			S.show_message("Tap with the rhythm");
+		}
+
+		J.object_show_counter = 15; // default???
 		P.spawn_object("peg_tap_shrink");
 	},
 
 	spawn_object_drag : function() { // creates a drag object
+		G.actionType = L.ACT_FADE_IN_DRAG;
 
+		G.dangerDirection = PS.random(3); // 1 to 3
+		J.show_danger_direction();
+		P.object_is_hit = false;
+		P.SPRITE_LOCATION = "sprites/drag_shrink/";
+		if(!G.successfulDrag){
+			S.show_message("Drag in a direction");
+		}
+
+		J.object_show_counter = 14; // default???
+		P.spawn_object("drag_shrink");
 	},
 
 	spawn_object_hold : function() {
 		G.actionType = L.ACT_FADE_IN_HOLD;
 		P.object_is_hit = false;
 		P.SPRITE_LOCATION = "sprites/hold_shrink/";
-		S.show_message("GET READY TO HOLD");
+		if(!G.successfulDrag){
+			S.show_message("Hold on to it");
+		}
+
+		J.object_show_counter = 15; // default???
 		P.spawn_object("hold_shrink");
 	},
 
 	is_wiggle_room : function(){
-		G.wiggleRoom = 10; // set waggle room
+		if(P.drag_exists){
+			G.wiggleRoom = 50;
+		}else{
+			G.wiggleRoom = 25; // set waggle room
+		}
 
 		var last_good = G.last_logic_activity;
 		var next_good = G.counter - G.calc_tick_distance(L.ACT_CLICK);
-		var dif_last = last_good - G.counter;
-		var dif_next = G.counter - next_good;
+		var dif_last = last_good - G.counter; // this is if our goal was slightly before us
+		var dif_next = G.counter - next_good; // this is if our goal is slightly ahead of us
 
 
 		var is_close_to_last = false;
@@ -301,12 +366,17 @@ var G = {//general game logic
 		}
 
 		if(G.is_wiggle_room()){
+
 			// what kind of interaction?
 			if(G.actionType == L.ACT_FADE_IN_TAP){
 				G.hit_object();
 			}
 			if(G.actionType == L.ACT_FADE_IN_HOLD){
 				G.hold_object();
+			}
+			if(G.actionType == L.ACT_FADE_IN_DRAG){
+				//PS.debug("dragging");
+				G.start_drag();
 			}
 
 		}else{
@@ -339,21 +409,164 @@ var G = {//general game logic
 		P.object_is_hit = true;
 
 		PS.dbEvent( "threnody", "hit status: ", "hit");
-		S.show_message("HIT");
+		//S.show_message("HIT");
 
 		A.play_action_sound();
 		J.hit_glow();
+		G.successfulTap = true;
 		//P.delete_object();
 	},
 
 	hold_object : function(){
 		PS.dbEvent( "threnody", "hit status: ", "hold start");
-		S.show_message("HOLDING");
+		//S.show_message("HOLDING");
 
 		P.object_is_hit = true;
 		A.play_hold();
 		J.hold_glow();
 
+	},
+
+	start_drag: function(){
+		PS.dbEvent( "threnody", "hit status: ", "drag start");
+		//S.show_message("DRAGGING");
+
+		P.object_is_hit = true;
+		G.isDragging = true; // is this actually the same thing?
+		/**TODO: AUDIO FOR DRAG START **/
+		//P.place_drag_peg();
+	},
+
+	stop_drag: function(){
+		PS.dbEvent( "threnody", "his status: ", "drag release");
+		//S.show_message("DRAG STOP");
+		G.isOpportunity = false;
+
+		P.remove_drag_peg();
+		J.error_glow();
+		G.increase_insanity();
+
+	},
+
+	drag: function(x, y){
+
+		if(!G.dragUp && !G.dragLeft && !G.dragRight){
+			G.get_drag_direction(x, y);
+		}
+
+		//G.dragUp = true;
+
+
+		var real = false;
+
+		if(G.dragLeft){ // X should be going down and we are going left
+			if(x < G.currentDragX){
+				// update the current drag X
+				G.currentDragX = x;
+				G.currentDragY = 16;
+				real = true;
+			}
+		}
+
+		if(G.dragRight){ // X should be going up
+			//PS.debug("RIGHT!");
+			if(x > G.currentDragX){
+				// update the current drag X
+				G.currentDragX = x;
+				G.currentDragY = 16;
+				real = true;
+			}
+		}
+
+		if(G.dragUp){ // Y should be going down
+			//PS.debug(G.currentDragX + "\n");
+			if(y < G.currentDragY){
+				// update the y
+				G.currentDragY = y;
+				G.currentDragX = 16;
+				real = true;
+			}
+		}
+
+		if(real){
+			/**TODO: AUDIOOOO **/
+
+			
+		}
+		P.update_drag_peg(G.currentDragX, G.currentDragY);
+
+
+
+
+		// if current drag X is equal to a certain threshold, we've done it boys
+
+		if(G.check_drag_completion()){
+			G.isDragging = false;
+			if(G.dragLeft){
+				//S.show_message("You ventured left");
+				if(G.dangerDirection == 1){
+					J.COLOR_VICTORY = J.COLOR_INSANITY;
+					//G.iterateTempo();
+				}else{
+					J.COLOR_VICTORY = J.COLOR_BACKGROUND_GLOW;
+				}
+			}
+			if(G.dragUp){
+				//S.show_message("You stayed the course");
+				if(G.dangerDirection == 2){
+					J.COLOR_VICTORY = J.COLOR_INSANITY;
+					//G.iterateTempo();
+				}else{
+					J.COLOR_VICTORY = J.COLOR_BACKGROUND_GLOW;
+				}
+			}
+			if(G.dragRight){
+				//S.show_message("You ventured right");
+				if(G.dangerDirection == 3){
+					J.COLOR_VICTORY = J.COLOR_INSANITY;
+					//G.iterateTempo();
+				}else{
+					J.COLOR_VICTORY = J.COLOR_BACKGROUND_GLOW;
+				}
+			}
+			J.drag_success_glow();
+		}
+
+
+	},
+
+	check_drag_completion: function(){
+		if(G.dragUp && G.currentDragY <= G.dragYThreshold){
+			return true;
+		}
+
+		if(G.dragLeft && G.currentDragX <= G.dragYThreshold){
+			return true;
+		}
+
+		if(G.dragRight && G.currentDragX >= G.dragXThreshold){
+			return true;
+		}
+
+		return false;
+
+	},
+
+	get_drag_direction: function(x, y){
+		if(y < G.currentDragY){
+			//PS.debug("GOING UP!!!");
+			G.dragUp = true;
+		}else {
+			if(x < G.currentDragX){
+				//PS.debug("GOING LEFT!!!");
+				G.dragLeft = true;
+			}else{
+				if(x > G.currentDragX){
+					//PS.debug("GOING RIGHT!!!");
+					G.dragRight = true;
+				}
+			}
+		}
 	},
 
 	miss_object : function(){
@@ -367,13 +580,22 @@ var G = {//general game logic
 		}
 
 		J.error_glow();
-		J.hide_object();
+		if(P.drag_exists){
+			P.remove_drag_peg();
+		}
 		G.increase_insanity();
 	},
 
 	increase_insanity : function(){
+		if(G.insanityLevel == 0){
+			J.start_insanity_timer();
+		}else{
+			if(G.insanityLevel %10 == 0){ // every 10 messups...
+				//J.globalFadeRate += 5;
+			}
+		}
 		G.insanityLevel++;
-	},
+	}
 
 };
 
@@ -382,12 +604,13 @@ var L = {//level or chapter logic
 	ACT_NULL: 0,
 	ACT_FADE_IN_TAP: 1, // was 1 originally
 	ACT_FADE_IN_HOLD: 2,
-	ACT_FADE_IN_DRAG_MtoL: 3,
-	ACT_FADE_IN_DRAG_MtoR: 4,
-	ACT_FADE_IN_DRAG_MtoLR: 5,
-	ACT_FADE_IN_DRAG_MtoU: 6,
-	ACT_FADE_IN_DRAG_MtoB: 7,
-	ACT_FADE_IN_DRAG_MtoUB: 8,
+	ACT_FADE_IN_DRAG: 3,
+	ACT_FADE_IN_DRAG_MtoL: 3, // deprecated
+	ACT_FADE_IN_DRAG_MtoR: 4, // deprecated
+	ACT_FADE_IN_DRAG_MtoLR: 5, // deprecated
+	ACT_FADE_IN_DRAG_MtoU: 6, // deprecated
+	ACT_FADE_IN_DRAG_MtoB: 7, // deprecated
+	ACT_FADE_IN_DRAG_MtoUB: 8, // deprecated
 	ACT_FADE_OUT: 9, // was 2 originally
 	ACT_CLICK: 10, // was 3 originally
 
@@ -398,83 +621,71 @@ var L = {//level or chapter logic
 	level: [],
 	max_measures: 0,
 
+	// each level is 24 tracks long
 	one : function() {
 
 		L.level = [
 			[
+				[1, 0,0,0,0,0, 10, 0,0,0,0,0, 0, 0,0,0,0,0, 0, 0,0,0,0,9]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+				],
+			[
 				[1, 0,0,0,0,0, 10, 0,0,9,0,0, 1, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-				],
-
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
 			[
+
 				[1, 0,0,0,0,0, 10, 0,0,9,0,0, 1, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-				],
-
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
 			[
-				
-				[2, 0,0,0,0,0, 10, 0,0,9,0,0, 0, 0,0,2,0,0, 10, 0,0,9,0,0] //logic
+				[1, 0,0,10,0,0, 9, 0,0,0,0,0, 1, 0,0,10,0,0, 9, 0,0,0,0,0]  //logic
 			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 				],
 			[
-				[2, 0,0,0,0,0, 10, 0,0,9,0,0, 0, 0,0,1,0,0, 10, 0,0,9,0,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-				],
-
-			[
-				[0, 0,0,1,0,0, 10, 0,0,9,0,0, 0, 0,0,2,0,0, 10, 0,0,9,0,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-				],
-				
-			[
-				[0, 0,0,2,0,0, 10, 0,0,9,0,0, 0, 0,0,1,0,0, 10, 0,0,9,0,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-				],
-
-			[
-				[1, 0,0,0,0,0, 0, 0,0,10,0,0, 9, 0,0,1,0,0, 10, 0,0,9,0,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-				],
-				
-			[
-				[1, 0,0,10,0,9, 1, 0,0,10,0,9, 1, 0,0,10,0,9, 1, 0,0,10,0,9]  //logic
+				[0, 0,0,1,0,0, 10, 0,0,9,0,0, 0, 0,0,1,0,0, 10, 0,0,9,0,0]  //logic
 			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 				],
 			[
-				[2, 0,0,0,0,0, 0, 0,0,10,0,0, 9, 0,0,2,0,0, 10, 0,0,9,0,0]  //logic
+				[2, 0,0,0,0,0, 10, 0,0,0,0,0, 9, 0,0,0,0,0, 0, 0,0,0,0,0]  //logic
 			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 				],
-				
+			[
+				[2, 0,0,0,0,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+				],
+			[
+				[2, 0,0,10,0,9, 2, 0,0,10,0,9, 2, 0,0,10,0,9, 2, 0,0,10,0,9]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+				],
+			[
+				[1, 0,0,0,0,0, 0, 0,0,10,0,0, 9, 0,0,2,0,0, 10, 0,0,9,0,0]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+				],
 			[
 				[1, 0,0,10,0,9, 2, 0,0,10,0,9, 1, 0,0,10,0,9, 2, 0,0,10,0,9]  //logic
 			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 				],
-
 			[
 				[1, 0,0,0,0,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0] //logic
 			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 				],
-
 			[
 				[1, 0,10,9,1,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
 			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 				],
-
 			[
-				[1, 0,0,0,0,0, 10, 0,0,9,0,0, 1, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+				[2, 0,0,0,0,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
 			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 				],
-
 			[
 				[1, 0,10,9,1,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
 			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 				],
-
 			[
-				[1, 0,0,0,0,0, 10, 0,0,9,0,0, 1, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+				[2, 0,0,0,0,0, 10, 0,0,9,0,2, 0, 10,0,9,0,0, 0, 0,0,0,0,0]  //logic
 			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 				],
-
 			[
 				[1, 0,0,0,0,0, 10, 0,0,9,0,0, 1, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
 			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
@@ -500,18 +711,18 @@ var L = {//level or chapter logic
 				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 			],
 			[
-				[2, 0,0,10,0,9, 1, 0,0,10,0,9, 1, 0,0,10,0,9, 2, 0,0,10,0,9]  //logic
+				[1, 0,0,10,0,9, 1, 0,0,10,0,9, 2, 0,0,10,0,9, 2, 0,0,10,0,9]  //logic
 				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 			],
 			[
-				[2, 0,0,0,0,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+				[2, 0,0,0,0,0, 10, 0,0,9,0,0, 1, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
 				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 			],
 			[
-				[2, 0,0,0,0,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+				[1, 0,0,0,0,0, 10, 0,0,9,0,0, 0, 0,0,0,0,0, 0, 0,0,0,0,0]  //logic
 				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 			],
-			[
+			/*[
 				[2, 0,0,0,0,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
 				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 			],
@@ -538,8 +749,142 @@ var L = {//level or chapter logic
 			[
 				[1, 0,10,9,1,0, 10, 0,0,9,0,0, 1, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
 				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			]
+			]*/
 				
+		];
+		//The next two lines will go into a generic 'level load' function once we write it
+		G.measure_counter = 0;
+		L.max_measures = L.level.length;
+	},
+	two : function() {
+
+		L.level = [
+			[
+				[1, 0,0,0,0,0, 10, 0,0,0,0,9, 1, 0,0,0,0,0, 10, 0,0,0,0,9]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[2, 0,0,0,0,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+
+				[1, 0,0,0,0,0, 10, 0,0,0,0,0, 0, 0,0,0,0,0, 0, 0,0,0,0,9]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[1, 0,0,0,0,0, 0, 0,0,0,0,0, 0, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[0, 0,0,2,0,0, 10, 0,0,9,0,0, 0, 0,0,1,0,0, 10, 0,0,9,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[2, 0,0,0,0,0, 10, 0,0,9,0,0, 1, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[1, 0,0,0,0,0, 0, 0,0,10,0,0, 9, 0,0,1,0,0, 10, 0,0,9,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[3, 0,0,0,0,0, 10, 0,0,0,0,0, 0, 0,0,0,0,0, 0, 0,0,0,0,9]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[3, 0,0,0,0,0, 10, 0,0,0,0,0, 0, 0,0,0,0,0, 0, 0,0,0,0,9]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[2, 0,0,10,0,9, 1, 0,0,10,0,9, 2, 0,0,10,0,9, 2, 0,0,10,0,9]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[1, 0,10,9,1,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[0, 1,10,9,1,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[1, 10,9,1,10,9, 1, 10,9,1,10,9, 1, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[2, 0,10,9,2,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[3, 0,0,0,0,0, 10, 0,0,9,0,0, 1, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[1, 0,0,0,0,0, 10, 0,0,9,0,0, 1, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[2, 0,0,0,0,0, 10, 0,0,9,0,0, 3, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[2, 0,0,0,0,0, 10, 0,0,9,0,0, 1, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[1, 0,0,0,0,0, 10, 0,0,9,0,0, 1, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[1, 0,0,0,0,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[1, 0,10,9,2,0, 10, 0,0,9,0,0, 3, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[2, 0,0,10,0,9, 1, 0,0,10,0,9, 1, 0,0,10,0,9, 2, 0,0,10,0,9]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[2, 0,0,0,0,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[1, 0,0,0,0,0, 0, 0,0,0,0,0, 0, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			/*[
+			 [2, 0,0,0,0,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+			 //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			 ],
+			 [
+			 [2, 0,0,0,0,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+			 //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			 ],
+			 [
+			 [2, 0,0,0,0,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+			 //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			 ],
+			 [
+			 [2, 0,0,0,0,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+			 //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			 ],
+			 [
+			 [2, 0,0,0,0,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+			 //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			 ],
+			 [
+			 [2, 0,0,0,0,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+			 //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			 ],
+			 [
+			 [1, 0,10,9,1,0, 10, 0,0,9,0,0, 1, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+			 //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			 ]*/
+
 		];
 		//The next two lines will go into a generic 'level load' function once we write it
 		G.measure_counter = 0;
@@ -549,38 +894,125 @@ var L = {//level or chapter logic
 
 var S = { // status line and chapter control
 	welcome_array: [],
+	chapter_one_array: [],
+	chapter_two_welcome_array: [],
+	chapter_two_array: [],
+	chapter_three_welcome_array:[],
+	chapter_three_array: [],
+	chapter_four_welcome_array:[],
+	chapter_four_array:[],
+
 	welcome_timer: 0,
 	welcome_rate: 14.5,
 	welcome_counter: 0,
 	welcome_text_counter: 0,
 
+	current_chapter: 1,
+
+	message_timer: 0,
+	message_rate: 40,
+	message_timer_exists: false,
+	message_counter: 0,
+	message_fade : 200,
+
+	time_until_next_chapter: 250,
+	next_chapter_timer: 0,
+
 	show_message: function(text){
+		PS.statusColor(PS.COLOR_BLACK);
+		PS.statusFade(S.message_fade);
 		PS.statusColor(PS.COLOR_WHITE);
 		PS.statusText(text);
+		S.message_timer_exists = true;
+		S.message_timer = PS.timerStart(S.message_rate, S.hide_message);
 	},
 
-	populate_welcome_array: function(){
-		S.welcome_array[0] = "July 16, 1923";
-		S.welcome_array[1] = "Exham Priory, England";
-		S.welcome_array[2] = "I am a Delapore";
-		S.welcome_array[3] = "This is my estate";
+	hide_message: function(){
+		if(S.message_timer_exists) {
+			PS.statusFade(S.message_fade);
+			PS.statusColor(PS.COLOR_BLACK);
+			PS.timerStop(S.message_timer);
+			S.message_timer_exists = false;
+		}
+	},
+
+	populate_message_arrays: function(){
+		S.welcome_array[0] = "Chapter One";
+		S.welcome_array[1] = "July 16, 1923";
+		S.welcome_array[2] = "Exham Priory, England";
+		S.welcome_array[3] = "Walls";
+
+		S.chapter_one_array[0] = "The scurrying of rats";
+		S.chapter_one_array[1] = "Scratching at the new panels";
+		S.chapter_one_array[2] = "From depths inconceivably below";
+		S.chapter_one_array[3] = "My friend, Captain Norrys";
+
+		S.chapter_two_welcome_array[0] = "Chapter Two";
+		S.chapter_two_welcome_array[1] = "Very sleepy";
+		S.chapter_two_welcome_array[2] = "Retired Early";
+		S.chapter_two_welcome_array[3] = "Dreams";
+
+		S.chapter_two_array[0] = "Harassed by visions";
+		S.chapter_two_array[1] = "The twilit Grotto";
+		S.chapter_two_array[2] = "The swineheard";
+		S.chapter_two_array[3] = "Abruptly awake";
+
+		S.chapter_three_welcome_array[0] = "Chapter Three";
+		S.chapter_three_welcome_array[1] = "From depths below";
+		S.chapter_three_welcome_array[2] = "The scurrying of rats";
+		S.chapter_three_welcome_array[3] = "Descent";
+
+		S.chapter_three_array[0] = "Deepest of sub-cellars";
+		S.chapter_three_array[1] = "Implements of excavation";
+		S.chapter_three_array[2] = "With the plump Captain Norrys";
+		S.chapter_three_array[3] = "A light ahead";
+
+		S.chapter_four_welcome_array[0] = "Chapter Four";
+		S.chapter_four_welcome_array[1] = "Skulls";
+		S.chapter_four_welcome_array[2] = "Men";
+		S.chapter_four_welcome_array[3] = "Rats";
+
+		S.chapter_four_array[0] = "The twilit grotto";
+		S.chapter_four_array[1] = "Ten stone cells";
+		S.chapter_four_array[2] = "Bones were gnawed";
+		S.chapter_four_array[3] = "Captain Norrys";
 
 	},
+
 	welcome_statement: function(){
+		A.stop_bgm();
 		PS.statusColor(PS.COLOR_BLACK);
-		PS.statusFade(5);
+		PS.statusFade(15);
 		G.isPlayable = false;
+		S.welcome_counter = 0;
+		S.welcome_text_counter = 0;
 		S.welcome_timer = PS.timerStart(S.welcome_rate, S.welcome_statement_helper);
 	},
+
 	welcome_statement_helper: function(){
 		//PS.debug(S.welcome_counter);
+		var whichArray;
+		switch(S.current_chapter){
+			case 1:
+				whichArray = S.welcome_array;
+				break;
+			case 2:
+				whichArray = S.chapter_two_welcome_array;
+				break;
+			case 3:
+				whichArray = S.chapter_three_welcome_array;
+				break;
+			case 4:
+				whichArray = S.chapter_four_welcome_array;
+				break;
+		}
 		if(S.welcome_counter%2 == 0){ // every other should be a message update
 			if(!A.bgm_is_playing){
 				A.play_bgm();
 			}
 			PS.statusColor(PS.COLOR_WHITE);
 
-			PS.statusText(S.welcome_array[S.welcome_text_counter]);
+			PS.statusText(whichArray[S.welcome_text_counter]);
 			S.welcome_text_counter++;
 
 		}else{
@@ -588,42 +1020,91 @@ var S = { // status line and chapter control
 		}
 
 		S.welcome_counter++;
-		if(S.welcome_text_counter > S.welcome_array.length){
+		if(S.welcome_text_counter > whichArray.length){
 			//PS.debug("stopping");
 			PS.statusColor(PS.COLOR_BLACK);
 			//PS.statusFade(0);
 			//PS.statusText("MEME");
 			//PS.statusColor(PS.COLOR_WHITE);
+
+			S.welcome_counter = 0;
 			PS.timerStop(S.welcome_timer);
-			S.start_chapter("one");
+			S.start_chapter(S.current_chapter);
 		}
+	},
+
+	load_message: function(){
+		var whichArray;
+		switch(S.current_chapter){
+			case 1:
+				whichArray = S.chapter_one_array;
+				break;
+			case 2:
+				whichArray = S.chapter_two_array;
+				break;
+			case 3:
+				whichArray = S.chapter_three_array;
+				break;
+			case 4:
+				whichArray = S.chapter_four_array;
+				break;
+		}
+
+		S.message_rate = 200;
+
+		S.message_fade = 200;
+		S.show_message(whichArray[S.message_counter]);
+		S.message_counter++;
 	},
 
 	complete_chapter : function(){
 		PS.dbEvent( "threnody", "chapter complete", true);
+		G.isPlayable = false;
+		S.current_chapter++;
+
+		if(S.current_chapter == 3){
+			S.end_game();
+			return;
+		}
+
+		G.insanityLevel = 0;
+
+		S.next_chapter_timer = PS.timerStart(S.time_until_next_chapter, S.next_chapter);
+	},
+
+	next_chapter : function(){
+		PS.timerStop(S.next_chapter_timer);
+
+		S.welcome_statement();
 	},
 
 	start_chapter : function(number){
 		switch(number){
-			case "one":
+			case 1:
 				PS.dbEvent( "threnody", "chapter one begun", true);
-				PS.statusColor(PS.COLOR_WHITE);
-				PS.statusText("CHAPTER ONE");
+				L.one();
 				G.start_global_timer();
 				break;
-			case "two":
+			case 2:
 				PS.dbEvent( "threnody", "chapter two begun", true);
+				L.two();
+				G.start_global_timer();
 				break;
-			case "three":
+			case 3:
 				PS.dbEvent( "threnody", "chapter three begun", true);
+				break;
+			case 4:
+				PS.dbEvent( "threnody", "chapter four begun", true);
 				break;
 		}
 
+		S.message_counter = 0;
+		S.welcome_counter = 0;
 	},
 
 	end_game : function(){
 
-		S.show_message("DEMO OVER");
+		S.show_message("Demo Over -- more to come");
 
 		PS.dbEvent( "threnody", "endgame", true );
 
@@ -637,19 +1118,24 @@ var J = {//juice
 	COLOR_BACKGROUND: PS.COLOR_BLACK,
 	COLOR_BACKGROUND_GLOW: PS.COLOR_WHITE,
 	COLOR_BACKGROUND_BORDER: PS.COLOR_WHITE,
+	COLOR_INSANITY: PS.COLOR_RED,
+	COLOR_VICTORY: PS.COLOR_WHITE,
 
 	COLOR_HOLD: PS.COLOR_BROWN,
 
+
+	LAYER_INSANITY: 2,
 	LAYER_BACKGROUND: 0,
 	LAYER_OBJECT: 1,
-	LAYER_OBJECT_HIDE: 2,
-	LAYER_CLICK: 3,
+	//LAYER_OBJECT_HIDE: 2,
+	LAYER_CLICK: 3, // used for peg dragging, etc.
+	LAYER_FADE: 4,
 
 	object_show_time: 0,
 	object_hide_time: 0,
 	object_hit_time: 1,
 	object_hold_time: 3,
-	object_miss_time: 3,
+	object_miss_time: 5, // deprecated
 
 	hit_total_sprites: 0,
 	hold_total_sprites: 0,
@@ -674,38 +1160,66 @@ var J = {//juice
 	error_timer: 0, // timer for error glow
 	opportunity_glow_timer: 0, // timer for timing grid glow
 
+	error_fade_rate: 15,
+	error_timer_rate: 15,
+	error_fade_counter: 0,
+
+	insanityUpperLeftXBound1: 1,
+	insanityUpperLeftXBound2: 10,
+	insanityUpperLeftYBound1: 1,
+	insanityUpperLeftYBound2: 10,
+	insanityUpperRightXBound1: 21,
+	insanityUpperRightXBound2: 30,
+	insanityUpperRightYBound1: 1,
+	insanityUpperRightYBound2: 10,
+	insanityLowerLeftXBound1: 1,
+	insanityLowerLeftXBound2: 10,
+	insanityLowerLeftYBound1: 21,
+	insanityLowerLeftYBound2: 30,
+	insanityLowerRightXBound1: 21,
+	insanityLowerRightXBound2: 30,
+	insanityLowerRightYBound1: 21,
+	insanityLowerRightYBound2: 30,
+
+	insanityFadeRate: 500,
+	insanityRandomMax: 100,
+	insanityThreshold: 99,
+
+	globalFadeRate: 0,
+	dangerDirectionFadeRate: 100,
+
 	init_grid: function(){
 		PS.gridSize(G.GRID_WIDTH, G.GRID_HEIGHT);
 		PS.gridColor(J.COLOR_BACKGROUND);
 
 		PS.gridPlane(J.LAYER_BACKGROUND); // set to background layer
 		PS.color(PS.ALL, PS.ALL, J.COLOR_BACKGROUND);
-		PS.color(PS.ALL, 0, J.COLOR_BACKGROUND_BORDER);
-		PS.color(PS.ALL, 31, J.COLOR_BACKGROUND_BORDER);
-		PS.color(0, PS.ALL, J.COLOR_BACKGROUND_BORDER);
-		PS.color(31, PS.ALL, J.COLOR_BACKGROUND_BORDER);
-
 		PS.border(PS.ALL, PS.ALL, 0);
 
-		PS.gridPlane(J.LAYER_OBJECT_HIDE);
-		PS.color(PS.ALL, PS.ALL, J.COLOR_BACKGROUND);
-		PS.color(PS.ALL, 0, J.COLOR_BACKGROUND_BORDER);
-		PS.color(PS.ALL, 31, J.COLOR_BACKGROUND_BORDER);
-		PS.color(0, PS.ALL, J.COLOR_BACKGROUND_BORDER);
-		PS.color(31, PS.ALL, J.COLOR_BACKGROUND_BORDER);
-		PS.fade(PS.ALL, PS.ALL, 0);
+		J.init_border();
+
 		//PS.alpha(PS.ALL, PS.ALL, 255);
 	},
 
+	init_border: function(){
+		PS.gridPlane(J.LAYER_BACKGROUND); // set to background layer
+		PS.color(PS.ALL, 0, J.COLOR_BACKGROUND_BORDER);
+		PS.color(PS.ALL, 31, J.COLOR_BACKGROUND_BORDER);
+		PS.color(0, PS.ALL, J.COLOR_BACKGROUND_BORDER);
+		PS.color(31, PS.ALL, J.COLOR_BACKGROUND_BORDER);
+		PS.alpha(PS.ALL, 0, 255);
+		PS.alpha(PS.ALL, 31, 255);
+		PS.alpha(0, PS.ALL, 255);
+		PS.alpha(31, PS.ALL, 255);
+	},
+
 	show_object: function(type){
-		PS.gridPlane(J.LAYER_OBJECT_HIDE);
 		// UPDATE THE OBJECT SHOW TIME
 	  //PS.debug("SHOWING OBJECT\n");
 
 		J.current_object_type = type;
 		J.object_show_time = G.calc_tick_distance(L.ACT_CLICK); // time until opportuity
 
-		J.object_show_counter = 14; // default???
 		J.object_show_rate = J.object_show_time / J.object_show_counter;
 		//PS.debug(J.object_show_time);
 		//PS.debug("DELTA: " + J.object_show_time + "\n");
@@ -730,6 +1244,19 @@ var J = {//juice
 				P.move_y = 1;
 				J.object_show_timer = PS.timerStart(J.object_show_rate, P.show_object_helper);
 				break;
+			case L.ACT_FADE_IN_DRAG:
+				//P.ready_sprite = "sprites/"
+				J.object_show_counter = 0;
+				/**TODO: MAKE SURE THIS IS RIGHT RIGHT RIGHT! **/
+				J.object_show_rate = J.object_show_time / 15; // is it 15?
+				P.move_x = 1;
+				P.move_y = 1;
+				//PS.debug("SHOW RATE: " + J.object_show_rate + "\n");
+				//PS.debug("SHOW tIME: " + J.object_show_time + "\n");
+
+				J.object_show_timer = PS.timerStart(J.object_show_rate, P.show_drag_helper);
+				break;
+
 		}
 	},
 
@@ -740,7 +1267,8 @@ var J = {//juice
 	},
 
 	hit_glow: function(){
-		PS.gridShadow(true, PS.COLOR_GREEN);
+		J.COLOR_VICTORY = J.COLOR_BACKGROUND_GLOW;
+		PS.gridShadow(true, J.COLOR_VICTORY);
 		J.current_object_type = "peg_tap_hit";
 		J.object_hit_counter = 0;
 		J.object_hit_rate = J.object_hit_time;
@@ -765,18 +1293,97 @@ var J = {//juice
 
 		P.SPRITE_LOCATION = "sprites/hold_hit/";
 		if(J.object_is_appearing){
+			P.object_is_appearing = false;
 			PS.timerStop(J.object_show_timer);
 		}
 		J.object_hold_timer = PS.timerStart(J.object_hold_rate, P.hold_object_helper);
 
 	},
 
+	drag_success_glow: function(){
+		P.delete_object();
+		P.remove_drag_peg();
+		J.init_border();
+
+		G.successfulDrag = true;
+
+		// AUDIO FOR DRAG SUCCESS??? ONE OF THREE???
+
+
+		if(J.object_is_appearing){
+			P.object_is_appearing = false;
+			PS.timerStop(J.object_show_timer);
+		}
+
+		PS.gridShadow(true, J.COLOR_VICTORY);
+
+		// reuse miss code
+		J.object_miss_counter = 0;
+		J.object_miss_rate = J.error_fade_rate;
+		for(var i = 0; i< G.GRID_WIDTH; i++){
+			for(var j = 0; j < G.GRID_HEIGHT; j++){
+				if((i > 0 && i < G.GRID_WIDTH-1) && (j > 0 && j < G.GRID_WIDTH-1)){
+					PS.gridPlane(J.LAYER_FADE);
+					PS.fade(i, j, J.error_fade_rate);
+					PS.alpha(i, j, 255);
+					PS.color(i, j, J.COLOR_BACKGROUND_GLOW);
+				}
+			}
+		}
+
+		J.error_fade_counter = 0;
+
+		J.object_miss_timer = PS.timerStart(J.error_timer_rate, J.drag_success_glow_helper);
+
+	},
+
+	drag_success_glow_helper: function(){
+		// make it all red
+		for(var i = 0; i< G.GRID_WIDTH; i++){
+			for(var j = 0; j < G.GRID_HEIGHT; j++){
+				if((i > 0 && i < G.GRID_WIDTH-1) && (j > 0 && j < G.GRID_WIDTH-1)){
+					PS.gridPlane(J.LAYER_FADE);
+					PS.fade(i, j, J.error_fade_rate-1);
+					PS.alpha(i, j, 0);
+					PS.color(PS.ALL, PS.ALL, J.COLOR_BACKGROUND);
+				}
+			}
+		}
+
+		if(J.error_fade_counter == 1){
+			for(var i = 0; i< G.GRID_WIDTH; i++){
+				for(var j = 0; j < G.GRID_HEIGHT; j++){
+					if((i > 0 && i < G.GRID_WIDTH-1) && (j > 0 && j < G.GRID_WIDTH-1)){
+						PS.gridPlane(J.LAYER_FADE);
+						//PS.fade(i, j, 0);
+						//PS.debug("why");
+						PS.color(PS.ALL, PS.ALL, J.COLOR_BACKGROUND);
+						PS.alpha(i, j, 0);
+					}
+				}
+			}
+		}
+
+		if(J.error_fade_counter == 2){
+			for(var i = 0; i< G.GRID_WIDTH; i++){
+				for(var j = 0; j < G.GRID_HEIGHT; j++){
+					if((i > 0 && i < G.GRID_WIDTH-1) && (j > 0 && j < G.GRID_WIDTH-1)){
+						PS.gridPlane(J.LAYER_FADE);
+						PS.fade(i, j, J.globalFadeRate);
+					}
+				}
+			}
+			PS.timerStop(J.object_miss_timer);
+		}
+		J.error_fade_counter++;
+	},
+
 	error_glow: function(){
 		//PS.debug("mistake!");
-		P.delete_object();
-		S.show_message("MISS");
+		//S.show_message("MISS");
 		// audio stuff
 		A.play_miss();
+		J.init_border();
 		// stop appearing
 		if(P.object_is_appearing){
 			P.object_is_appearing = false;
@@ -790,14 +1397,288 @@ var J = {//juice
 		PS.gridShadow(true, PS.COLOR_RED);
 		P.object_is_missed = true; // we are in miss state
 
-		J.current_object_type = "peg_tap_miss";
+		//J.current_object_type = "peg_tap_miss";
 		J.object_miss_counter = 0;
-		J.object_miss_rate = J.object_miss_time;
-		J.miss_total_sprites = 5;
+		J.object_miss_rate = J.error_fade_rate;
 
-		P.SPRITE_LOCATION = "sprites/tap_miss/";
-		J.object_miss_timer = PS.timerStart(J.object_miss_rate, P.miss_object_helper);
+		//P.SPRITE_LOCATION = "sprites/tap_miss/";
+
+		// make it all red
+		for(var i = 0; i< G.GRID_WIDTH; i++){
+			for(var j = 0; j < G.GRID_HEIGHT; j++){
+				if((i > 0 && i < G.GRID_WIDTH-1) && (j > 0 && j < G.GRID_WIDTH-1)){
+					PS.gridPlane(J.LAYER_FADE);
+					PS.fade(i, j, J.error_fade_rate);
+					PS.alpha(i, j, 255);
+					PS.color(i, j, PS.COLOR_RED);
+				}
+			}
+		}
+
+		J.error_fade_counter = 0;
+
+		J.object_miss_timer = PS.timerStart(J.error_timer_rate, J.error_glow_helper);
 	},
+
+	error_glow_helper: function(){
+		// make it all red
+		P.delete_object();
+		for(var i = 0; i< G.GRID_WIDTH; i++){
+			for(var j = 0; j < G.GRID_HEIGHT; j++){
+				if((i > 0 && i < G.GRID_WIDTH-1) && (j > 0 && j < G.GRID_WIDTH-1)){
+					PS.gridPlane(J.LAYER_FADE);
+					PS.fade(i, j, J.error_fade_rate-1);
+					PS.alpha(i, j, 0);
+					PS.color(PS.ALL, PS.ALL, J.COLOR_BACKGROUND);
+
+				}
+			}
+		}
+
+		if(J.error_fade_counter == 1){
+			for(var i = 0; i< G.GRID_WIDTH; i++){
+				for(var j = 0; j < G.GRID_HEIGHT; j++){
+					if((i > 0 && i < G.GRID_WIDTH-1) && (j > 0 && j < G.GRID_WIDTH-1)){
+						PS.gridPlane(J.LAYER_FADE);
+						//PS.fade(i, j, 0);
+						//PS.debug("why");
+						PS.color(PS.ALL, PS.ALL, J.COLOR_BACKGROUND);
+						PS.alpha(i, j, 0);
+					}
+				}
+			}
+		}
+
+		if(J.error_fade_counter == 2){
+			for(var i = 0; i< G.GRID_WIDTH; i++){
+				for(var j = 0; j < G.GRID_HEIGHT; j++){
+					if((i > 0 && i < G.GRID_WIDTH-1) && (j > 0 && j < G.GRID_WIDTH-1)){
+						PS.gridPlane(J.LAYER_FADE);
+						PS.fade(i, j, J.globalFadeRate);
+					}
+				}
+			}
+			PS.timerStop(J.object_miss_timer);
+		}
+		J.error_fade_counter++;
+	},
+
+	start_insanity_timer: function(){
+		J.populate_insanity();
+		G.insanityTimer = PS.timerStart(G.insanityRate, J.update_insanity);
+	},
+
+	populate_insanity: function(){
+		// iterate thru every spot to establish bounds
+		for(var x = 0; x< G.GRID_WIDTH; x++){
+			for(var y = 0; y< G.GRID_HEIGHT; y++){
+				// check for bounds
+				PS.gridPlane(J.LAYER_INSANITY);
+				if((x >= J.insanityUpperLeftXBound1 && x <= J.insanityUpperLeftXBound2) &&
+					(y >= J.insanityUpperLeftYBound1 && y<= J.insanityUpperLeftYBound2)){
+					PS.color(x, y, J.COLOR_INSANITY);
+					PS.alpha(x, y, 0);
+					PS.fade(x, y, J.insanityFadeRate);
+				}
+				if((x >= J.insanityLowerLeftXBound1 && x <= J.insanityLowerLeftXBound2) &&
+					(y >= J.insanityLowerLeftYBound1 && y<= J.insanityLowerLeftYBound2)){
+					PS.color(x, y, J.COLOR_INSANITY);
+					PS.alpha(x, y, 0);
+					PS.fade(x, y, J.insanityFadeRate);
+
+				}
+				if((x >= J.insanityUpperRightXBound1 && x <= J.insanityUpperRightXBound2) &&
+					(y >= J.insanityUpperRightYBound1 && y<= J.insanityUpperRightYBound2)){
+					PS.color(x, y, J.COLOR_INSANITY);
+					PS.alpha(x, y, 0);
+					PS.fade(x, y, J.insanityFadeRate);
+
+				}
+				if((x >= J.insanityLowerRightXBound1 && x <= J.insanityLowerRightXBound2) &&
+					(y >= J.insanityLowerRightYBound1 && y<= J.insanityLowerRightYBound2)){
+					PS.color(x, y, J.COLOR_INSANITY);
+					PS.alpha(x, y, 0);
+					PS.fade(x, y, J.insanityFadeRate);
+
+				}
+			}
+		}
+	},
+
+	update_insanity: function(){
+		// iterate thru every spot to establish bounds
+		for(var x = 0; x< G.GRID_WIDTH; x++){
+			for(var y = 0; y< G.GRID_HEIGHT; y++){
+				// check for bounds
+				PS.gridPlane(J.LAYER_INSANITY);
+				if((x >= J.insanityUpperLeftXBound1 && x <= J.insanityUpperLeftXBound2) &&
+					(y >= J.insanityUpperLeftYBound1 && y<= J.insanityUpperLeftYBound2)){
+
+					PS.fade(x, y, J.insanityFadeRate);
+
+					var rando = PS.random(J.insanityRandomMax);
+					//PS.debug("ORIG RANDO: " + rando + "\n");
+					rando = rando + (rando * (G.insanityLevel/100)); // if insanity level is 2, rando = rando + 2%, etc.
+					//PS.debug("NEW RANDO: " + rando + "\n");
+
+					// check for proximity to center
+					var threshold = J.insanityThreshold;
+					if(x < 5 && y < 5){ // we don't want to be too close
+						threshold = threshold - 1;
+					}
+					if(x < 4 && y < 4){
+						threshold = threshold - 1;
+					}
+					if(x < 3 && y < 3){
+						threshold = threshold - 1;
+					}
+					if(x < 2 && y < 2){
+						threshold = threshold - 1;
+					}
+					if(x < 1 && y < 1){
+						threshold = threshold - 1;
+					}
+					if(rando >= threshold){
+						PS.alpha(x, y, 200);
+					}else{
+						PS.alpha(x, y, 0);
+					}
+				}
+
+				if((x >= J.insanityLowerLeftXBound1 && x <= J.insanityLowerLeftXBound2) &&
+					(y >= J.insanityLowerLeftYBound1 && y<= J.insanityLowerLeftYBound2)){
+
+					PS.fade(x, y, J.insanityFadeRate);
+
+					var rando = PS.random(J.insanityRandomMax);
+					//PS.debug("ORIG RANDO: " + rando + "\n");
+					rando = rando + (rando * (G.insanityLevel/100)); // if insanity level is 2, rando = rando + 2%, etc.
+					//PS.debug("NEW RANDO: " + rando + "\n");
+
+					// check for proximity to center
+					var threshold = J.insanityThreshold;
+					if(x < 5 && y < 5){ // we don't want to be too close
+						threshold = threshold - 1;
+					}
+					if(x < 4 && y < 4){
+						threshold = threshold - 1;
+					}
+					if(x < 3 && y < 3){
+						threshold = threshold - 1;
+					}
+					if(x < 2 && y < 2){
+						threshold = threshold - 1;
+					}
+					if(x < 1 && y < 1){
+						threshold = threshold - 1;
+					}
+					if(rando >= threshold){
+						PS.alpha(x, y, 200);
+					}else{
+						PS.alpha(x, y, 0);
+					}
+				}
+				if((x >= J.insanityUpperRightXBound1 && x <= J.insanityUpperRightXBound2) &&
+					(y >= J.insanityUpperRightYBound1 && y<= J.insanityUpperRightYBound2)){
+
+					PS.fade(x, y, J.insanityFadeRate);
+
+					var rando = PS.random(J.insanityRandomMax);
+					//PS.debug("ORIG RANDO: " + rando + "\n");
+					rando = rando + (rando * (G.insanityLevel/100)); // if insanity level is 2, rando = rando + 2%, etc.
+					//PS.debug("NEW RANDO: " + rando + "\n");
+
+					// check for proximity to center
+					var threshold = J.insanityThreshold;
+					if(x < 5 && y < 5){ // we don't want to be too close
+						threshold = threshold - 1;
+					}
+					if(x < 4 && y < 4){
+						threshold = threshold - 1;
+					}
+					if(x < 3 && y < 3){
+						threshold = threshold - 1;
+					}
+					if(x < 2 && y < 2){
+						threshold = threshold - 1;
+					}
+					if(x < 1 && y < 1){
+						threshold = threshold - 1;
+					}
+					if(rando >= threshold){
+						PS.alpha(x, y, 200);
+					}else{
+						PS.alpha(x, y, 0);
+					}				}
+				if((x >= J.insanityLowerRightXBound1 && x <= J.insanityLowerRightXBound2) &&
+					(y >= J.insanityLowerRightYBound1 && y<= J.insanityLowerRightYBound2)){
+
+					PS.fade(x, y, J.insanityFadeRate);
+
+					var rando = PS.random(J.insanityRandomMax);
+					//PS.debug("ORIG RANDO: " + rando + "\n");
+					rando = rando + (rando * (G.insanityLevel/100)); // if insanity level is 2, rando = rando + 2%, etc.
+					//PS.debug("NEW RANDO: " + rando + "\n");
+
+					// check for proximity to center
+					var threshold = J.insanityThreshold;
+					if(x < 5 && y < 5){ // we don't want to be too close
+						threshold = threshold - 1;
+					}
+					if(x < 4 && y < 4){
+						threshold = threshold - 1;
+					}
+					if(x < 3 && y < 3){
+						threshold = threshold - 1;
+					}
+					if(x < 2 && y < 2){
+						threshold = threshold - 1;
+					}
+					if(x < 1 && y < 1){
+						threshold = threshold - 1;
+					}
+					if(rando >= threshold){
+						PS.alpha(x, y, 200);
+						PS.color(x, y, J.COLOR_INSANITY);
+					}else{
+						PS.alpha(x, y, 0);
+						PS.color(x, y, J.COLOR_BACKGROUND);
+					}
+				}
+
+			}
+		}
+	},
+
+	show_danger_direction: function(){
+		PS.gridPlane(J.LAYER_BACKGROUND);
+		switch(G.dangerDirection){
+			case 0: // everything is fine
+				break;
+			case 1: // left is evil
+				for(var y = 1; y < 31; y++){
+					PS.alpha(0, y, 255);
+					PS.fade(0, y, J.dangerDirectionFadeRate);
+					PS.color(0, y, J.COLOR_INSANITY);
+				}
+				break;
+			case 2: // up is evil
+				for(var x = 1; x < 31; x++){
+					PS.alpha(x, 0, 255);
+					PS.fade(x, 0, J.dangerDirectionFadeRate);
+					PS.color(x, 0, J.COLOR_INSANITY);
+				}
+				break;
+			case 3: // right is evil
+				for(var y = 1; y < 31; y++){
+					PS.alpha(31, y, 255);
+					PS.fade(31, y, J.dangerDirectionFadeRate);
+					PS.color(31, y, J.COLOR_INSANITY);
+				}
+				break;
+
+		}
+	}
 
 };
 
@@ -823,6 +1704,12 @@ var P = { // sPrites
 	move_x: 0,
 	move_y: 0,
 
+	drag_object: 0, // the drag peg
+	drag_exists: false,
+	dragX: 0,
+	dragY: 0,
+
+
 	reset_sprite: function(){
 
 		P.delete_object();
@@ -841,7 +1728,6 @@ var P = { // sPrites
 	},
 
 	show_object_helper: function(){
-
 		var loader;
 		loader = function(data){
 			P.current_object = PS.spriteImage(data);
@@ -875,6 +1761,38 @@ var P = { // sPrites
 			//P.reset_sprite();
 		}
 
+
+	},
+
+	show_drag_helper: function(){
+		var loader;
+		loader = function(data){
+			P.current_object = PS.spriteImage(data);
+			PS.spritePlane(P.current_object, J.LAYER_OBJECT);
+			PS.spriteMove(P.current_object, P.move_x, P.move_y);
+		};
+		if(J.object_show_counter < 10){
+			var theImage = J.current_object_type + "0" + J.object_show_counter;
+		}else{
+			var theImage = J.current_object_type + J.object_show_counter;
+		}
+
+		theImage = P.SPRITE_LOCATION + theImage + ".png";
+
+		PS.imageLoad(theImage, loader);
+		J.object_show_counter++;
+
+		// sound stuff
+		// play a sound plz
+		if(J.object_show_counter>14){
+			//theImage = P.ready_sprite;
+			//PS.imageLoad(theImage, loader);
+			PS.timerStop(J.object_show_timer);
+			P.object_is_appearing = false;
+
+			P.place_drag_peg();
+			//P.reset_sprite();
+		}
 
 	},
 
@@ -935,7 +1853,9 @@ var P = { // sPrites
 			if(P.object_is_held) {
 				PS.timerStop(J.object_hold_timer);
 				P.object_is_held = false;
-				PS.gridShadow(true, PS.COLOR_GREEN);
+				J.COLOR_VICTORY = J.COLOR_BACKGROUND_GLOW;
+				PS.gridShadow(true, J.COLOR_VICTORY);
+				G.successfulHold = true;
 				//P.reset_sprite();
 			}
 		}
@@ -954,33 +1874,6 @@ var P = { // sPrites
 		A.play_miss();
 	},
 
-	miss_object_helper: function(){
-
-		var loader;
-		loader = function(data){
-			P.current_miss = PS.spriteImage(data);
-			PS.spritePlane(P.current_miss, J.LAYER_OBJECT);
-			PS.spriteMove(P.current_miss, 1, 11);
-
-		};
-
-		if(J.object_miss_counter < 10){
-			var theImage = J.current_object_type + "0" + J.object_miss_counter;
-		}else{
-			var theImage = J.current_object_type + J.object_miss_counter;
-		}
-		theImage = P.SPRITE_LOCATION + theImage + ".png";
-
-		PS.imageLoad(theImage, loader);
-		J.object_miss_counter++;
-		if(J.object_miss_counter > J.miss_total_sprites){
-			//theImage = "sprites/peg_tap_ready.png";
-			//PS.imageLoad(theImage, loader);
-			PS.timerStop(J.object_miss_timer);
-			//P.reset_sprite();
-		}
-	},
-
 	delete_object: function(){
 		if(P.object_exists){
 			PS.spriteDelete(P.current_object);
@@ -990,6 +1883,34 @@ var P = { // sPrites
 		}
 
 	},
+
+	place_drag_peg: function(){
+		var loader;
+		P.dragX = 16;
+		P.dragY = 16;
+		loader = function(data){
+			P.drag_object = PS.spriteImage(data);
+			PS.spritePlane(P.drag_object, J.LAYER_CLICK);
+			PS.spriteAxis(P.drag_object, 5, 5);
+			PS.spriteMove(P.drag_object, P.dragX, P.dragY);
+		};
+		var theImage = "sprites/peg_drag.png";
+		PS.imageLoad(theImage, loader);
+		P.drag_exists = true;
+	},
+
+	update_drag_peg: function(x, y){
+		//PS.debug("(" + x + ", " + y + ")\n");
+		PS.spriteMove(P.drag_object, x, y);
+	},
+
+	remove_drag_peg: function(){
+		PS.spriteDelete(P.drag_object);
+		G.dragLeft = false;
+		G.dragUp = false;
+		G.dragRight = false;
+		P.drag_exists = false;
+	}
 };
 
 var A = {//audio
@@ -997,6 +1918,8 @@ var A = {//audio
 	// channels
 	hold_channel: 0,
 	bgm_channel: 0,
+	insanity_channel: 0,
+
 	//sounds 
 
 	TONE_NULL: "NULL",
@@ -1063,6 +1986,7 @@ var A = {//audio
 	appear_counter: 0,
 
 	bgm_is_playing: false,
+	insanity_is_playing: false,
 
 	play_beat: function(){
 		var tone = L.level[G.measure_counter][L.INDEX_LOGIC][G.logic_counter];
@@ -1190,13 +2114,31 @@ var A = {//audio
 		A.bgm_is_playing = true;
 	},
 
+	stop_bgm: function(){
+		if(!A.bgm_is_playing){
+			return;
+		}
+		PS.audioStop(A.bgm_channel);
+		A.bgm_is_playing = false;
+	},
+
 	play_hold: function(){
 		A.hold_channel = PS.audioPlay(A.TONE_HOLD, {loop: false, volume: 0.5, path: A.SOUND_PATH});
 	},
 
 	pause_hold: function(){
 		PS.audioStop(A.hold_channel);
-	}
+	},
+
+	play_insanity: function(){
+
+	},
+
+	increase_insanity: function(){
+
+	},
+
+
 	
 };
 
@@ -1220,6 +2162,21 @@ var A = {//audio
 // [system] = an object containing engine and platform information; see documentation for details
 // [options] = an object with optional parameters; see documentation for details
 
+var callback = function ( id ) {
+	if ( id === PS.ERROR ) {
+		// If this test succeeds, the collected username was invalid.
+		// Your database still exists, but no username will be associated with it.
+		// A warning notice will appear in the footer, but no actual error is thrown.
+		PS.statusColor(PS.COLOR_WHITE);
+		PS.statusText("USERNAME INVALID, REFRESH PLZ");
+	}else{
+		S.welcome_statement();
+	}
+
+// This is where you should complete initialization
+// and start your game
+};
+
 PS.init = function( system, options ) {
 	// Use PS.gridSize( x, y ) to set the grid to
 	// the initial dimensions you want (32 x 32 maximum)
@@ -1231,13 +2188,15 @@ PS.init = function( system, options ) {
 	J.init_grid();
 	
 	G.init_measure();
-	L.one();
-	S.populate_welcome_array();
+	G.populate_tempo_array();
+	S.populate_message_arrays();
+	//J.start_insanity_timer();
 
 	//G.spawn_object_tap(15);
 
 	//SET TO TRUE BFORE WE'RE DONE
-	PS.dbInit( "threnody", { login : true } );
+	PS.statusColor(PS.COLOR_WHITE);
+	PS.dbInit( "threnody", { login : callback } );
 
 	//G.start_global_timer();
 
@@ -1256,11 +2215,21 @@ PS.init = function( system, options ) {
 
 PS.touch = function( x, y, data, options ) {
 	// Uncomment the following line to inspect parameters
-	// PS.debug( "PS.touch() @ " + x + ", " + y + "\n" );
+	//PS.debug( "PS.touch() @ " + x + ", " + y + "\n" );
 
 	// TEMP 
 	//var d = G.calc_tick_distance();
-	G.isHolding = true
+	//G.increase_insanity();
+	//PS.debug("INSA LEVEL: " + G.insanityLevel + "\n");
+	if(!A.insanity_is_playing){
+		A.play_insanity();
+	}else{
+		A.increase_insanity();
+	}
+	G.isHolding = true;
+	G.currentDragX = x;
+	G.currentDragY = y;
+	S.current_chapter = 1;
 	if(!G.isPlayable){
 		return;
 	}
@@ -1270,12 +2239,14 @@ PS.touch = function( x, y, data, options ) {
 		//PS.statusColor(PS.COLOR_WHITE);
 		//A.play_bgm();
 		//G.start_global_timer();
-		S.welcome_statement();
+		//S.welcome_statement();
 	}else{
 		if(G.isOnPeg(x, y)){
 			G.click();
 		}
 	}
+
+
 };
 
 // PS.release ( x, y, data, options )
@@ -1295,6 +2266,11 @@ PS.release = function( x, y, data, options ) {
 
 	// Add code here for when the mouse button/touch is released over a bead
 	G.isHolding = false;
+	if(P.drag_exists && G.isDragging){
+		G.stop_drag();
+	}
+	G.isDragging = false;
+
 };
 
 // PS.enter ( x, y, button, data, options )
@@ -1310,6 +2286,10 @@ PS.enter = function( x, y, data, options ) {
 	// PS.debug( "PS.enter() @ " + x + ", " + y + "\n" );
 
 	// Add code here for when the mouse cursor/touch enters a bead
+
+	if(P.drag_exists  && G.isDragging){
+		G.drag(x, y);
+	}
 };
 
 // PS.exit ( x, y, data, options )
@@ -1352,6 +2332,8 @@ PS.keyDown = function( key, shift, ctrl, options ) {
 	// Uncomment the following line to inspect parameters
 	//	PS.debug( "DOWN: key = " + key + ", shift = " + shift + "\n" );
 
+	// don't do this anymore
+	//return;
 	// Add code here for when a key is pressed
 	if(key != 32){
 		return;
@@ -1421,7 +2403,7 @@ PS.input = function( sensors, options ) {
 		PS.debug( "sensors.wheel = " + device + "\n" );
 	}
 	*/
-	
+
 	// Add code here for when an input event is detected
 };
 
