@@ -316,7 +316,7 @@ var G = {//general game logic
 		G.actionType = L.ACT_FADE_IN_HOLD;
 		P.object_is_hit = false;
 		P.SPRITE_LOCATION = "sprites/hold_shrink/";
-		if(!G.successfulDrag){
+		if(!G.successfulHold){
 			S.show_message("Hold on to it");
 		}
 
@@ -328,7 +328,7 @@ var G = {//general game logic
 		if(P.drag_exists){
 			G.wiggleRoom = 50;
 		}else{
-			G.wiggleRoom = 25; // set waggle room
+			G.wiggleRoom = 15; // set waggle room
 		}
 
 		var last_good = G.last_logic_activity;
@@ -490,7 +490,7 @@ var G = {//general game logic
 
 		if(real){
 			/**TODO: AUDIOOOO **/
-
+			A.play_drag();
 			
 		}
 		P.update_drag_peg(G.currentDragX, G.currentDragY);
@@ -529,6 +529,7 @@ var G = {//general game logic
 					J.COLOR_VICTORY = J.COLOR_BACKGROUND_GLOW;
 				}
 			}
+			A.play_action_sound();
 			J.drag_success_glow();
 		}
 
@@ -629,6 +630,7 @@ var L = {//level or chapter logic
 				[1, 0,0,0,0,0, 10, 0,0,0,0,0, 0, 0,0,0,0,0, 0, 0,0,0,0,9]  //logic
 			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 				],
+
 			[
 				[1, 0,0,0,0,0, 10, 0,0,9,0,0, 1, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
 				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
@@ -793,7 +795,11 @@ var L = {//level or chapter logic
 				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 			],
 			[
-				[3, 0,0,0,0,0, 10, 0,0,0,0,0, 0, 0,0,0,0,0, 0, 0,0,0,0,9]  //logic
+				[1, 0,0,0,0,0, 10, 0,0,0,0,0, 0, 0,0,0,0,0, 0, 0,0,0,0,9]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[1, 0,0,0,0,0, 10, 0,0,0,0,0, 0, 0,0,0,0,0, 0, 0,0,0,0,9]  //logic
 				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 			],
 			[
@@ -801,19 +807,15 @@ var L = {//level or chapter logic
 				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 			],
 			[
-				[1, 0,10,9,1,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+				[1, 10,0,9,0,0, 0, 0,0,1,10,9, 1, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
 				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 			],
 			[
-				[0, 1,10,9,1,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+				[1, 10,0,9,0,0, 0, 0,0,1,10,9, 1, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
 				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 			],
 			[
-				[1, 10,9,1,10,9, 1, 10,9,1,10,9, 1, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
-				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			],
-			[
-				[2, 0,10,9,2,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+				[2, 0,10,9,0,0, 0, 0,0,0,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
 				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 			],
 			[
@@ -841,7 +843,7 @@ var L = {//level or chapter logic
 				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 			],
 			[
-				[1, 0,10,9,2,0, 10, 0,0,9,0,0, 3, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+				[1, 0,10,9,0,0, 0, 0,0,0,0,0, 3, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
 				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 			],
 			[
@@ -1034,6 +1036,7 @@ var S = { // status line and chapter control
 	},
 
 	load_message: function(){
+
 		var whichArray;
 		switch(S.current_chapter){
 			case 1:
@@ -1069,6 +1072,11 @@ var S = { // status line and chapter control
 
 		G.insanityLevel = 0;
 
+
+
+		S.message_counter = 0;
+		S.welcome_counter = 0;
+
 		S.next_chapter_timer = PS.timerStart(S.time_until_next_chapter, S.next_chapter);
 	},
 
@@ -1097,9 +1105,6 @@ var S = { // status line and chapter control
 				PS.dbEvent( "threnody", "chapter four begun", true);
 				break;
 		}
-
-		S.message_counter = 0;
-		S.welcome_counter = 0;
 	},
 
 	end_game : function(){
@@ -1231,6 +1236,10 @@ var J = {//juice
 		P.object_is_appearing = true;
 		P.object_is_missed = false;
 
+		// just in case
+		if(J.object_show_rate < 1){
+			J.object_show_rate = 5;
+		}
 		switch(G.actionType){
 			case L.ACT_FADE_IN_TAP:
 				P.ready_sprite = "sprites/peg_tap_ready.png";
@@ -1422,7 +1431,6 @@ var J = {//juice
 
 	error_glow_helper: function(){
 		// make it all red
-		P.delete_object();
 		for(var i = 0; i< G.GRID_WIDTH; i++){
 			for(var j = 0; j < G.GRID_HEIGHT; j++){
 				if((i > 0 && i < G.GRID_WIDTH-1) && (j > 0 && j < G.GRID_WIDTH-1)){
@@ -1436,6 +1444,8 @@ var J = {//juice
 		}
 
 		if(J.error_fade_counter == 1){
+
+			P.delete_object();
 			for(var i = 0; i< G.GRID_WIDTH; i++){
 				for(var j = 0; j < G.GRID_HEIGHT; j++){
 					if((i > 0 && i < G.GRID_WIDTH-1) && (j > 0 && j < G.GRID_WIDTH-1)){
@@ -1781,6 +1791,7 @@ var P = { // sPrites
 
 		PS.imageLoad(theImage, loader);
 		J.object_show_counter++;
+		A.play_appear_drag();
 
 		// sound stuff
 		// play a sound plz
@@ -1897,6 +1908,7 @@ var P = { // sPrites
 		var theImage = "sprites/peg_drag.png";
 		PS.imageLoad(theImage, loader);
 		P.drag_exists = true;
+		A.appear_counter = 0;
 	},
 
 	update_drag_peg: function(x, y){
@@ -1918,6 +1930,7 @@ var A = {//audio
 	// channels
 	hold_channel: 0,
 	bgm_channel: 0,
+	drums_channel: 0,
 	insanity_channel: 0,
 
 	//sounds 
@@ -1930,7 +1943,11 @@ var A = {//audio
 	TONE_MISS: "sfx_miss",
 	TONE_HOLD: "sfx_hold",
 
-	SONG_BGM_0: "bgm_level_0",
+	SONG_BGM_1: "bgm_0_drone",
+	DRUMS_BGM_1: "bgm_0_drum",
+	SONG_BGM_2: "bgm_1_drone",
+	DRUMS_BGM_2: "bgm_1_drum",
+
 	TONE_TAP_0: "sfx_hit_0",
 	TONE_TAP_1: "sfx_hit_1",
 	TONE_TAP_2: "sfx_hit_2",
@@ -1971,16 +1988,32 @@ var A = {//audio
 	TONE_APPEAR_VERT_14: "sfx_fade_vertical_14",
 	TONE_APPEAR_VERT_15: "sfx_fade_vertical_15",
 
-
-
+	TONE_APPEAR_DRAG_0: "sfx_drag_0",
+	TONE_APPEAR_DRAG_1: "sfx_drag_1",
+	TONE_APPEAR_DRAG_2: "sfx_drag_2",
+	TONE_APPEAR_DRAG_3: "sfx_drag_3",
+	TONE_APPEAR_DRAG_4: "sfx_drag_4",
+	TONE_APPEAR_DRAG_5: "sfx_drag_5",
+	TONE_APPEAR_DRAG_6: "sfx_drag_6",
+	TONE_APPEAR_DRAG_7: "sfx_drag_7",
+	TONE_APPEAR_DRAG_8: "sfx_drag_8",
+	TONE_APPEAR_DRAG_9: "sfx_drag_9",
+	TONE_APPEAR_DRAG_10: "sfx_drag_10",
+	TONE_APPEAR_DRAG_11: "sfx_drag_11",
+	TONE_APPEAR_DRAG_12: "sfx_drag_12",
+	TONE_APPEAR_DRAG_13: "sfx_drag_13",
+	TONE_APPEAR_DRAG_14: "sfx_drag_14",
+	TONE_APPEAR_DRAG_15: "sfx_drag_15",
 
 	SOUND_PATH: "audio/",
 	TONES_GROW_PATH: "audio/fadein/",
+	TONES_DRAG_PATH: "audio/drag/",
 
 
 	TONES: [],
 	TONES_HORIZ:[],
 	TONES_VERT: [],
+	TONES_DRAG: [],
 	TAP_ARRAY: [],
 
 	appear_counter: 0,
@@ -2002,6 +2035,10 @@ var A = {//audio
 		//PS.debug("please");
 		switch(G.actionType){
 			case L.ACT_FADE_IN_TAP:
+				var rando = PS.random(A.TAP_ARRAY.length-1); // generate from 1 to max
+				PS.audioPlay(A.TAP_ARRAY[rando], {volume: 0.5, path: A.SOUND_PATH});
+				break;
+			case L.ACT_FADE_IN_DRAG:
 				var rando = PS.random(A.TAP_ARRAY.length-1); // generate from 1 to max
 				PS.audioPlay(A.TAP_ARRAY[rando], {volume: 0.5, path: A.SOUND_PATH});
 				break;
@@ -2061,6 +2098,25 @@ var A = {//audio
 		A.TONES_VERT[14] = A.TONE_APPEAR_VERT_14;
 		A.TONES_VERT[15] = A.TONE_APPEAR_VERT_15;
 
+		A.TONES_DRAG[0] = A.TONE_APPEAR_DRAG_0;
+		A.TONES_DRAG[1] = A.TONE_APPEAR_DRAG_1;
+		A.TONES_DRAG[2] = A.TONE_APPEAR_DRAG_2;
+		A.TONES_DRAG[3] = A.TONE_APPEAR_DRAG_3;
+		A.TONES_DRAG[4] = A.TONE_APPEAR_DRAG_4;
+		A.TONES_DRAG[5] = A.TONE_APPEAR_DRAG_5;
+		A.TONES_DRAG[6] = A.TONE_APPEAR_DRAG_6;
+		A.TONES_DRAG[7] = A.TONE_APPEAR_DRAG_7;
+		A.TONES_DRAG[8] = A.TONE_APPEAR_DRAG_8;
+		A.TONES_DRAG[9] = A.TONE_APPEAR_DRAG_9;
+		A.TONES_DRAG[10] = A.TONE_APPEAR_DRAG_10;
+		A.TONES_DRAG[11] = A.TONE_APPEAR_DRAG_11;
+		A.TONES_DRAG[12] = A.TONE_APPEAR_DRAG_12;
+		A.TONES_DRAG[13] = A.TONE_APPEAR_DRAG_13;
+		A.TONES_DRAG[14] = A.TONE_APPEAR_DRAG_14;
+		A.TONES_DRAG[15] = A.TONE_APPEAR_DRAG_15;
+
+
+
 
 		A.TONES[L.ACT_FADE_OUT] = A.TONE_FADE_OUT;
 		A.TONES[L.ACT_CLICK] = A.TONE_CLICK;
@@ -2071,7 +2127,11 @@ var A = {//audio
 			}
 		}
 
-		PS.audioLoad(A.SONG_BGM_0, {lock:true, path: A.SOUND_PATH});
+		PS.audioLoad(A.DRUMS_BGM_1, {lock:true, path: A.SOUND_PATH});
+		PS.audioLoad(A.DRUMS_BGM_2, {lock:true, path: A.SOUND_PATH});
+		PS.audioLoad(A.SONG_BGM_1, {lock:true, path: A.SOUND_PATH});
+		PS.audioLoad(A.SONG_BGM_2, {lock:true, path: A.SOUND_PATH});
+
 		PS.audioLoad(A.TAP_ARRAY[0], {lock:true, path: A.SOUND_PATH});
 		PS.audioLoad(A.TAP_ARRAY[1], {lock:true, path: A.SOUND_PATH});
 		PS.audioLoad(A.TAP_ARRAY[2], {lock:true, path: A.SOUND_PATH});
@@ -2083,6 +2143,14 @@ var A = {//audio
 
 		for(var i = 0; i < A.TONES_HORIZ.length; i++){
 			PS.audioLoad(A.TONES_HORIZ[i], {lock:true, path: A.TONES_GROW_PATH});
+		}
+
+		for(var i = 0; i < A.TONES_VERT.length; i++){
+			PS.audioLoad(A.TONES_VERT[i], {lock:true, path: A.TONES_GROW_PATH});
+		}
+
+		for(var i = 0; i < A.TONES_DRAG.length; i++){
+			PS.audioLoad(A.TONES_DRAG[i], {lock:true, path: A.TONES_GROW_PATH});
 		}
 	},
 
@@ -2109,8 +2177,36 @@ var A = {//audio
 		}
 	},
 
+	play_appear_drag: function(){
+		PS.audioPlay(A.TONES_DRAG[A.appear_counter], {volume:0.05, path: A.TONES_GROW_PATH});
+		A.appear_counter++;
+		if(A.appear_counter > 14){
+			//PS.debug("yes");
+			A.appear_counter = 0;
+		}
+	},
+
+	play_drag: function(){
+		PS.audioPlay(A.TONES_DRAG[A.appear_counter], {volume:0.05, path: A.TONES_DRAG_PATH});
+		A.appear_counter++;
+	},
+
 	play_bgm: function(){
-		A.bgm_channel = PS.audioPlay(A.SONG_BGM_0, {loop: false, volume:0.25, path: A.SOUND_PATH});
+		var theBgm;
+		var theDrums;
+		switch(S.current_chapter){
+			case 1:
+				theBgm = A.SONG_BGM_1;
+				theDrums = A.DRUMS_BGM_1;
+				break;
+			case 2:
+				theBgm = A.SONG_BGM_2;
+				theDrums = A.DRUMS_BGM_2;
+				break;
+		}
+		A.bgm_channel = PS.audioPlay(theBgm, {loop: false, volume:0.1, path: A.SOUND_PATH});
+		A.drums_channel = PS.audioPlay(theDrums, {loop: false, volume:0.2, path: A.SOUND_PATH});
+
 		A.bgm_is_playing = true;
 	},
 
@@ -2118,7 +2214,10 @@ var A = {//audio
 		if(!A.bgm_is_playing){
 			return;
 		}
+
 		PS.audioStop(A.bgm_channel);
+		PS.audioStop(A.drums_channel);
+
 		A.bgm_is_playing = false;
 	},
 
@@ -2170,6 +2269,7 @@ var callback = function ( id ) {
 		PS.statusColor(PS.COLOR_WHITE);
 		PS.statusText("USERNAME INVALID, REFRESH PLZ");
 	}else{
+		S.current_chapter = 1;
 		S.welcome_statement();
 	}
 
@@ -2229,7 +2329,6 @@ PS.touch = function( x, y, data, options ) {
 	G.isHolding = true;
 	G.currentDragX = x;
 	G.currentDragY = y;
-	S.current_chapter = 1;
 	if(!G.isPlayable){
 		return;
 	}
