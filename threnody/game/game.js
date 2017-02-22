@@ -1186,6 +1186,7 @@ var J = {//juice
 	insanityLowerRightYBound1: 21,
 	insanityLowerRightYBound2: 30,
 
+
 	insanityFadeRate: 500,
 	insanityRandomMax: 100,
 	insanityThreshold: 99,
@@ -1426,11 +1427,15 @@ var J = {//juice
 
 		J.error_fade_counter = 0;
 
-		J.object_miss_timer = PS.timerStart(J.error_timer_rate, J.error_glow_helper);
+		J.object_miss_timer = PS.timerStart(J.error_timer_rate, J.error_glow_helper); // timer to turn it off
 	},
 
 	error_glow_helper: function(){
-		// make it all red
+		// make it black again
+		J.black_cross();
+		J.clear_cross();
+		P.delete_object();
+
 		for(var i = 0; i< G.GRID_WIDTH; i++){
 			for(var j = 0; j < G.GRID_HEIGHT; j++){
 				if((i > 0 && i < G.GRID_WIDTH-1) && (j > 0 && j < G.GRID_WIDTH-1)){
@@ -1442,35 +1447,7 @@ var J = {//juice
 				}
 			}
 		}
-
-		if(J.error_fade_counter == 1){
-
-			P.delete_object();
-			for(var i = 0; i< G.GRID_WIDTH; i++){
-				for(var j = 0; j < G.GRID_HEIGHT; j++){
-					if((i > 0 && i < G.GRID_WIDTH-1) && (j > 0 && j < G.GRID_WIDTH-1)){
-						PS.gridPlane(J.LAYER_FADE);
-						//PS.fade(i, j, 0);
-						//PS.debug("why");
-						PS.color(PS.ALL, PS.ALL, J.COLOR_BACKGROUND);
-						PS.alpha(i, j, 0);
-					}
-				}
-			}
-		}
-
-		if(J.error_fade_counter == 2){
-			for(var i = 0; i< G.GRID_WIDTH; i++){
-				for(var j = 0; j < G.GRID_HEIGHT; j++){
-					if((i > 0 && i < G.GRID_WIDTH-1) && (j > 0 && j < G.GRID_WIDTH-1)){
-						PS.gridPlane(J.LAYER_FADE);
-						PS.fade(i, j, J.globalFadeRate);
-					}
-				}
-			}
-			PS.timerStop(J.object_miss_timer);
-		}
-		J.error_fade_counter++;
+		PS.timerStop(J.object_miss_timer);
 	},
 
 	start_insanity_timer: function(){
@@ -1522,7 +1499,13 @@ var J = {//juice
 				// check for bounds
 				PS.gridPlane(J.LAYER_INSANITY);
 				if((x >= J.insanityUpperLeftXBound1 && x <= J.insanityUpperLeftXBound2) &&
-					(y >= J.insanityUpperLeftYBound1 && y<= J.insanityUpperLeftYBound2)){
+					(y >= J.insanityUpperLeftYBound1 && y<= J.insanityUpperLeftYBound2)) {
+
+					// dead zone
+					if(( x >= J.insanityUpperLeftXBound1 + 4) && (y >= J.insanityUpperLeftYBound1 + 4)){
+						continue;
+					}
+
 
 					PS.fade(x, y, J.insanityFadeRate);
 
@@ -1554,9 +1537,13 @@ var J = {//juice
 						PS.alpha(x, y, 0);
 					}
 				}
-
 				if((x >= J.insanityLowerLeftXBound1 && x <= J.insanityLowerLeftXBound2) &&
 					(y >= J.insanityLowerLeftYBound1 && y<= J.insanityLowerLeftYBound2)){
+
+					// dead zone
+					if(( x >= J.insanityLowerLeftXBound1 + 4) && (y <= J.insanityLowerLeftYBound2 - 4)){
+						continue;
+					}
 
 					PS.fade(x, y, J.insanityFadeRate);
 
@@ -1591,6 +1578,10 @@ var J = {//juice
 				if((x >= J.insanityUpperRightXBound1 && x <= J.insanityUpperRightXBound2) &&
 					(y >= J.insanityUpperRightYBound1 && y<= J.insanityUpperRightYBound2)){
 
+					// dead zone
+					if(( x <= J.insanityUpperRightXBound2 - 4) && (y >= J.insanityUpperRightYBound1 + 4)){
+						continue;
+					}
 					PS.fade(x, y, J.insanityFadeRate);
 
 					var rando = PS.random(J.insanityRandomMax);
@@ -1623,6 +1614,10 @@ var J = {//juice
 				if((x >= J.insanityLowerRightXBound1 && x <= J.insanityLowerRightXBound2) &&
 					(y >= J.insanityLowerRightYBound1 && y<= J.insanityLowerRightYBound2)){
 
+					// dead zone
+					if(( x <= J.insanityLowerRightXBound2 - 4) && (y <= J.insanityLowerRightYBound2 - 4)){
+						continue;
+					}
 					PS.fade(x, y, J.insanityFadeRate);
 
 					var rando = PS.random(J.insanityRandomMax);
@@ -1688,6 +1683,48 @@ var J = {//juice
 				break;
 
 		}
+	},
+
+	black_cross: function(){ // creates a block cross, for covering up things
+		PS.gridPlane(J.LAYER_FADE);
+		for(var x = 0; x < G.GRID_WIDTH; x++){
+			for(var y = 0; y < G.GRID_HEIGHT; y++){
+				// topdown quadrant
+				if((x > 10 && x < 21) && (y > 0 && y < 31)){
+					PS.fade(x, y, 0);
+					PS.alpha(x, y, 255);
+					PS.color(x, y, PS.COLOR_BLACK);
+				}
+
+				//right quadrant
+				if((x > 0 && x < 31) && (y > 10 && y < 21)){
+					PS.fade(x, y, 0);
+					PS.alpha(x, y, 255);
+					PS.color(x, y, PS.COLOR_BLACK);
+				}
+			}
+		}
+	},
+
+	clear_cross: function(){
+		PS.gridPlane(J.LAYER_FADE);
+		for(var x = 0; x < G.GRID_WIDTH; x++){
+			for(var y = 0; y < G.GRID_HEIGHT; y++){
+				// topdown quadrant
+				if((x > 10 && x < 21) && (y > 0 && y < 31)){
+					PS.fade(x, y, 0);
+					PS.alpha(x, y, 0);
+					PS.color(x, y, PS.COLOR_BLACK);
+				}
+
+				//right quadrant
+				if((x > 0 && x < 31) && (y > 10 && y < 21)){
+					PS.fade(x, y, 0);
+					PS.alpha(x, y, 0);
+					PS.color(x, y, PS.COLOR_BLACK);
+				}
+			}
+		}
 	}
 
 };
@@ -1734,6 +1771,7 @@ var P = { // sPrites
 	spawn_object: function(type){
 		PS.gridFade(0);
 		P.object_exists = true;
+		J.clear_cross(); // to remove fade
 		J.show_object(type);
 	},
 
@@ -1746,6 +1784,23 @@ var P = { // sPrites
 
 		};
 
+		//sound stuff
+		if(G.actionType == L.ACT_FADE_IN_TAP){
+			A.play_appear_horiz();
+		}
+		if(G.actionType == L.ACT_FADE_IN_HOLD){
+			A.play_appear_vert();
+		}
+		
+		if(J.object_show_counter < 0){
+			theImage = P.ready_sprite;
+			PS.imageLoad(theImage, loader);
+			PS.timerStop(J.object_show_timer);
+			P.object_is_appearing = false;
+			return;
+			//P.reset_sprite();
+		}
+
 		if(J.object_show_counter < 10){
 			var theImage = J.current_object_type + "0" + J.object_show_counter;
 		}else{
@@ -1755,21 +1810,6 @@ var P = { // sPrites
 
 		PS.imageLoad(theImage, loader);
 		J.object_show_counter--;
-
-		//sound stuff
-		if(G.actionType == L.ACT_FADE_IN_TAP){
-			A.play_appear_horiz();
-		}
-		if(G.actionType == L.ACT_FADE_IN_HOLD){
-			A.play_appear_vert();
-		}
-		if(J.object_show_counter<0){
-			theImage = P.ready_sprite;
-			PS.imageLoad(theImage, loader);
-			PS.timerStop(J.object_show_timer);
-			P.object_is_appearing = false;
-			//P.reset_sprite();
-		}
 
 
 	},
@@ -2288,6 +2328,10 @@ PS.init = function( system, options ) {
 	J.init_grid();
 	
 	G.init_measure();
+
+	J.black_cross();
+	J.clear_cross();
+
 	G.populate_tempo_array();
 	S.populate_message_arrays();
 	//J.start_insanity_timer();
@@ -2296,6 +2340,7 @@ PS.init = function( system, options ) {
 
 	//SET TO TRUE BFORE WE'RE DONE
 	PS.statusColor(PS.COLOR_WHITE);
+
 	PS.dbInit( "threnody", { login : callback } );
 
 	//G.start_global_timer();
@@ -2434,26 +2479,7 @@ PS.keyDown = function( key, shift, ctrl, options ) {
 	// don't do this anymore
 	//return;
 	// Add code here for when a key is pressed
-	if(key != 32){
-		return;
-	}else{
-		G.isHolding = true
-		if(!G.isPlayable){
-			return;
-		}
 
-		if(!G.isRhythmBegun){
-			//PS.statusText("THE PLACEHOLDER SOUNDS");
-			//PS.statusColor(PS.COLOR_WHITE);
-			//A.play_bgm();
-			//G.start_global_timer();
-			S.welcome_statement();
-		}else{
-			//if(G.isOnPeg(x, y)){
-				G.click();
-			//}
-		}
-	}
 
 
 };
@@ -2472,16 +2498,7 @@ PS.keyUp = function( key, shift, ctrl, options ) {
 	// PS.debug( "PS.keyUp(): key = " + key + ", shift = " + shift + ", ctrl = " + ctrl + "\n" );
 
 	// Add code here for when a key is released
-	if(key != 32){
-		return;
-	}else{
-		if(!G.isPlayable){
-			return;
-		}
 
-		// Add code here for when the mouse button/touch is released over a bead
-		G.isHolding = false;
-	}
 
 
 };
