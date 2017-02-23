@@ -63,6 +63,7 @@ var G = {//general game logic
 	isRhythmBegun: false, // has the rhythm begun?
 	isHolding: false, // are we holding?
 	isDragging: false, // are we dragging?
+	canClick: true, // can we click
 	actionType: 0, // 1 for tap, 2 for hold, [amount] for direction
 
 	currentDragX: 0,
@@ -301,7 +302,7 @@ var G = {//general game logic
 		G.actionType = L.ACT_FADE_IN_DRAG;
 
 		G.dangerDirection = PS.random(3); // 1 to 3
-		J.show_danger_direction();
+		//J.show_danger_direction();
 		P.object_is_hit = false;
 		P.SPRITE_LOCATION = "sprites/drag_shrink/";
 		if(!G.successfulDrag){
@@ -431,7 +432,7 @@ var G = {//general game logic
 		PS.dbEvent( "threnody", "hit status: ", "drag start");
 		//S.show_message("DRAGGING");
 
-		P.object_is_hit = true;
+		//P.object_is_hit = true;
 		G.isDragging = true; // is this actually the same thing?
 		/**TODO: AUDIO FOR DRAG START **/
 		//P.place_drag_peg();
@@ -450,85 +451,18 @@ var G = {//general game logic
 
 	drag: function(x, y){
 
-		if(!G.dragUp && !G.dragLeft && !G.dragRight){
-			G.get_drag_direction(x, y);
-		}
+		// update the current drag X
+		G.currentDragX = x;
+		G.currentDragY = 16;
 
-		//G.dragUp = true;
-
-
-		var real = false;
-
-		if(G.dragLeft){ // X should be going down and we are going left
-			if(x < G.currentDragX){
-				// update the current drag X
-				G.currentDragX = x;
-				G.currentDragY = 16;
-				real = true;
-			}
-		}
-
-		if(G.dragRight){ // X should be going up
-			//PS.debug("RIGHT!");
-			if(x > G.currentDragX){
-				// update the current drag X
-				G.currentDragX = x;
-				G.currentDragY = 16;
-				real = true;
-			}
-		}
-
-		if(G.dragUp){ // Y should be going down
-			//PS.debug(G.currentDragX + "\n");
-			if(y < G.currentDragY){
-				// update the y
-				G.currentDragY = y;
-				G.currentDragX = 16;
-				real = true;
-			}
-		}
-
-		if(real){
-			/**TODO: AUDIOOOO **/
-			A.play_drag();
-			
-		}
+		A.play_drag();
 		P.update_drag_peg(G.currentDragX, G.currentDragY);
 
-
-
-
 		// if current drag X is equal to a certain threshold, we've done it boys
-
 		if(G.check_drag_completion()){
 			G.isDragging = false;
-			if(G.dragLeft){
-				//S.show_message("You ventured left");
-				if(G.dangerDirection == 1){
-					J.COLOR_VICTORY = J.COLOR_INSANITY;
-					//G.iterateTempo();
-				}else{
-					J.COLOR_VICTORY = J.COLOR_BACKGROUND_GLOW;
-				}
-			}
-			if(G.dragUp){
-				//S.show_message("You stayed the course");
-				if(G.dangerDirection == 2){
-					J.COLOR_VICTORY = J.COLOR_INSANITY;
-					//G.iterateTempo();
-				}else{
-					J.COLOR_VICTORY = J.COLOR_BACKGROUND_GLOW;
-				}
-			}
-			if(G.dragRight){
-				//S.show_message("You ventured right");
-				if(G.dangerDirection == 3){
-					J.COLOR_VICTORY = J.COLOR_INSANITY;
-					//G.iterateTempo();
-				}else{
-					J.COLOR_VICTORY = J.COLOR_BACKGROUND_GLOW;
-				}
-			}
+			G.isPlayable = false;
+			J.COLOR_VICTORY = J.COLOR_BACKGROUND_GLOW;
 			A.play_action_sound();
 			J.drag_success_glow();
 		}
@@ -537,26 +471,17 @@ var G = {//general game logic
 	},
 
 	check_drag_completion: function(){
-		if(G.dragUp && G.currentDragY <= G.dragYThreshold){
+		if(G.currentDragX <= G.dragYThreshold || G.currentDragX >= G.dragXThreshold){
 			return true;
+		}else{
+			return false;
 		}
-
-		if(G.dragLeft && G.currentDragX <= G.dragYThreshold){
-			return true;
-		}
-
-		if(G.dragRight && G.currentDragX >= G.dragXThreshold){
-			return true;
-		}
-
-		return false;
-
 	},
 
 	get_drag_direction: function(x, y){
 		if(y < G.currentDragY){
 			//PS.debug("GOING UP!!!");
-			G.dragUp = true;
+			G.dragUp = false; // we are never going up anymore
 		}else {
 			if(x < G.currentDragX){
 				//PS.debug("GOING LEFT!!!");
@@ -571,7 +496,6 @@ var G = {//general game logic
 	},
 
 	miss_object : function(){
-		//PS.debug("miss!");
 		PS.dbEvent( "threnody", "hit status: ", "misssed");
 		G.isOpportunity = false;
 
@@ -580,11 +504,11 @@ var G = {//general game logic
 			return;
 		}
 
-		J.error_glow();
 		if(P.drag_exists){
 			P.remove_drag_peg();
 		}
-		G.increase_insanity();
+
+		J.miss_fade(); // create a black cross
 	},
 
 	increase_insanity : function(){
@@ -596,6 +520,20 @@ var G = {//general game logic
 			}
 		}
 		G.insanityLevel++;
+	},
+
+	halt_click : function(){
+		G.canClick = false;
+
+		var click_timer = 0;
+		var click_rate = 10;
+
+		var reenable_click = function(){
+			G.canClick = true;
+			PS.timerStop(click_timer);
+		}
+
+		click_timer = PS.timerStart(click_rate, reenable_click);
 	}
 
 };
@@ -627,7 +565,7 @@ var L = {//level or chapter logic
 
 		L.level = [
 			[
-				[1, 0,0,0,0,0, 10, 0,0,0,0,0, 0, 0,0,0,0,0, 0, 0,0,0,0,9]  //logic
+				[3, 0,0,0,0,0, 10, 0,0,0,0,0, 0, 0,0,0,0,0, 0, 0,0,0,0,9]  //logic
 			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 				],
 
@@ -1270,12 +1208,6 @@ var J = {//juice
 		}
 	},
 
-	hide_object: function(){
-	//	PS.gridPlane(J.LAYER_OBJECT_HIDE);
-		//PS.fade(PS.ALL, PS.ALL, 0);
-		//PS.alpha(PS.ALL, PS.ALL, 255);
-	},
-
 	hit_glow: function(){
 		J.COLOR_VICTORY = J.COLOR_BACKGROUND_GLOW;
 		PS.gridShadow(true, J.COLOR_VICTORY);
@@ -1725,8 +1657,28 @@ var J = {//juice
 				}
 			}
 		}
-	}
+	},
 
+	miss_fade: function(){
+		PS.gridPlane(J.LAYER_FADE);
+		for(var x = 0; x < G.GRID_WIDTH; x++){
+			for(var y = 0; y < G.GRID_HEIGHT; y++){
+				// topdown quadrant
+				if((x > 10 && x < 21) && (y > 0 && y < 31)){
+					PS.fade(x, y, 5);
+					PS.alpha(x, y, 255);
+					PS.color(x, y, PS.COLOR_BLACK);
+				}
+
+				//right quadrant
+				if((x > 0 && x < 31) && (y > 10 && y < 21)){
+					PS.fade(x, y, 5);
+					PS.alpha(x, y, 255);
+					PS.color(x, y, PS.COLOR_BLACK);
+				}
+			}
+		}
+	}
 };
 
 var P = { // sPrites
@@ -1756,33 +1708,18 @@ var P = { // sPrites
 	dragX: 0,
 	dragY: 0,
 
-
-	reset_sprite: function(){
-
-		P.delete_object();
-
-		//P.current_object = 0;
-		//P.current_object_type = "nothing";
-		//J.object_show_counter = "nothing";
-		//P.ready_sprite = "nothing";
-
-	},
-
 	spawn_object: function(type){
 		PS.gridFade(0);
+		if(P.object_exists){
+			P.delete_object();
+		}
 		P.object_exists = true;
+		G.isPlayable = true;
 		J.clear_cross(); // to remove fade
 		J.show_object(type);
 	},
 
 	show_object_helper: function(){
-		var loader;
-		loader = function(data){
-			P.current_object = PS.spriteImage(data);
-			PS.spritePlane(P.current_object, J.LAYER_OBJECT);
-			PS.spriteMove(P.current_object, P.move_x, P.move_y);
-
-		};
 
 		//sound stuff
 		if(G.actionType == L.ACT_FADE_IN_TAP){
@@ -1791,8 +1728,16 @@ var P = { // sPrites
 		if(G.actionType == L.ACT_FADE_IN_HOLD){
 			A.play_appear_vert();
 		}
-		
-		if(J.object_show_counter < 0){
+
+		var loader;
+		loader = function(data){
+			P.current_object = PS.spriteImage(data);
+			PS.spritePlane(P.current_object, J.LAYER_OBJECT);
+			PS.spriteMove(P.current_object, P.move_x, P.move_y);
+
+		};
+
+		if(J.object_show_counter < 0 && P.object_is_appearing == true){
 			theImage = P.ready_sprite;
 			PS.imageLoad(theImage, loader);
 			PS.timerStop(J.object_show_timer);
@@ -1815,12 +1760,16 @@ var P = { // sPrites
 	},
 
 	show_drag_helper: function(){
+		// sound stuff
+		A.play_appear_drag();
+
 		var loader;
 		loader = function(data){
 			P.current_object = PS.spriteImage(data);
 			PS.spritePlane(P.current_object, J.LAYER_OBJECT);
 			PS.spriteMove(P.current_object, P.move_x, P.move_y);
 		};
+
 		if(J.object_show_counter < 10){
 			var theImage = J.current_object_type + "0" + J.object_show_counter;
 		}else{
@@ -1831,7 +1780,6 @@ var P = { // sPrites
 
 		PS.imageLoad(theImage, loader);
 		J.object_show_counter++;
-		A.play_appear_drag();
 
 		// sound stuff
 		// play a sound plz
@@ -1844,7 +1792,6 @@ var P = { // sPrites
 			P.place_drag_peg();
 			//P.reset_sprite();
 		}
-
 	},
 
 	hit_object_helper: function(){
@@ -1923,13 +1870,13 @@ var P = { // sPrites
 		PS.gridShadow(true, PS.COLOR_RED);
 		A.pause_hold();
 		A.play_miss();
+		J.error_glow();
 	},
 
 	delete_object: function(){
 		if(P.object_exists){
 			PS.spriteDelete(P.current_object);
 			P.object_exists = false;
-			J.hide_object();
 			return;
 		}
 
@@ -2227,8 +2174,8 @@ var A = {//audio
 	},
 
 	play_drag: function(){
-		PS.audioPlay(A.TONES_DRAG[A.appear_counter], {volume:0.05, path: A.TONES_DRAG_PATH});
-		A.appear_counter++;
+		//PS.audioPlay(A.TONES_DRAG[A.appear_counter], {volume:0.05, path: A.TONES_DRAG_PATH});
+		//A.appear_counter++;
 	},
 
 	play_bgm: function(){
@@ -2371,12 +2318,14 @@ PS.touch = function( x, y, data, options ) {
 	}else{
 		A.increase_insanity();
 	}
-	G.isHolding = true;
-	G.currentDragX = x;
-	G.currentDragY = y;
 	if(!G.isPlayable){
 		return;
 	}
+	if(!G.canClick){
+		return;
+	}
+
+	G.halt_click();
 
 	if(!G.isRhythmBegun){
 		//PS.statusText("THE PLACEHOLDER SOUNDS");
@@ -2387,6 +2336,9 @@ PS.touch = function( x, y, data, options ) {
 	}else{
 		if(G.isOnPeg(x, y)){
 			G.click();
+			G.isHolding = true;
+			G.currentDragX = x;
+			G.currentDragY = y;
 		}
 	}
 
