@@ -86,6 +86,9 @@ var G = {//general game logic
 	successfulHold: false,
 	successfulDrag: false,
 
+	activityCounter: 0, // for debugging
+	tutorialComplete: false,
+
 	init_measure : function() {
 		
 		if(G.tick_per_measure % 4 === 0){
@@ -409,6 +412,10 @@ var G = {//general game logic
 		G.isOpportunity = false;
 		P.object_is_hit = true;
 
+		if(S.current_chapter == 0){
+			L.tap_correct++;
+		}
+
 		PS.dbEvent( "threnody", "hit status: ", "hit");
 		//S.show_message("HIT");
 
@@ -512,6 +519,10 @@ var G = {//general game logic
 	},
 
 	increase_insanity : function(){
+		// do not increase if tutorial
+		if(S.current_chapter == 0){
+			return;
+		}
 		if(G.insanityLevel == 0){
 			J.start_insanity_timer();
 		}else{
@@ -560,7 +571,81 @@ var L = {//level or chapter logic
 	level: [],
 	max_measures: 0,
 
+	tap_correct : 0,
+	hold_correct : 0,
+	drag_correct : 0,
+	current_tutorial : "tap",
+
 	// each level is 24 tracks long
+	zero_tap : function(){
+		L.level = [
+			[
+				[1, 0,0,0,0,0, 10, 0,0,0,0,0, 9, 0,0,0,0,0, 0, 0,0,0,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[1, 0,0,0,0,0, 10, 0,0,0,0,0, 9, 0,0,0,0,0, 0, 0,0,0,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+
+				[1, 0,0,0,0,0, 10, 0,0,9,0,0, 1, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			]
+		];
+
+		//The next two lines will go into a generic 'level load' function once we write it
+		G.measure_counter = 0;
+		L.max_measures = L.level.length;
+		L.tap_correct = 0;
+		G.successfulTap = false;
+		L.current_tutorial = "tap";
+	},
+
+	zero_hold : function(){
+		L.level = [
+			[
+				[2, 0,0,0,0,0, 10, 0,0,0,0,0, 9, 0,0,0,0,0, 0, 0,0,0,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[2, 0,0,0,0,0, 10, 0,0,0,0,0, 9, 0,0,0,0,0, 0, 0,0,0,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[2, 0,0,0,0,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			]
+		];
+
+		//The next two lines will go into a generic 'level load' function once we write it
+		G.measure_counter = 0;
+		L.max_measures = L.level.length;
+		L.hold_correct = 0;
+		G.successfulHold = false;
+		L.current_tutorial = "hold";
+	},
+
+	zero_drag : function(){
+		L.level = [
+			[
+				[3, 0,0,0,0,0, 10, 0,0,0,0,0, 9, 0,0,0,0,0, 0, 0,0,0,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[3, 0,0,0,0,0, 10, 0,0,0,0,0, 9, 0,0,0,0,0, 0, 0,0,0,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			]
+		];
+
+		//The next two lines will go into a generic 'level load' function once we write it
+		G.measure_counter = 0;
+		L.max_measures = L.level.length;
+		L.drag_correct = 0;
+		G.successfulDrag = false;
+		L.current_tutorial = "drag";
+	},
+
 	one : function() {
 
 		L.level = [
@@ -700,7 +785,7 @@ var L = {//level or chapter logic
 
 		L.level = [
 			[
-				[1, 0,0,0,0,0, 10, 0,0,0,0,9, 1, 0,0,0,0,0, 10, 0,0,0,0,9]  //logic
+				[1, 10,9,0,0,0, 1, 10,0,0,0,9, 1, 0,0,0,0,0, 10, 0,0,0,0,9]  //logic
 				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 			],
 			[
@@ -745,11 +830,11 @@ var L = {//level or chapter logic
 				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 			],
 			[
-				[1, 10,0,9,0,0, 0, 0,0,1,10,9, 1, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+				[1, 0,10,0,9,0, 0, 0,0,1,0,0, 0, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
 				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 			],
 			[
-				[1, 10,0,9,0,0, 0, 0,0,1,10,9, 1, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+				[1, 10,0,9,0,0, 0, 0,0,0,0,0, 1, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
 				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 			],
 			[
@@ -834,6 +919,7 @@ var L = {//level or chapter logic
 
 var S = { // status line and chapter control
 	welcome_array: [],
+	tutorial_array: [],
 	chapter_one_array: [],
 	chapter_two_welcome_array: [],
 	chapter_two_array: [],
@@ -850,7 +936,7 @@ var S = { // status line and chapter control
 	current_chapter: 1,
 
 	message_timer: 0,
-	message_rate: 40,
+	message_rate: 200,
 	message_timer_exists: false,
 	message_counter: 0,
 	message_fade : 200,
@@ -877,6 +963,12 @@ var S = { // status line and chapter control
 	},
 
 	populate_message_arrays: function(){
+		S.tutorial_array[0] = "Threnody";
+		S.tutorial_array[1] = "Threnody";
+		S.tutorial_array[2] = "Threnody";
+		S.tutorial_array[3] = "Threnody";
+
+
 		S.welcome_array[0] = "Chapter One";
 		S.welcome_array[1] = "July 16, 1923";
 		S.welcome_array[2] = "Exham Priory, England";
@@ -933,6 +1025,9 @@ var S = { // status line and chapter control
 		//PS.debug(S.welcome_counter);
 		var whichArray;
 		switch(S.current_chapter){
+			case 0:
+				whichArray = S.tutorial_array;
+				break;
 			case 1:
 				whichArray = S.welcome_array;
 				break;
@@ -947,7 +1042,7 @@ var S = { // status line and chapter control
 				break;
 		}
 		if(S.welcome_counter%2 == 0){ // every other should be a message update
-			if(!A.bgm_is_playing){
+			if(!A.bgm_is_playing && !A.drum_is_playing){
 				A.play_bgm();
 			}
 			PS.statusColor(PS.COLOR_WHITE);
@@ -999,11 +1094,14 @@ var S = { // status line and chapter control
 	},
 
 	complete_chapter : function(){
-		PS.dbEvent( "threnody", "chapter complete", true);
 		G.isPlayable = false;
+		if(S.current_chapter == 0){
+			S.check_complete();
+			return;
+		}
 		S.current_chapter++;
 
-		if(S.current_chapter == 3){
+		if(S.current_chapter == 3){ // the current end state
 			S.end_game();
 			return;
 		}
@@ -1018,6 +1116,37 @@ var S = { // status line and chapter control
 		S.next_chapter_timer = PS.timerStart(S.time_until_next_chapter, S.next_chapter);
 	},
 
+	check_complete : function(){
+		switch(L.current_tutorial){
+			case "tap":
+				if(L.tap_correct == 4){
+					L.current_tutorial = "hold";
+				}
+				S.start_chapter(0);
+				break;
+			case "hold":
+				if(L.hold_correct == 4){
+					L.current_tutorial = "drag";
+				}
+				S.start_chapter(0);
+				break;
+			case "drag":
+				if(L.drag_correct == 4){
+					S.current_chapter++;
+					A.stop_bgm();
+
+					G.insanityLevel = 0;
+					S.message_counter = 0;
+					S.welcome_counter = 0;
+
+					S.next_chapter_timer = PS.timerStart(S.time_until_next_chapter, S.next_chapter); // on to the real game
+				}else{
+					S.start_chapter(0);
+				}
+				break;
+		}
+	},
+
 	next_chapter : function(){
 		PS.timerStop(S.next_chapter_timer);
 
@@ -1026,6 +1155,21 @@ var S = { // status line and chapter control
 
 	start_chapter : function(number){
 		switch(number){
+			case 0:
+				PS.dbEvent("threnody", "chapter zero begun", true);
+				switch(L.current_tutorial){
+					case "tap":
+						L.zero_tap();
+						break;
+					case "hold":
+						L.zero_hold();
+						break;
+					case "drag":
+						L.zero_drag();
+						break;
+				}
+				G.start_global_timer();
+				break;
 			case 1:
 				PS.dbEvent( "threnody", "chapter one begun", true);
 				L.one();
@@ -1248,6 +1392,7 @@ var J = {//juice
 		J.init_border();
 
 		G.successfulDrag = true;
+		L.drag_correct++;
 
 		// AUDIO FOR DRAG SUCCESS??? ONE OF THREE???
 
@@ -1709,6 +1854,8 @@ var P = { // sPrites
 	dragY: 0,
 
 	spawn_object: function(type){
+		G.activityCounter++;
+		//PS.debug(G.activityCounter + "\n");
 		PS.gridFade(0);
 		if(P.object_exists){
 			P.delete_object();
@@ -1854,13 +2001,10 @@ var P = { // sPrites
 				J.COLOR_VICTORY = J.COLOR_BACKGROUND_GLOW;
 				PS.gridShadow(true, J.COLOR_VICTORY);
 				G.successfulHold = true;
+				L.hold_correct++;
 				//P.reset_sprite();
 			}
 		}
-	},
-
-	release_object: function(){
-
 	},
 
 	hold_object_miss: function(){
@@ -2006,6 +2150,7 @@ var A = {//audio
 	appear_counter: 0,
 
 	bgm_is_playing: false,
+	drum_is_playing: false,
 	insanity_is_playing: false,
 
 	play_beat: function(){
@@ -2182,6 +2327,9 @@ var A = {//audio
 		var theBgm;
 		var theDrums;
 		switch(S.current_chapter){
+			case 0:
+				theDrums = A.DRUMS_BGM_1;
+				break;
 			case 1:
 				theBgm = A.SONG_BGM_1;
 				theDrums = A.DRUMS_BGM_1;
@@ -2191,21 +2339,25 @@ var A = {//audio
 				theDrums = A.DRUMS_BGM_2;
 				break;
 		}
-		A.bgm_channel = PS.audioPlay(theBgm, {loop: false, volume:0.1, path: A.SOUND_PATH});
+		if(S.current_chapter != 0){
+			A.bgm_channel = PS.audioPlay(theBgm, {loop: false, volume:0.1, path: A.SOUND_PATH});
+			A.bgm_is_playing = true;
+		}
 		A.drums_channel = PS.audioPlay(theDrums, {loop: false, volume:0.2, path: A.SOUND_PATH});
-
-		A.bgm_is_playing = true;
+		A.drum_is_playing = true;
 	},
 
 	stop_bgm: function(){
-		if(!A.bgm_is_playing){
-			return;
+		if(A.bgm_is_playing){
+			PS.audioStop(A.bgm_channel);
 		}
 
-		PS.audioStop(A.bgm_channel);
-		PS.audioStop(A.drums_channel);
+		if(A.drum_is_playing){
+			PS.audioStop(A.drums_channel);
+		}
 
 		A.bgm_is_playing = false;
+		A.drum_is_playing = false;
 	},
 
 	play_hold: function(){
@@ -2256,7 +2408,7 @@ var callback = function ( id ) {
 		PS.statusColor(PS.COLOR_WHITE);
 		PS.statusText("USERNAME INVALID, REFRESH PLZ");
 	}else{
-		S.current_chapter = 1;
+		S.current_chapter = 0;
 		S.welcome_statement();
 	}
 
