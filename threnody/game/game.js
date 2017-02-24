@@ -183,14 +183,7 @@ var G = {//general game logic
 			}
 		}
 		//number of ticks between
-/*
-		PS.debug("\n" + measure +"\n");
-		PS.debug(G.measure_counter +"\n");
-		PS.debug(G.tick_per_measure +"\n");
-		PS.debug(G.counter +"\n");
-		PS.debug(new_index);
-		PS.debug(G.logic_timings[new_index] +"\n");
-*/
+
 		var delta = ((measure - G.measure_counter) * G.tick_per_measure) + G.counter - (G.logic_timings[new_index]);
 
 		return delta; 
@@ -233,7 +226,9 @@ var G = {//general game logic
 				(G.measure_counter == 12)||
 				(G.measure_counter == 18)||
 				(G.measure_counter == 24)){
-				S.load_message();
+				if(S.current_chapter != 5){
+					S.load_message();
+				}
 			}
 
 
@@ -258,12 +253,6 @@ var G = {//general game logic
 		G.global_timer = PS.timerStart(G.global_rate, G.tick);
 	},
 
-	stop_global_timer : function(){
-		G.isRhythmBegun = false;
-		G.isPlayable = false;
-		PS.timerStop(G.global_timer);
-	},
-
 	//1 = start fadein, 2 = clear because miss, 3 = open opportunity
 	beat_logic : function(action){
 		switch(action){
@@ -271,6 +260,9 @@ var G = {//general game logic
 				G.isOpportunity = true;
 				L.actionType = L.ACT_FADE_IN_TAP; // set the action to the current fade in style
 				G.spawn_object_tap();
+				if(S.current_chapter == 5){
+					S.epilogue_message();
+				}
 				break;
 			case L.ACT_FADE_IN_HOLD:
 				G.isOpportunity = true;
@@ -287,7 +279,7 @@ var G = {//general game logic
 				G.last_logic_activity = G.counter;
 				break;
 			case L.ACT_FADE_OUT: // clear because miss
-				//PS.statusText("");
+				//PS.statusText("");s
 				G.miss_object();
 				break;
 
@@ -364,20 +356,17 @@ var G = {//general game logic
 			G.wiggleRoom = 15; // set waggle room
 		}
 
+		if(S.current_chapter == 5){
+			G.wiggleRoom = 40;
+		}
+
 		var last_good = G.last_logic_activity;
 		var next_good = G.counter - G.calc_tick_distance(L.ACT_CLICK);
 		var dif_last = last_good - G.counter; // this is if our goal was slightly before us
 		var dif_next = G.counter - next_good; // this is if our goal is slightly ahead of us
 
-
 		var is_close_to_last = false;
 		var is_close_to_next = false;
-
-		/*PS.debug("current tick: " + G.counter + "\n");
-		PS.debug("last tick: " + G.last_logic_activity + "\n");
-		PS.debug("next tick: " + next_good + "\n");
-		PS.debug("dif last: " + dif_last + "\n");
-		PS.debug("dif next: " + dif_next + "\n");*/
 
 		if((dif_last < G.wiggleRoom) && (last_good > G.counter)){
 			is_close_to_last = true;
@@ -399,7 +388,6 @@ var G = {//general game logic
 		}
 
 		if(G.is_wiggle_room()){
-
 			// what kind of interaction?
 			if(G.actionType == L.ACT_FADE_IN_TAP){
 				G.hit_object();
@@ -408,7 +396,6 @@ var G = {//general game logic
 				G.hold_object();
 			}
 			if(G.actionType == L.ACT_FADE_IN_DRAG){
-				//PS.debug("dragging");
 				G.start_drag();
 			}
 
@@ -431,13 +418,15 @@ var G = {//general game logic
 		PS.dbEvent( "threnody", "hit status: ", "hit at wrong time");
 		G.isOpportunity = false;
 
+		if(S.current_chapter == 5){
+			return;
+		}
 		J.error_glow();
 		G.increase_insanity();
 
 	},
 
 	hit_object : function(){
-		//PS.debug("hit!");
 		G.isOpportunity = false;
 		P.object_is_hit = true;
 
@@ -596,7 +585,11 @@ var G = {//general game logic
 			P.remove_drag_peg();
 		}
 
-		J.miss_fade(); // create a black cross
+		if(S.current_chapter == 5){
+			J.miss_epilogue();
+		}else{
+			J.miss_fade(); // create a black cross
+		}
 	},
 
 	increase_insanity : function(){
@@ -662,7 +655,7 @@ var L = {//level or chapter logic
 		L.level = [
 			[
 				[1, 0,0,0,0,0, 10, 0,0,0,0,0, 9, 0,0,0,0,0, 0, 0,0,0,0,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 			],
 			[
 				[1, 0,0,0,0,0, 10, 0,0,0,0,0, 9, 0,0,0,0,0, 0, 0,0,0,0,0]  //logic
@@ -731,524 +724,271 @@ var L = {//level or chapter logic
 
 		L.level = [
 			[
-				[1, 0,0,0,0,0, 10, 0,0,0,0,0, 9, 0,0,0,0,0, 0, 0,0,0,0,0]  //logic
+				[1, 0,0,0,0,0, 10, 0,0,0,0,0, 0, 0,0,0,0,0, 0, 0,0,0,0,9]  //logic
 			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 				],
 
 			[
 				[1, 0,0,0,0,0, 10, 0,0,9,0,0, 1, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 			],
 			[
 
+				[1, 0,0,0,0,0, 10, 0,0,9,0,0, 1, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
 				[1, 0,0,10,0,0, 9, 0,0,0,0,0, 1, 0,0,10,0,0, 9, 0,0,0,0,0]  //logic
 			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			],
+				],
 			[
-				[1, 0,0,0,0,0, 10, 0,0,9,0,0, 0, 0,0,1,0,0, 10, 0,0,9,0,0]  //logic
+				[0, 0,0,1,0,0, 10, 0,0,9,0,0, 0, 0,0,1,0,0, 10, 0,0,9,0,0]  //logic
 			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 				],
-
-
-
 			[
 				[2, 0,0,0,0,0, 10, 0,0,0,0,0, 9, 0,0,0,0,0, 0, 0,0,0,0,0]  //logic
 			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 				],
-
 			[
 				[2, 0,0,0,0,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
 			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			],
+				],
 			[
-
-				[2, 0,0,10,0,0, 9, 0,0,0,0,0, 2, 0,0,10,0,0, 9, 0,0,0,0,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			],
-			[
-				[2, 0,0,0,0,0, 10, 0,0,9,0,0, 0, 0,0,2,0,0, 10, 0,0,9,0,0]  //logic
+				[2, 0,0,10,0,9, 2, 0,0,10,0,9, 2, 0,0,10,0,9, 2, 0,0,10,0,9]  //logic
 			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 				],
-
-
-
 			[
-				[3, 0,0,0,0,0, 10, 0,0,0,0,0, 9, 0,0,0,0,0, 0, 0,0,0,0,0]  //logic
+				[1, 0,0,0,0,0, 0, 0,0,10,0,0, 9, 0,0,2,0,0, 10, 0,0,9,0,0]  //logic
 			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 				],
-
 			[
-				[3, 0,0,0,0,0, 10, 0,0,9,0,0, 3, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+				[1, 0,0,10,0,9, 2, 0,0,10,0,9, 1, 0,0,10,0,9, 2, 0,0,10,0,9]  //logic
 			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+				],
+			[
+				[1, 0,0,0,0,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0] //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+				],
+			[
+				[1, 0,10,9,1,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+				],
+			[
+				[2, 0,0,0,0,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+				],
+			[
+				[1, 0,10,9,1,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+				],
+			[
+				[2, 0,0,0,0,0, 10, 0,0,9,0,2, 0, 10,0,9,0,0, 0, 0,0,0,0,0]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+				],
+			[
+				[1, 0,0,0,0,0, 10, 0,0,9,0,0, 1, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+				],
+			[
+				[2, 0,0,0,0,0, 10, 0,0,9,0,0, 1, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 			],
 			[
-
-				[2, 0,0,10,0,0, 9, 0,0,0,0,0, 2, 0,0,10,0,0, 9, 0,0,0,0,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+				[2, 0,0,0,0,0, 10, 0,0,9,0,0, 1, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 			],
 			[
-				[1, 0,0,0,0,0, 10, 0,0,9,0,0, 0, 0,0,1,0,0, 10, 0,0,9,0,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-				],
-
-
-			[
-				[1, 0,0,0,0,0, 10, 0,0,9,0,0, 0, 0,0,1,0,0, 10, 0,0,9,0,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-				],
-
+				[1, 0,0,0,0,0, 10, 0,0,9,0,0, 1, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
 			[
 				[1, 0,0,0,0,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 			],
 			[
-
-				[2, 0,0,10,0,0, 9, 0,0,0,0,0, 1, 0,0,10,0,0, 9, 0,0,0,0,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+				[1, 0,10,9,2,0, 10, 0,0,9,0,0, 1, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 			],
 			[
-				[3, 0,0,0,0,0, 10, 0,0,9,0,0, 0, 0,0,1,0,0, 10, 0,0,9,0,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-				],
-
-			[
-
-				[1, 0,0,10,9,0, 1, 0,0,10,9,0, 1, 0,0,10,9,0, 0, 0,0,0,0,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+				[1, 0,0,10,0,9, 1, 0,0,10,0,9, 2, 0,0,10,0,9, 2, 0,0,10,0,9]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 			],
 			[
-				[2, 0,0,10,9,0, 2, 0,0,10,9,0, 2, 0,0,10,9,0, 0, 0,0,0,0,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+				[2, 0,0,0,0,0, 10, 0,0,9,0,0, 1, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 			],
 			[
-				[1, 0,0,10,9,0, 1, 0,0,10,9,0, 2, 0,0,10,9,0, 0, 0,0,0,0,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+				[1, 0,0,0,0,0, 10, 0,0,9,0,0, 0, 0,0,0,0,0, 0, 0,0,0,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			/*[
+				[2, 0,0,0,0,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 			],
 			[
-				[3, 0,0,0,0,0, 10, 0,0,9,0,0, 0, 0,0,1,0,0, 10, 0,0,9,0,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			],
-
-
-			[
-				[1, 0,0,10,9,0, 2, 0,0,10,9,0, 1, 0,0,10,9,0, 0, 0,0,0,0,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+				[2, 0,0,0,0,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 			],
 			[
-				[2, 0,0,10,9,0, 1, 0,0,10,9,0, 2, 0,0,10,9,0, 0, 0,0,0,0,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+				[2, 0,0,0,0,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 			],
 			[
-				[3, 0,0,0,0,0, 10, 0,0,9,0,0, 0, 0,0,1,0,0, 10, 0,0,9,0,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-				],
+				[2, 0,0,0,0,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
 			[
-				[3, 0,0,0,0,0, 10, 0,0,9,0,0, 0, 0,0,0,0,0, 0, 0,0,0,0,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-				]
+				[2, 0,0,0,0,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[2, 0,0,0,0,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[1, 0,10,9,1,0, 10, 0,0,9,0,0, 1, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			]*/
 				
 		];
 		//The next two lines will go into a generic 'level load' function once we write it
 		G.measure_counter = 0;
 		L.max_measures = L.level.length;
 	},
-
 	two : function() {
 
 		L.level = [
 			[
-				[1, 0,0,0,0,0, 0, 0,0,0,0,0, 10, 0,0,0,0,0, 9, 0,0,0,0,0]  //logic
+				[1, 10,9,0,0,0, 1, 10,0,0,0,9, 1, 0,0,0,0,0, 10, 0,0,0,0,9]  //logic
 				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 			],
-			[
-				[1, 0,0,10,9,0, 1, 0,0,10,9,0, 1, 0,0,10,9,0, 0, 0,0,0,0,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			],
-			[
-				[2, 0,0,10,9,0, 2, 0,0,10,9,0, 2, 0,0,10,9,0, 0, 0,0,0,0,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			],
-			[
-				[3, 0,0,0,0,0, 10, 0,0,9,0,0, 0, 0,0,1,0,0, 10, 0,0,9,0,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-				],
-
-
-
-			[
-				[2, 0,0,0,0,0, 0, 0,0,0,0,0, 10, 0,0,0,0,0, 9, 0,0,0,0,0]  //logic
-				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			],
-			[
-				[2, 0,0,10,9,0, 2, 0,0,10,9,0, 2, 0,0,10,9,0, 0, 0,0,0,0,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			],
-			[
-				[1, 0,0,10,9,0, 1, 0,0,10,9,0, 1, 0,0,10,9,0, 0, 0,0,0,0,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			],
-			[
-				[3, 0,0,0,0,0, 10, 0,0,9,0,0, 0, 0,0,1,0,0, 10, 0,0,9,0,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-				],
-				
-
-
-			[
-				[1, 0,0,10,0,0, 9, 0,0,1,0,0, 10, 9,0,1,0,0, 10, 0,0,9,0,0]  //logic
-				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			],
-			[
-				[1, 0,0,10,0,0, 9, 0,0,1,0,0, 10, 9,0,1,0,0, 10, 0,0,9,0,0]  //logic
-				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			],
-			[
-				[1, 0,0,0,0,0, 10, 0,0,9,0,0, 3, 0,0,10,0,0, 9, 0,0,0,0,0]  //logic
-				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			],
-			[
-				[2, 0,0,0,0,0, 10, 0,0,9,0,0, 3, 0,0,10,0,0, 9, 0,0,0,0,0]  //logic
-				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			],
-
-
-
-			[
-				[2, 0,0,10,0,0, 9, 0,0,2,0,0, 10, 9,0,2,0,0, 10, 0,0,9,0,0]  //logic
-				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			],
-			[
-				[2, 0,0,10,0,0, 9, 0,0,2,0,0, 10, 9,0,2,0,0, 10, 0,0,9,0,0]  //logic
-				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			],
-			[
-				[2, 0,0,0,0,0, 10, 0,0,9,0,0, 3, 0,0,10,0,0, 9, 0,0,0,0,0]  //logic
-				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			],
-			[
-				[1, 0,0,0,0,0, 10, 0,0,9,0,0, 3, 0,0,10,0,0, 9, 0,0,0,0,0]  //logic
-				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			],
-
-
-
-			[
-				[3, 0,0,0,0,0, 0, 0,0,0,0,0, 10, 0,0,0,0,0, 9, 0,0,0,0,0]  //logic
-				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			],
-			[
-				[1, 0,0,10,9,0, 1, 0,0,10,9,0, 1, 0,0,10,9,0, 0, 0,0,0,0,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			],
-			[
-				[2, 0,0,10,0,0, 9, 0,0,2,0,0, 10, 9,0,2,0,0, 10, 0,0,9,0,0]  //logic
-				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			],
-			[
-				[0, 0,0,0,0,0, 0, 0,0,0,0,0, 0, 0,0,0,0,0, 1, 0,0,10,9,0]  //logic
-				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			],
-
-			[
-				[3, 0,0,0,0,0, 0, 0,0,0,0,0, 10, 0,0,0,0,0, 9, 0,0,0,0,0]  //logic
-				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			],
-			[
-				[1, 0,0,10,9,0, 2, 0,0,10,9,0, 1, 0,0,10,9,0, 0, 0,0,0,0,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			],
-			[
-				[2, 0,0,10,0,0, 9, 0,0,1,0,0, 10, 9,0,2,0,0, 10, 0,0,9,0,0]  //logic
-				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			],
-			[
-				[0, 0,0,0,0,0, 0, 0,0,0,0,0, 0, 0,0,0,0,0, 1, 0,0,10,9,0]  //logic
-				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			],
-
-		];
-		//The next two lines will go into a generic 'level load' function once we write it
-		G.measure_counter = 0;
-		L.max_measures = L.level.length;
-	},
-
-	three : function() {
-
-		L.level = [
-			[
-				[1, 0,0,0,0,0, 10, 0,0,0,0,0, 9, 0,0,0,0,0, 0, 0,0,0,0,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-				],
-
-			[
-				[1, 0,0,0,0,0, 10, 0,0,9,0,0, 1, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			],
-			[
-
-				[1, 0,0,10,0,0, 9, 0,0,0,0,0, 1, 0,0,10,0,0, 9, 0,0,0,0,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			],
-			[
-				[1, 0,0,0,0,0, 10, 0,0,9,0,0, 0, 0,0,1,0,0, 10, 0,0,9,0,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-				],
-
-
-
-
-			[
-				[2, 0,0,0,0,0, 10, 0,0,0,0,0, 9, 0,0,0,0,0, 0, 0,0,0,0,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-				],
-
 			[
 				[2, 0,0,0,0,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			],
-			[
-
-				[2, 0,0,10,0,0, 9, 0,0,0,0,0, 2, 0,0,10,0,0, 9, 0,0,0,0,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			],
-			[
-				[2, 0,0,0,0,0, 10, 0,0,9,0,0, 0, 0,0,2,0,0, 10, 0,0,9,0,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-				],
-
-
-
-
-			[
-				[3, 0,0,0,0,0, 10, 0,0,0,0,0, 9, 0,0,0,0,0, 0, 0,0,0,0,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-				],
-
-			[
-				[3, 0,0,0,0,0, 10, 0,0,9,0,0, 3, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			],
-			[
-
-				[2, 0,0,10,0,0, 9, 0,0,0,0,0, 2, 0,0,10,0,0, 9, 0,0,0,0,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			],
-			[
-				[1, 0,0,0,0,0, 10, 0,0,9,0,0, 0, 0,0,1,0,0, 10, 0,0,9,0,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-				],
-
-
-
-			[
-				[1, 0,0,0,0,0, 10, 0,0,9,0,0, 0, 0,0,1,0,0, 10, 0,0,9,0,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-				],
-
-			[
-				[1, 0,0,0,0,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			],
-			[
-
-				[2, 0,0,10,0,0, 9, 0,0,0,0,0, 1, 0,0,10,0,0, 9, 0,0,0,0,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			],
-			[
-				[3, 0,0,0,0,0, 10, 0,0,9,0,0, 0, 0,0,1,0,0, 10, 0,0,9,0,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-				],
-
-
-
-			[
-
-				[1, 0,0,10,9,0, 1, 0,0,10,9,0, 1, 0,0,10,9,0, 0, 0,0,0,0,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			],
-			[
-				[2, 0,0,10,9,0, 2, 0,0,10,9,0, 2, 0,0,10,9,0, 0, 0,0,0,0,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			],
-			[
-				[1, 0,0,10,9,0, 1, 0,0,10,9,0, 2, 0,0,10,9,0, 0, 0,0,0,0,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			],
-			[
-				[3, 0,0,0,0,0, 10, 0,0,9,0,0, 0, 0,0,1,0,0, 10, 0,0,9,0,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			],
-
-
-			[
-				[1, 0,0,10,9,0, 2, 0,0,10,9,0, 1, 0,0,10,9,0, 0, 0,0,0,0,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			],
-			[
-				[2, 0,0,10,9,0, 1, 0,0,10,9,0, 2, 0,0,10,9,0, 0, 0,0,0,0,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			],
-			[
-				[3, 0,0,0,0,0, 10, 0,0,9,0,0, 0, 0,0,1,0,0, 10, 0,0,9,0,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-				],
-			[
-				[3, 0,0,0,0,0, 10, 0,0,9,0,0, 0, 0,0,0,0,0, 0, 0,0,0,0,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-				]
-				
-		];
-		//The next two lines will go into a generic 'level load' function once we write it
-		G.measure_counter = 0;
-		L.max_measures = L.level.length;
-	},
-
-	four : function() {
-
-		L.level = [
-			[
-				[0, 0,0,0,0,0, 0, 0,0,0,0,0, 0, 0,0,0,0,0, 1, 0,0,10,9,0]  //logic
 				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 			],
 			[
-				[3, 0,0,10,9,0, 3, 0,0,10,9,0, 3, 0,0,10,9,0, 3, 0,0,10,9,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			],
-			[
-				[0, 0,0,0,0,0, 0, 0,0,0,0,0, 0, 0,0,0,0,0, 1, 0,0,10,9,0]  //logic
+
+				[1, 0,0,0,0,0, 10, 0,0,0,0,0, 0, 0,0,0,0,0, 0, 0,0,0,0,9]  //logic
 				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 			],
 			[
-				[3, 0,0,10,9,0, 3, 0,0,10,9,0, 3, 0,0,10,9,0, 3, 0,0,10,9,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			],
-
-
-
-			[
-				[0, 0,0,1,0,0, 10, 9,0,2,0,0, 10, 9,0,3,0,0, 10, 9,0,0,0,0]  //logic
+				[1, 0,0,0,0,0, 0, 0,0,0,0,0, 0, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
 				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 			],
 			[
-				[0, 0,0,2,0,0, 10, 9,0,1,0,0, 10, 9,0,3,0,0, 10, 9,0,0,0,0]  //logic
+				[0, 0,0,2,0,0, 10, 0,0,9,0,0, 0, 0,0,1,0,0, 10, 0,0,9,0,0]  //logic
 				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 			],
 			[
-				[1, 0,0,10,9,0, 3, 0,0,10,9,0, 1, 0,0,10,9,0, 0, 0,0,0,0,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			],
-			[
-				[2, 0,0,10,9,0, 1, 0,0,10,9,0, 3, 0,0,10,9,0, 0, 0,0,0,0,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			],
-
-
-			[
-				[0, 0,0,0,0,0, 0, 0,0,0,0,0, 0, 0,0,0,0,0, 1, 0,0,10,9,0]  //logic
+				[2, 0,0,0,0,0, 10, 0,0,9,0,0, 1, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
 				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 			],
 			[
-				[3, 0,0,10,9,0, 3, 0,0,10,9,0, 3, 0,0,10,9,0, 3, 0,0,10,9,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			],
-			[
-				[0, 0,0,0,0,0, 0, 0,0,0,0,0, 0, 0,0,0,0,0, 1, 0,0,10,9,0]  //logic
+				[1, 0,0,0,0,0, 0, 0,0,10,0,0, 9, 0,0,1,0,0, 10, 0,0,9,0,0]  //logic
 				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 			],
 			[
-				[3, 0,0,10,9,0, 3, 0,0,10,9,0, 3, 0,0,10,9,0, 3, 0,0,10,9,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			],
-
-			[
-				[0, 0,0,2,0,0, 10, 9,0,1,0,0, 10, 9,0,3,0,0, 10, 9,0,0,0,0]  //logic
+				[3, 0,0,0,0,0, 10, 0,0,0,0,0, 0, 0,0,0,0,0, 0, 0,0,0,0,9]  //logic
 				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 			],
 			[
-				[0, 0,0,2,0,0, 10, 9,0,3,0,0, 10, 9,0,2,0,0, 10, 9,0,0,0,0]  //logic
+				[1, 0,0,0,0,0, 10, 0,0,0,0,0, 0, 0,0,0,0,0, 0, 0,0,0,0,9]  //logic
 				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 			],
 			[
-				[3, 0,0,10,9,0, 1, 0,0,10,9,0, 2, 0,0,10,9,0, 0, 0,0,0,0,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			],
-			[
-				[3, 0,0,10,9,0, 1, 0,0,10,9,0, 3, 0,0,10,9,0, 0, 0,0,0,0,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			],
-
-
-
-			[
-				[3, 0,0,10,9,0, 1, 0,0,10,9,0, 3, 0,0,10,9,0, 2, 0,0,10,9,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			],
-			[
-				[3, 0,0,10,9,0, 2, 0,0,10,9,0, 3, 0,0,10,9,0, 0, 0,0,0,0,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			],
-			[
-				[3, 0,0,10,9,0, 1, 0,0,10,9,0, 3, 0,0,10,9,0, 1, 0,0,10,9,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			],
-			[
-				[3, 0,0,10,9,0, 2, 0,0,10,9,0, 3, 0,0,10,9,0, 0, 0,0,0,0,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			],
-
-			[
-				[3, 0,0,10,9,0, 2, 0,0,10,9,0, 3, 0,0,10,9,0, 2, 0,0,10,9,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			],
-			[
-				[3, 0,0,10,9,0, 1, 0,0,10,9,0, 3, 0,0,10,9,0, 0, 0,0,0,0,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			],
-			[
-				[3, 0,0,10,9,0, 2, 0,0,10,9,0, 3, 0,0,10,9,0, 1, 0,0,10,9,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			],
-			[
-				[3, 0,0,10,9,0, 1, 0,0,10,9,0, 3, 0,0,10,9,0, 3, 0,0,10,9,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			],
-
-
-			[
-				[3, 0,0,0,0,0, 0, 0,0,0,0,0, 10, 9,0,3,0,0, 9, 0,0,0,0,0]  //logic
+				[1, 0,0,0,0,0, 10, 0,0,0,0,0, 0, 0,0,0,0,0, 0, 0,0,0,0,9]  //logic
 				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 			],
 			[
-				[3, 0,0,10,9,0, 2, 0,0,10,9,0, 3, 0,0,10,9,0, 2, 0,0,10,9,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+				[2, 0,0,10,0,9, 1, 0,0,10,0,9, 2, 0,0,10,0,9, 2, 0,0,10,0,9]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 			],
 			[
-				[3, 0,0,10,9,0, 2, 0,0,10,9,0, 3, 0,0,10,9,0, 1, 0,0,10,9,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+				[1, 0,10,0,9,0, 0, 0,0,1,0,0, 0, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 			],
 			[
-				[3, 0,0,10,9,0, 1, 0,0,10,9,0, 3, 0,0,10,9,0, 3, 0,0,10,9,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+				[1, 10,0,9,0,0, 0, 0,0,0,0,0, 1, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 			],
-
-		
 			[
-				[1, 0,0,10,9,0, 2, 0,0,10,9,0, 1, 0,0,10,9,0, 2, 0,0,10,9,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+				[2, 0,10,9,0,0, 0, 0,0,0,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 			],
 			[
 				[3, 0,0,0,0,0, 10, 0,0,9,0,0, 1, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 			],
-				
+			[
+				[1, 0,0,0,0,0, 10, 0,0,9,0,0, 1, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[2, 0,0,0,0,0, 10, 0,0,9,0,0, 3, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[2, 0,0,0,0,0, 10, 0,0,9,0,0, 1, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[1, 0,0,0,0,0, 10, 0,0,9,0,0, 1, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[1, 0,0,0,0,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[1, 0,10,9,0,0, 0, 0,0,0,0,0, 3, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[2, 0,0,10,0,9, 1, 0,0,10,0,9, 1, 0,0,10,0,9, 2, 0,0,10,0,9]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[2, 0,0,0,0,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[1, 0,0,0,0,0, 0, 0,0,0,0,0, 0, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			/*[
+			 [2, 0,0,0,0,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+			 //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			 ],
+			 [
+			 [2, 0,0,0,0,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+			 //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			 ],
+			 [
+			 [2, 0,0,0,0,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+			 //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			 ],
+			 [
+			 [2, 0,0,0,0,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+			 //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			 ],
+			 [
+			 [2, 0,0,0,0,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+			 //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			 ],
+			 [
+			 [2, 0,0,0,0,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+			 //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			 ],
+			 [
+			 [1, 0,10,9,1,0, 10, 0,0,9,0,0, 1, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+			 //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			 ]*/
+
 		];
 		//The next two lines will go into a generic 'level load' function once we write it
 		G.measure_counter = 0;
 		L.max_measures = L.level.length;
-<<<<<<< HEAD
 	},
-
-
 	five: function() {
 		L.level = [
 			[
@@ -1276,15 +1016,32 @@ var L = {//level or chapter logic
 				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 			],
 
+			[
+				[1, 0,0,0,0,0, 10, 0,0,0,0,0, 9, 0,0,0,0,0, 0, 0,0,0,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+
+			[
+				[1, 0,0,0,0,0, 10, 0,0,0,0,0, 9, 0,0,0,0,0, 0, 0,0,0,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+
+			[
+				[1, 0,0,0,0,0, 10, 0,0,0,0,0, 9, 0,0,0,0,0, 0, 0,0,0,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+
+			[
+				[1, 0,0,0,0,0, 10, 0,0,0,0,0, 9, 0,0,0,0,0, 0, 0,0,0,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+
 		];
 		//The next two lines will go into a generic 'level load' function once we write it
 		G.measure_counter = 0;
 		L.max_measures = L.level.length;
 	},
 
-=======
-	}
->>>>>>> parent of 029b065... code I have
 };
 
 var S = { // status line and chapter control
@@ -1297,6 +1054,7 @@ var S = { // status line and chapter control
 	chapter_three_array: [],
 	chapter_four_welcome_array:[],
 	chapter_four_array:[],
+	chapter_five_array: [],
 
 	welcome_timer: 0,
 	welcome_rate: 14.5,
@@ -1314,10 +1072,20 @@ var S = { // status line and chapter control
 	time_until_next_chapter: 150,
 	next_chapter_timer: 0,
 
+	epilogue_counter: 0,
+
 	show_message: function(text){
-		PS.statusColor(PS.COLOR_BLACK);
+		if(S.current_chapter == 5){
+			PS.statusColor(PS.COLOR_WHITE);
+		}else{
+			PS.statusColor(PS.COLOR_BLACK);
+		}
 		PS.statusFade(S.message_fade);
-		PS.statusColor(PS.COLOR_WHITE);
+		if(S.current_chapter == 5){
+			PS.statusColor(PS.COLOR_BLACK);
+		}else{
+			PS.statusColor(PS.COLOR_WHITE);
+		}
 		PS.statusText(text);
 		S.message_timer_exists = true;
 		S.message_timer = PS.timerStart(S.message_rate, S.hide_message);
@@ -1326,7 +1094,11 @@ var S = { // status line and chapter control
 	hide_message: function(){
 		if(S.message_timer_exists) {
 			PS.statusFade(S.message_fade);
-			PS.statusColor(PS.COLOR_BLACK);
+			if(S.current_chapter == 5){
+				PS.statusColor(PS.COLOR_WHITE);
+			}else{
+				PS.statusColor(PS.COLOR_BLACK);
+			}
 			PS.timerStop(S.message_timer);
 			S.message_timer_exists = false;
 		}
@@ -1344,7 +1116,7 @@ var S = { // status line and chapter control
 		S.welcome_array[2] = "Exham Priory, England";
 		S.welcome_array[3] = "Walls";
 
-		S.chapter_one_array[0] = "The scurrying of rats";
+		S.chapter_one_array[0] = "The scurrying rats";
 		S.chapter_one_array[1] = "Scratching at the new panels";
 		S.chapter_one_array[2] = "From depths inconceivably below";
 		S.chapter_one_array[3] = "My friend, Captain Norrys";
@@ -1361,7 +1133,7 @@ var S = { // status line and chapter control
 
 		S.chapter_three_welcome_array[0] = "Chapter Three";
 		S.chapter_three_welcome_array[1] = "From depths below";
-		S.chapter_three_welcome_array[2] = "The scurrying of rats";
+		S.chapter_three_welcome_array[2] = "The scurrying rats";
 		S.chapter_three_welcome_array[3] = "Descent";
 
 		S.chapter_three_array[0] = "Deepest of sub-cellars";
@@ -1379,6 +1151,13 @@ var S = { // status line and chapter control
 		S.chapter_four_array[2] = "Bones were gnawed";
 		S.chapter_four_array[3] = "Captain Norrys";
 
+		S.chapter_five_array[0] = "A hideous thing";
+		S.chapter_five_array[1] = "I did not do it";
+		S.chapter_five_array[2] = "It was the rats";
+		S.chapter_five_array[3] = "The scurrying rats";
+		S.chapter_five_array[4] = "";
+
+
 	},
 
 	welcome_statement: function(){
@@ -1392,7 +1171,6 @@ var S = { // status line and chapter control
 	},
 
 	welcome_statement_helper: function(){
-		//PS.debug(S.welcome_counter);
 		var whichArray;
 		switch(S.current_chapter){
 			case 0:
@@ -1426,7 +1204,6 @@ var S = { // status line and chapter control
 
 		S.welcome_counter++;
 		if(S.welcome_text_counter > whichArray.length){
-			//PS.debug("stopping");
 			PS.statusColor(PS.COLOR_BLACK);
 			//PS.statusFade(0);
 			//PS.statusText("MEME");
@@ -1454,12 +1231,17 @@ var S = { // status line and chapter control
 			case 4:
 				whichArray = S.chapter_four_array;
 				break;
+			case 5:
+				whichArray = S.chapter_five_array;
+				break;
 		}
 
 		S.message_rate = 200;
 
 		S.message_fade = 200;
-		S.show_message(whichArray[S.message_counter]);
+		if(S.message_counter != 4){
+			S.show_message(whichArray[S.message_counter]);
+		}
 		S.message_counter++;
 	},
 
@@ -1471,7 +1253,7 @@ var S = { // status line and chapter control
 		}
 		S.current_chapter++;
 
-		if(S.current_chapter == 3){ // the current end state
+		if(S.current_chapter == 6){ // the current end state
 			S.end_game();
 			return;
 		}
@@ -1569,12 +1351,19 @@ var S = { // status line and chapter control
 			case 4:
 				PS.dbEvent( "threnody", "chapter four begun", true);
 				break;
+			case 5:
+				PS.dbEvent( "threnody", "chapter epilogue begun", true);
+				L.five();
+				J.start_epilogue_fade();
+				break;
 		}
 	},
 
 	end_game : function(){
 
-		S.show_message("Demo Over -- more to come");
+		//S.show_message("Demo Over -- more to come");
+		//S.show_message("Threnody");
+		S.threnody();
 
 		PS.dbEvent( "threnody", "endgame", true );
 
@@ -1582,6 +1371,19 @@ var S = { // status line and chapter control
 
 		PS.dbSend( "threnody", "dpallen", { discard : true } );
 	},
+
+	epilogue_message : function(){
+		if(S.epilogue_counter % 2 == 0){
+			S.load_message();
+		}
+		S.epilogue_counter++;
+	},
+
+	threnody : function(){
+		PS.statusText("Threnody");
+		PS.statusColor(PS.COLOR_BLACK);
+	}
+
 };
 
 var J = {//juice
@@ -1600,6 +1402,7 @@ var J = {//juice
 	//LAYER_OBJECT_HIDE: 2,
 	LAYER_CLICK: 3, // used for peg dragging, etc.
 	LAYER_FADE: 4,
+	LAYER_EPILOGUE: 5,
 
 	object_show_time: 0,
 	object_hide_time: 0,
@@ -1659,6 +1462,9 @@ var J = {//juice
 	globalFadeRate: 0,
 	dangerDirectionFadeRate: 100,
 
+	epilogue_fade_rate: 300,
+	epilogue_enter_rate: 150,
+
 	init_grid: function(){
 		PS.gridSize(G.GRID_WIDTH, G.GRID_HEIGHT);
 		PS.gridColor(J.COLOR_BACKGROUND);
@@ -1686,18 +1492,11 @@ var J = {//juice
 
 	show_object: function(type){
 		// UPDATE THE OBJECT SHOW TIME
-	  //PS.debug("SHOWING OBJECT\n");
 
 		J.current_object_type = type;
 		J.object_show_time = G.calc_tick_distance(L.ACT_CLICK); // time until opportuity
 
 		J.object_show_rate = J.object_show_time / J.object_show_counter;
-		//PS.debug(J.object_show_time);
-		//PS.debug("DELTA: " + J.object_show_time + "\n");
-		//PS.fade(PS.ALL, PS.ALL, J.object_show_time);
-		//PS.fade(0, 0, J.object_show_time, {onEnd: G.opportunity_open});
-		//PS.alpha(PS.ALL, PS.ALL, 0);
-		//PS.gridShadow(false);
 
 		P.object_is_appearing = true;
 		P.object_is_missed = false;
@@ -1711,7 +1510,12 @@ var J = {//juice
 				P.ready_sprite = "sprites/peg_tap_ready.png";
 				P.move_x = 1;
 				P.move_y = 11;
-				J.object_show_timer = PS.timerStart(J.object_show_rate, P.show_object_helper);
+				if(S.current_chapter == 5){
+					// we are in epilogue
+					P.show_object_epilogue();
+				}else{
+					J.object_show_timer = PS.timerStart(J.object_show_rate, P.show_object_helper);
+				}
 				break;
 			case L.ACT_FADE_IN_HOLD:
 				P.ready_sprite = "sprites/peg_hold_ready.png";
@@ -1726,9 +1530,6 @@ var J = {//juice
 				J.object_show_rate = J.object_show_time / 15; // is it 15?
 				P.move_x = 1;
 				P.move_y = 1;
-				//PS.debug("SHOW RATE: " + J.object_show_rate + "\n");
-				//PS.debug("SHOW tIME: " + J.object_show_time + "\n");
-
 				J.object_show_timer = PS.timerStart(J.object_show_rate, P.show_drag_helper);
 				break;
 
@@ -1742,7 +1543,6 @@ var J = {//juice
 		J.object_hit_counter = 0;
 		J.object_hit_rate = J.object_hit_time;
 		J.hit_total_sprites = 8;
-		//PS.debug("\n" + J.object_hit_rate + "\n");
 
 		P.SPRITE_LOCATION = "sprites/tap_hit/";
 		if(P.object_is_appearing){
@@ -1826,7 +1626,6 @@ var J = {//juice
 					if((i > 0 && i < G.GRID_WIDTH-1) && (j > 0 && j < G.GRID_WIDTH-1)){
 						PS.gridPlane(J.LAYER_FADE);
 						//PS.fade(i, j, 0);
-						//PS.debug("why");
 						PS.color(PS.ALL, PS.ALL, J.COLOR_BACKGROUND);
 						PS.alpha(i, j, 0);
 					}
@@ -1849,7 +1648,6 @@ var J = {//juice
 	},
 
 	error_glow: function(){
-		//PS.debug("mistake!");
 		//S.show_message("MISS");
 		// audio stuff
 		A.play_miss();
@@ -1970,9 +1768,7 @@ var J = {//juice
 					PS.fade(x, y, J.insanityFadeRate);
 
 					var rando = PS.random(J.insanityRandomMax);
-					//PS.debug("ORIG RANDO: " + rando + "\n");
 					rando = rando + (rando * (G.insanityLevel/100)); // if insanity level is 2, rando = rando + 2%, etc.
-					//PS.debug("NEW RANDO: " + rando + "\n");
 
 					// check for proximity to center
 					var threshold = J.insanityThreshold;
@@ -2008,9 +1804,7 @@ var J = {//juice
 					PS.fade(x, y, J.insanityFadeRate);
 
 					var rando = PS.random(J.insanityRandomMax);
-					//PS.debug("ORIG RANDO: " + rando + "\n");
 					rando = rando + (rando * (G.insanityLevel/100)); // if insanity level is 2, rando = rando + 2%, etc.
-					//PS.debug("NEW RANDO: " + rando + "\n");
 
 					// check for proximity to center
 					var threshold = J.insanityThreshold;
@@ -2045,9 +1839,7 @@ var J = {//juice
 					PS.fade(x, y, J.insanityFadeRate);
 
 					var rando = PS.random(J.insanityRandomMax);
-					//PS.debug("ORIG RANDO: " + rando + "\n");
 					rando = rando + (rando * (G.insanityLevel/100)); // if insanity level is 2, rando = rando + 2%, etc.
-					//PS.debug("NEW RANDO: " + rando + "\n");
 
 					// check for proximity to center
 					var threshold = J.insanityThreshold;
@@ -2081,9 +1873,7 @@ var J = {//juice
 					PS.fade(x, y, J.insanityFadeRate);
 
 					var rando = PS.random(J.insanityRandomMax);
-					//PS.debug("ORIG RANDO: " + rando + "\n");
 					rando = rando + (rando * (G.insanityLevel/100)); // if insanity level is 2, rando = rando + 2%, etc.
-					//PS.debug("NEW RANDO: " + rando + "\n");
 
 					// check for proximity to center
 					var threshold = J.insanityThreshold;
@@ -2115,36 +1905,6 @@ var J = {//juice
 		}
 	},
 
-	show_danger_direction: function(){
-		PS.gridPlane(J.LAYER_BACKGROUND);
-		switch(G.dangerDirection){
-			case 0: // everything is fine
-				break;
-			case 1: // left is evil
-				for(var y = 1; y < 31; y++){
-					PS.alpha(0, y, 255);
-					PS.fade(0, y, J.dangerDirectionFadeRate);
-					PS.color(0, y, J.COLOR_INSANITY);
-				}
-				break;
-			case 2: // up is evil
-				for(var x = 1; x < 31; x++){
-					PS.alpha(x, 0, 255);
-					PS.fade(x, 0, J.dangerDirectionFadeRate);
-					PS.color(x, 0, J.COLOR_INSANITY);
-				}
-				break;
-			case 3: // right is evil
-				for(var y = 1; y < 31; y++){
-					PS.alpha(31, y, 255);
-					PS.fade(31, y, J.dangerDirectionFadeRate);
-					PS.color(31, y, J.COLOR_INSANITY);
-				}
-				break;
-
-		}
-	},
-
 	black_cross: function(){ // creates a block cross, for covering up things
 		PS.gridPlane(J.LAYER_FADE);
 		for(var x = 0; x < G.GRID_WIDTH; x++){
@@ -2153,14 +1913,14 @@ var J = {//juice
 				if((x > 10 && x < 21) && (y > 0 && y < 31)){
 					PS.fade(x, y, 0);
 					PS.alpha(x, y, 255);
-					PS.color(x, y, PS.COLOR_BLACK);
+					PS.color(x, y, J.COLOR_BACKGROUND);
 				}
 
 				//right quadrant
 				if((x > 0 && x < 31) && (y > 10 && y < 21)){
 					PS.fade(x, y, 0);
 					PS.alpha(x, y, 255);
-					PS.color(x, y, PS.COLOR_BLACK);
+					PS.color(x, y, J.COLOR_BACKGROUND);
 				}
 			}
 		}
@@ -2174,14 +1934,14 @@ var J = {//juice
 				if((x > 10 && x < 21) && (y > 0 && y < 31)){
 					PS.fade(x, y, 0);
 					PS.alpha(x, y, 0);
-					PS.color(x, y, PS.COLOR_BLACK);
+					PS.color(x, y, J.COLOR_BACKGROUND);
 				}
 
 				//right quadrant
 				if((x > 0 && x < 31) && (y > 10 && y < 21)){
 					PS.fade(x, y, 0);
 					PS.alpha(x, y, 0);
-					PS.color(x, y, PS.COLOR_BLACK);
+					PS.color(x, y, J.COLOR_BACKGROUND);
 				}
 			}
 		}
@@ -2206,6 +1966,57 @@ var J = {//juice
 				}
 			}
 		}
+	},
+
+	miss_epilogue: function(){
+		PS.gridPlane(J.LAYER_OBJECT);
+		for(var x = 0; x < G.GRID_WIDTH; x++){
+			for(var y = 0; y < G.GRID_HEIGHT; y++){
+				// center quadrant
+				if((x > 10 && x < 21) && (y > 10 && y < 21)){
+					PS.fade(x, y, 25);
+					PS.alpha(x, y, 0);
+					//PS.color(x, y, J.COLOR_BACKGROUND);
+				}
+			}
+		}
+	},
+
+	epilogue_fade_done : false,
+	epilogue_fade_timer : 0,
+	epilogue_fade_timer_rate : 100,
+
+	start_epilogue_fade: function(){
+		PS.gridPlane(J.LAYER_BACKGROUND);
+		PS.gridFade(J.epilogue_fade_rate);
+		PS.gridColor(PS.COLOR_WHITE);
+
+		A.stop_bgm();
+		A.play_bgm();
+
+		G.successfulTap = true;
+
+		J.epilogue_fade_timer = PS.timerStart(J.epilogue_fade_rate, J.epilogueOver);
+
+		for(var x = 0; x< G.GRID_WIDTH; x++){
+			for(var y = 0; y < G.GRID_HEIGHT; y++){
+				// don't mess with peg spot
+					PS.fade(x, y, J.epilogue_fade_rate);
+					PS.alpha(x, y, 255);
+					PS.color(x, y, PS.COLOR_WHITE);
+
+			}
+		}
+	},
+
+	epilogueOver : function() {
+		PS.timerStop(J.epilogue_fade_timer);
+		if(!J.epilogue_fade_done) {
+			J.COLOR_BACKGROUND = PS.COLOR_WHITE;
+			G.start_global_timer();
+		}
+
+		J.epilogue_fade_done = true;
 	}
 };
 
@@ -2246,12 +2057,13 @@ var P = { // sPrites
 		P.object_exists = true;
 		G.isPlayable = true;
 
-		J.clear_cross(); // to remove fade
+		if(S.current_chapter !== 5){
+			J.clear_cross(); // to remove fade
+		}
 		J.show_object(type);
 	},
 
 	show_object_helper: function(){
-
 		//sound stuff
 		if(G.actionType == L.ACT_FADE_IN_TAP){
 			A.play_appear_horiz();
@@ -2286,8 +2098,6 @@ var P = { // sPrites
 
 		PS.imageLoad(theImage, loader);
 		J.object_show_counter--;
-
-
 	},
 
 	show_drag_helper: function(){
@@ -2353,7 +2163,6 @@ var P = { // sPrites
 
 	hold_object_helper: function(){
 		if(!G.isHolding){
-			//PS.debug("HOLD OH NO");
 			PS.timerStop(J.object_hold_timer);
 			P.object_is_held = false;
 			P.hold_object_miss();
@@ -2427,7 +2236,6 @@ var P = { // sPrites
 	},
 
 	update_drag_peg: function(x, y){
-		//PS.debug("(" + x + ", " + y + ")\n");
 		PS.spriteMove(P.drag_object, x, y);
 	},
 
@@ -2438,7 +2246,31 @@ var P = { // sPrites
 		G.dragRight = false;
 		G.dragDown = false;
 		P.drag_exists = false;
-	}
+	},
+
+	show_object_epilogue: function(){
+		PS.gridPlane(J.LAYER_OBJECT);
+		for(var x = 0; x < G.GRID_WIDTH; x++){
+			for(var y = 0; y < G.GRID_HEIGHT; y++){
+				// center quadrant
+				if((x > 10 && x < 21) && (y > 10 && y < 21)){
+					PS.fade(x, y, J.epilogue_enter_rate);
+					PS.alpha(x, y, 0);
+					//PS.color(x, y, J.COLOR_BACKGROUND);
+				}
+			}
+		}
+		var loader;
+		loader = function(data){
+			P.current_object = PS.spriteImage(data);
+			PS.spritePlane(P.current_object, J.LAYER_OBJECT);
+			PS.spriteMove(P.current_object, 11, 11);
+
+		};
+		var theImage = "sprites/epilogue_ready.png";
+		PS.imageLoad(theImage, loader);
+		P.object_is_appearing = false;
+	},
 };
 
 var A = {//audio
@@ -2524,6 +2356,8 @@ var A = {//audio
 	TONE_APPEAR_DRAG_14: "sfx_drag_14",
 	TONE_APPEAR_DRAG_15: "sfx_drag_15",
 
+	TONE_HIT_EPILOGUE: "sfx_hit_epilogue",
+
 	SOUND_PATH: "audio/",
 	TONES_GROW_PATH: "audio/fadein/",
 	TONES_DRAG_PATH: "audio/drag/",
@@ -2545,17 +2379,19 @@ var A = {//audio
 
 		//these things don't have sounds.  if they 
 		if(A.TONES[tone] !== "NULL"){
-			//PS.debug("why");
 			//PS.audioPlay(A.TONES[tone]);
 		}	
 	},
 
 	play_action_sound: function(){
-		//PS.debug("please");
 		switch(G.actionType){
 			case L.ACT_FADE_IN_TAP:
-				var rando = PS.random(A.TAP_ARRAY.length-1); // generate from 1 to max
-				PS.audioPlay(A.TAP_ARRAY[rando], {volume: 0.5, path: A.SOUND_PATH});
+				if(S.current_chapter != 5){
+					var rando = PS.random(A.TAP_ARRAY.length-1); // generate from 1 to max
+					PS.audioPlay(A.TAP_ARRAY[rando], {volume: 0.5, path: A.SOUND_PATH});
+				}else{
+					PS.audioPlay(A.TONE_HIT_EPILOGUE, {volume: 0.5, path: A.SOUND_PATH});
+				}
 				break;
 			case L.ACT_FADE_IN_DRAG:
 				var rando = PS.random(A.TAP_ARRAY.length-1); // generate from 1 to max
@@ -2563,12 +2399,6 @@ var A = {//audio
 				break;
 		}
 		//PS.audioPlay(A.TONES[L.ACT_CLICK]);
-	},
-
-	play_start_drag: function(){
-		var rando = PS.random(A.TAP_ARRAY.length-1); // generate from 1 to max
-		PS.audioPlay(A.TAP_ARRAY[rando], {volume: 0.2, path: A.SOUND_PATH});
-
 	},
 
 	load : function() {
@@ -2679,6 +2509,8 @@ var A = {//audio
 		for(var i = 0; i < A.TONES_DRAG.length; i++){
 			PS.audioLoad(A.TONES_DRAG[i], {lock:true, path: A.TONES_GROW_PATH});
 		}
+
+		PS.audioLoad(A.TONE_HIT_EPILOGUE, {lock:true, path: A.SOUND_PATH});
 	},
 
 	play_miss: function(){
@@ -2686,11 +2518,9 @@ var A = {//audio
 	},
 
 	play_appear_horiz: function(){
-		//PS.debug(A.appear_counter + "\n");
 		PS.audioPlay(A.TONES_HORIZ[A.appear_counter], {volume:0.05, path: A.TONES_GROW_PATH});
 		A.appear_counter++;
 		if(A.appear_counter > 14){
-			//PS.debug("yes");
 			A.appear_counter = 0;
 		}
 	},
@@ -2699,7 +2529,6 @@ var A = {//audio
 		PS.audioPlay(A.TONES_VERT[A.appear_counter], {volume:0.05, path: A.TONES_GROW_PATH});
 		A.appear_counter++;
 		if(A.appear_counter > 14){
-			//PS.debug("yes");
 			A.appear_counter = 0;
 		}
 	},
@@ -2708,7 +2537,6 @@ var A = {//audio
 		PS.audioPlay(A.TONES_DRAG[A.appear_counter], {volume:0.05, path: A.TONES_GROW_PATH});
 		A.appear_counter++;
 		if(A.appear_counter > 14){
-			//PS.debug("yes");
 			A.appear_counter = 0;
 		}
 	},
@@ -2765,16 +2593,6 @@ var A = {//audio
 	pause_hold: function(){
 		PS.audioStop(A.hold_channel);
 	},
-
-	play_insanity: function(){
-
-	},
-
-	increase_insanity: function(){
-
-	},
-
-
 	
 };
 
@@ -2808,6 +2626,7 @@ var callback = function ( id ) {
 	}else{
 		S.current_chapter = 0;
 		S.welcome_statement();
+		//S.start_chapter(0);
 	}
 
 // This is where you should complete initialization
@@ -2863,12 +2682,6 @@ PS.touch = function( x, y, data, options ) {
 		S.end_break_time();
 		return;
 	}
-
-	if(!A.insanity_is_playing){
-		A.play_insanity();
-	}else{
-		A.increase_insanity();
-	}
 	if(!G.isPlayable){
 		return;
 	}
@@ -2879,11 +2692,6 @@ PS.touch = function( x, y, data, options ) {
 	G.halt_click();
 
 	if(!G.isRhythmBegun){
-		//PS.statusText("THE PLACEHOLDER SOUNDS");
-		//PS.statusColor(PS.COLOR_WHITE);
-		//A.play_bgm();
-		//G.start_global_timer();
-		//S.welcome_statement();
 	}else{
 		if(G.isOnPeg(x, y)){
 			G.click();
