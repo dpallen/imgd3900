@@ -485,23 +485,6 @@ var G = {//general game logic
 		}
 	},
 
-	get_drag_direction: function(x, y){
-		if(y < G.currentDragY){
-			//PS.debug("GOING UP!!!");
-			G.dragUp = false; // we are never going up anymore
-		}else {
-			if(x < G.currentDragX){
-				//PS.debug("GOING LEFT!!!");
-				G.dragLeft = true;
-			}else{
-				if(x > G.currentDragX){
-					//PS.debug("GOING RIGHT!!!");
-					G.dragRight = true;
-				}
-			}
-		}
-	},
-
 	miss_object : function(){
 		PS.dbEvent( "threnody", "hit status: ", "misssed");
 		G.isOpportunity = false;
@@ -1131,7 +1114,7 @@ var S = { // status line and chapter control
 				S.start_chapter(0);
 				break;
 			case "drag":
-				if(L.drag_correct == 4){
+				if(L.drag_correct == 2){
 					S.current_chapter++;
 					A.stop_bgm();
 
@@ -2074,10 +2057,13 @@ var A = {//audio
 	TONE_MISS: "sfx_miss",
 	TONE_HOLD: "sfx_hold",
 
-	SONG_BGM_1: "bgm_0_drone",
-	DRUMS_BGM_1: "bgm_0_drum",
-	SONG_BGM_2: "bgm_1_drone",
-	DRUMS_BGM_2: "bgm_1_drum",
+	SONG_BGM_0: "bgm_0",
+	SONG_BGM_1: "bgm_1",
+	SONG_BGM_2: "bgm_2",
+	SONG_BGM_3: "bgm_3",
+	SONG_BGM_4: "bgm_4",
+	SONG_BGM_5: "bgm_5",
+
 
 	TONE_TAP_0: "sfx_hit_0",
 	TONE_TAP_1: "sfx_hit_1",
@@ -2150,7 +2136,6 @@ var A = {//audio
 	appear_counter: 0,
 
 	bgm_is_playing: false,
-	drum_is_playing: false,
 	insanity_is_playing: false,
 
 	play_beat: function(){
@@ -2259,10 +2244,12 @@ var A = {//audio
 			}
 		}
 
-		PS.audioLoad(A.DRUMS_BGM_1, {lock:true, path: A.SOUND_PATH});
-		PS.audioLoad(A.DRUMS_BGM_2, {lock:true, path: A.SOUND_PATH});
 		PS.audioLoad(A.SONG_BGM_1, {lock:true, path: A.SOUND_PATH});
 		PS.audioLoad(A.SONG_BGM_2, {lock:true, path: A.SOUND_PATH});
+		PS.audioLoad(A.SONG_BGM_3, {lock:true, path: A.SOUND_PATH});
+		//PS.audioLoad(A.SONG_BGM_4, {lock:true, path: A.SOUND_PATH});
+		PS.audioLoad(A.SONG_BGM_5, {lock:true, path: A.SOUND_PATH});
+
 
 		PS.audioLoad(A.TAP_ARRAY[0], {lock:true, path: A.SOUND_PATH});
 		PS.audioLoad(A.TAP_ARRAY[1], {lock:true, path: A.SOUND_PATH});
@@ -2325,39 +2312,40 @@ var A = {//audio
 
 	play_bgm: function(){
 		var theBgm;
-		var theDrums;
 		switch(S.current_chapter){
 			case 0:
-				theDrums = A.DRUMS_BGM_1;
+				theBgm = A.SONG_BGM_0;
 				break;
 			case 1:
 				theBgm = A.SONG_BGM_1;
-				theDrums = A.DRUMS_BGM_1;
 				break;
 			case 2:
 				theBgm = A.SONG_BGM_2;
-				theDrums = A.DRUMS_BGM_2;
+				break;
+			case 3:
+				theBgm = A.SONG_BGM_3;
+				break;
+			case 4:
+				theBgm = A.SONG_BGM_4;
+				break;
+			case 5:
+				theBgm = A.SONG_BGM_5;
 				break;
 		}
 		if(S.current_chapter != 0){
 			A.bgm_channel = PS.audioPlay(theBgm, {loop: false, volume:0.1, path: A.SOUND_PATH});
 			A.bgm_is_playing = true;
+		}else{
+			A.bgm_channel = PS.audioPlay(theBgm, {loop: true, volume:0.1, path: A.SOUND_PATH});
+			A.bgm_is_playing = true;
 		}
-		A.drums_channel = PS.audioPlay(theDrums, {loop: false, volume:0.2, path: A.SOUND_PATH});
-		A.drum_is_playing = true;
 	},
 
 	stop_bgm: function(){
 		if(A.bgm_is_playing){
 			PS.audioStop(A.bgm_channel);
 		}
-
-		if(A.drum_is_playing){
-			PS.audioStop(A.drums_channel);
-		}
-
 		A.bgm_is_playing = false;
-		A.drum_is_playing = false;
 	},
 
 	play_hold: function(){
