@@ -66,15 +66,20 @@ var G = {//general game logic
 	canClick: true, // can we click
 	actionType: 0, // 1 for tap, 2 for hold, [amount] for direction
 
-	currentDragX: 0,
-	currentDragY: 0,
-	dragXThreshold: 26,
-	dragYThreshold: 5,
+	currentDragX: 16,
+	currentDragY: 16,
+	dragHighThreshold: 28,
+	dragLowThreshold: 4,
 
 	dragUp: false,
 	dragLeft: false,
 	dragRight: false,
-	dangerDirection: 0, // can be 0 for nothing, 1 for is left, 2 for up, 3 for right
+	dragDown: false,
+
+	dragUpLowest: 17, // how much to the NOT THIS DIRECTION the peg can be dragged
+	dragLeftLowest: 17,
+	dragRightLowest: 17,
+	dragDownLowest: 17,
 
 	insanityLevel: 0,
 	tempoLevel: 0,
@@ -88,6 +93,8 @@ var G = {//general game logic
 
 	activityCounter: 0, // for debugging
 	tutorialComplete: false,
+
+	isBreakTime: false,
 
 	init_measure : function() {
 		
@@ -304,12 +311,34 @@ var G = {//general game logic
 	spawn_object_drag : function() { // creates a drag object
 		G.actionType = L.ACT_FADE_IN_DRAG;
 
-		G.dangerDirection = PS.random(3); // 1 to 3
-		//J.show_danger_direction();
+		G.dragLeft = false;
+		G.dragUp = false;
+		G.dragRight = false;
+		G.dragDown = false;
+
+		// what direction?
+		var rando = PS.random(4);
+		switch(rando){
+			case 1:
+				G.dragLeft = true;
+				P.SPRITE_LOCATION = "sprites/drag_shrink_left/";
+				break;
+			case 2:
+				G.dragUp = true;
+				P.SPRITE_LOCATION = "sprites/drag_shrink_up/";
+				break;
+			case 3:
+				G.dragRight = true;
+				P.SPRITE_LOCATION = "sprites/drag_shrink_right/";
+				break;
+			case 4:
+				G.dragDown = true;
+				P.SPRITE_LOCATION = "sprites/drag_shrink_down/";
+				break;
+		}
 		P.object_is_hit = false;
-		P.SPRITE_LOCATION = "sprites/drag_shrink/";
 		if(!G.successfulDrag){
-			S.show_message("Drag in a direction");
+			S.show_message("Drag towards the white");
 		}
 
 		J.object_show_counter = 14; // default???
@@ -442,6 +471,7 @@ var G = {//general game logic
 		//P.object_is_hit = true;
 		G.isDragging = true; // is this actually the same thing?
 		/**TODO: AUDIO FOR DRAG START **/
+		//A.play_start_drag();
 		//P.place_drag_peg();
 	},
 
@@ -458,11 +488,53 @@ var G = {//general game logic
 
 	drag: function(x, y){
 
+		var didMove = false;
 		// update the current drag X
-		G.currentDragX = x;
-		G.currentDragY = 16;
+		if(G.dragLeft){
+			if(x < G.dragLeftLowest){
+				G.currentDragX = x;
+				didMove = true;
+			}else{
+				G.currentDragX = G.currentDragX;
+			}
+			G.currentDragY = 16;
+		}
 
-		A.play_drag();
+		if(G.dragRight){
+			if(x > G.dragRightLowest){
+				G.currentDragX = x;
+				didMove = true;
+			}else{
+				G.currentDragX = G.currentDragX;
+			}
+			G.currentDragY = 16;
+		}
+
+		if(G.dragUp){
+			if(y < G.dragUpLowest){
+				G.currentDragY = y;
+				didMove = true;
+			}else{
+				G.currentDragY = G.currentDragY;
+			}
+			G.currentDragX = 16;
+
+		}
+
+		if(G.dragDown){
+			if(y > G.dragDownLowest){
+				G.currentDragY = y;
+				didMove = true;
+			}else{
+				G.currentDragY = G.currentDragY;
+			}
+			G.currentDragX = 16;
+
+		}
+
+		if(didMove){
+			//A.play_drag();
+		}
 		P.update_drag_peg(G.currentDragX, G.currentDragY);
 
 		// if current drag X is equal to a certain threshold, we've done it boys
@@ -478,10 +550,36 @@ var G = {//general game logic
 	},
 
 	check_drag_completion: function(){
-		if(G.currentDragX <= G.dragYThreshold || G.currentDragX >= G.dragXThreshold){
-			return true;
-		}else{
-			return false;
+		if(G.dragLeft){
+			if(G.currentDragX <= G.dragLowThreshold){
+				return true;
+			}else{
+				return false;
+			}
+		}
+
+		if(G.dragRight){
+			if(G.currentDragX >= G.dragHighThreshold){
+				return true;
+			}else{
+				return false;
+			}
+		}
+
+		if(G.dragUp){
+			if(G.currentDragY <= G.dragLowThreshold){
+				return true;
+			}else{
+				return false;
+			}
+		}
+
+		if(G.dragDown){
+			if(G.currentDragY >= G.dragHighThreshold){
+				return true;
+			}else{
+				return false;
+			}
 		}
 	},
 
@@ -520,7 +618,7 @@ var G = {//general game logic
 		G.canClick = false;
 
 		var click_timer = 0;
-		var click_rate = 10;
+		var click_rate = 30;
 
 		var reenable_click = function(){
 			G.canClick = true;
@@ -924,7 +1022,7 @@ var S = { // status line and chapter control
 	message_counter: 0,
 	message_fade : 200,
 
-	time_until_next_chapter: 250,
+	time_until_next_chapter: 150,
 	next_chapter_timer: 0,
 
 	show_message: function(text){
@@ -1096,7 +1194,8 @@ var S = { // status line and chapter control
 		S.message_counter = 0;
 		S.welcome_counter = 0;
 
-		S.next_chapter_timer = PS.timerStart(S.time_until_next_chapter, S.next_chapter);
+		S.time_until_next_chapter = 300;
+		S.next_chapter_timer = PS.timerStart(S.time_until_next_chapter, S.start_break_time);
 	},
 
 	check_complete : function(){
@@ -1122,7 +1221,7 @@ var S = { // status line and chapter control
 					S.message_counter = 0;
 					S.welcome_counter = 0;
 
-					S.next_chapter_timer = PS.timerStart(S.time_until_next_chapter, S.next_chapter); // on to the real game
+					S.next_chapter_timer = PS.timerStart(S.time_until_next_chapter, S.start_break_time); // on to the real break
 				}else{
 					S.start_chapter(0);
 				}
@@ -1130,9 +1229,21 @@ var S = { // status line and chapter control
 		}
 	},
 
-	next_chapter : function(){
+	start_break_time : function(){
+		G.isBreakTime = true;
+		S.show_message("Click to continue...");
 		PS.timerStop(S.next_chapter_timer);
 
+	},
+
+	end_break_time : function(){
+		PS.statusText("");
+		G.isBreakTime = false;
+		S.next_chapter_timer = PS.timerStart(S.time_until_next_chapter, S.next_chapter); // on to the real game
+	},
+
+	next_chapter : function(){
+		PS.timerStop(S.next_chapter_timer);
 		S.welcome_statement();
 	},
 
@@ -1845,6 +1956,7 @@ var P = { // sPrites
 		}
 		P.object_exists = true;
 		G.isPlayable = true;
+
 		J.clear_cross(); // to remove fade
 		J.show_object(type);
 	},
@@ -2035,6 +2147,7 @@ var P = { // sPrites
 		G.dragLeft = false;
 		G.dragUp = false;
 		G.dragRight = false;
+		G.dragDown = false;
 		P.drag_exists = false;
 	}
 };
@@ -2161,6 +2274,12 @@ var A = {//audio
 				break;
 		}
 		//PS.audioPlay(A.TONES[L.ACT_CLICK]);
+	},
+
+	play_start_drag: function(){
+		var rando = PS.random(A.TAP_ARRAY.length-1); // generate from 1 to max
+		PS.audioPlay(A.TAP_ARRAY[rando], {volume: 0.2, path: A.SOUND_PATH});
+
 	},
 
 	load : function() {
@@ -2306,8 +2425,10 @@ var A = {//audio
 	},
 
 	play_drag: function(){
-		//PS.audioPlay(A.TONES_DRAG[A.appear_counter], {volume:0.05, path: A.TONES_DRAG_PATH});
-		//A.appear_counter++;
+		if(A.appear_counter % 16 == 0){
+			PS.audioPlay(A.TONES_DRAG[A.appear_counter], {volume:0.5, path: A.TONES_DRAG_PATH});
+		}
+		A.appear_counter++;
 	},
 
 	play_bgm: function(){
@@ -2449,10 +2570,11 @@ PS.touch = function( x, y, data, options ) {
 	// Uncomment the following line to inspect parameters
 	//PS.debug( "PS.touch() @ " + x + ", " + y + "\n" );
 
-	// TEMP 
-	//var d = G.calc_tick_distance();
-	//G.increase_insanity();
-	//PS.debug("INSA LEVEL: " + G.insanityLevel + "\n");
+	if(G.isBreakTime){
+		S.end_break_time();
+		return;
+	}
+
 	if(!A.insanity_is_playing){
 		A.play_insanity();
 	}else{
