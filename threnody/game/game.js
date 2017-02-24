@@ -287,7 +287,7 @@ var G = {//general game logic
 				G.last_logic_activity = G.counter;
 				break;
 			case L.ACT_FADE_OUT: // clear because miss
-				//PS.statusText("");
+				//PS.statusText("");s
 				G.miss_object();
 				break;
 
@@ -431,6 +431,9 @@ var G = {//general game logic
 		PS.dbEvent( "threnody", "hit status: ", "hit at wrong time");
 		G.isOpportunity = false;
 
+		if(S.current_chapter == 5){
+			return;
+		}
 		J.error_glow();
 		G.increase_insanity();
 
@@ -596,7 +599,11 @@ var G = {//general game logic
 			P.remove_drag_peg();
 		}
 
-		J.miss_fade(); // create a black cross
+		if(S.current_chapter = 5){
+			J.miss_epilogue();
+		}else{
+			J.miss_fade(); // create a black cross
+		}
 	},
 
 	increase_insanity : function(){
@@ -995,7 +1002,40 @@ var L = {//level or chapter logic
 		//The next two lines will go into a generic 'level load' function once we write it
 		G.measure_counter = 0;
 		L.max_measures = L.level.length;
-	}
+	},
+	five: function() {
+		L.level = [
+			[
+				[1, 0,0,0,0,0, 10, 0,0,0,0,0, 9, 0,0,0,0,0, 0, 0,0,0,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[1, 0,0,0,0,0, 10, 0,0,0,0,0, 9, 0,0,0,0,0, 0, 0,0,0,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[1, 0,0,0,0,0, 10, 0,0,0,0,0, 9, 0,0,0,0,0, 0, 0,0,0,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[1, 0,0,0,0,0, 10, 0,0,0,0,0, 9, 0,0,0,0,0, 0, 0,0,0,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[1, 0,0,0,0,0, 10, 0,0,0,0,0, 9, 0,0,0,0,0, 0, 0,0,0,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[1, 0,0,0,0,0, 10, 0,0,0,0,0, 9, 0,0,0,0,0, 0, 0,0,0,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+
+		];
+		//The next two lines will go into a generic 'level load' function once we write it
+		G.measure_counter = 0;
+		L.max_measures = L.level.length;
+	},
+
 };
 
 var S = { // status line and chapter control
@@ -1008,6 +1048,7 @@ var S = { // status line and chapter control
 	chapter_three_array: [],
 	chapter_four_welcome_array:[],
 	chapter_four_array:[],
+	chapter_five_array: [],
 
 	welcome_timer: 0,
 	welcome_rate: 14.5,
@@ -1090,6 +1131,12 @@ var S = { // status line and chapter control
 		S.chapter_four_array[2] = "Bones were gnawed";
 		S.chapter_four_array[3] = "Captain Norrys";
 
+		S.chapter_five_array[0] = "";
+		S.chapter_five_array[1] = "";
+		S.chapter_five_array[2] = "";
+		S.chapter_five_array[3] = "";
+
+
 	},
 
 	welcome_statement: function(){
@@ -1165,6 +1212,9 @@ var S = { // status line and chapter control
 			case 4:
 				whichArray = S.chapter_four_array;
 				break;
+			case 5:
+				whichArray = S.chapter_five_array;
+				break;
 		}
 
 		S.message_rate = 200;
@@ -1182,7 +1232,7 @@ var S = { // status line and chapter control
 		}
 		S.current_chapter++;
 
-		if(S.current_chapter == 3){ // the current end state
+		if(S.current_chapter == 6){ // the current end state
 			S.end_game();
 			return;
 		}
@@ -1280,12 +1330,17 @@ var S = { // status line and chapter control
 			case 4:
 				PS.dbEvent( "threnody", "chapter four begun", true);
 				break;
+			case 5:
+				PS.dbEvent( "threnody", "chapter epilogue begun", true);
+				L.five();
+				J.start_epilogue_fade();
+				break;
 		}
 	},
 
 	end_game : function(){
 
-		S.show_message("Demo Over -- more to come");
+		//S.show_message("Demo Over -- more to come");
 
 		PS.dbEvent( "threnody", "endgame", true );
 
@@ -1311,6 +1366,7 @@ var J = {//juice
 	//LAYER_OBJECT_HIDE: 2,
 	LAYER_CLICK: 3, // used for peg dragging, etc.
 	LAYER_FADE: 4,
+	LAYER_EPILOGUE: 5,
 
 	object_show_time: 0,
 	object_hide_time: 0,
@@ -1370,6 +1426,8 @@ var J = {//juice
 	globalFadeRate: 0,
 	dangerDirectionFadeRate: 100,
 
+	epilogue_fade_rate: 300,
+
 	init_grid: function(){
 		PS.gridSize(G.GRID_WIDTH, G.GRID_HEIGHT);
 		PS.gridColor(J.COLOR_BACKGROUND);
@@ -1422,6 +1480,11 @@ var J = {//juice
 				P.ready_sprite = "sprites/peg_tap_ready.png";
 				P.move_x = 1;
 				P.move_y = 11;
+				if(S.current_chapter == 5){
+					// we are in epilogue
+					P.show_object_epilogue();
+					return;
+				}
 				J.object_show_timer = PS.timerStart(J.object_show_rate, P.show_object_helper);
 				break;
 			case L.ACT_FADE_IN_HOLD:
@@ -1439,7 +1502,6 @@ var J = {//juice
 				P.move_y = 1;
 				//PS.debug("SHOW RATE: " + J.object_show_rate + "\n");
 				//PS.debug("SHOW tIME: " + J.object_show_time + "\n");
-
 				J.object_show_timer = PS.timerStart(J.object_show_rate, P.show_drag_helper);
 				break;
 
@@ -1826,36 +1888,6 @@ var J = {//juice
 		}
 	},
 
-	show_danger_direction: function(){
-		PS.gridPlane(J.LAYER_BACKGROUND);
-		switch(G.dangerDirection){
-			case 0: // everything is fine
-				break;
-			case 1: // left is evil
-				for(var y = 1; y < 31; y++){
-					PS.alpha(0, y, 255);
-					PS.fade(0, y, J.dangerDirectionFadeRate);
-					PS.color(0, y, J.COLOR_INSANITY);
-				}
-				break;
-			case 2: // up is evil
-				for(var x = 1; x < 31; x++){
-					PS.alpha(x, 0, 255);
-					PS.fade(x, 0, J.dangerDirectionFadeRate);
-					PS.color(x, 0, J.COLOR_INSANITY);
-				}
-				break;
-			case 3: // right is evil
-				for(var y = 1; y < 31; y++){
-					PS.alpha(31, y, 255);
-					PS.fade(31, y, J.dangerDirectionFadeRate);
-					PS.color(31, y, J.COLOR_INSANITY);
-				}
-				break;
-
-		}
-	},
-
 	black_cross: function(){ // creates a block cross, for covering up things
 		PS.gridPlane(J.LAYER_FADE);
 		for(var x = 0; x < G.GRID_WIDTH; x++){
@@ -1864,14 +1896,14 @@ var J = {//juice
 				if((x > 10 && x < 21) && (y > 0 && y < 31)){
 					PS.fade(x, y, 0);
 					PS.alpha(x, y, 255);
-					PS.color(x, y, PS.COLOR_BLACK);
+					PS.color(x, y, J.COLOR_BACKGROUND);
 				}
 
 				//right quadrant
 				if((x > 0 && x < 31) && (y > 10 && y < 21)){
 					PS.fade(x, y, 0);
 					PS.alpha(x, y, 255);
-					PS.color(x, y, PS.COLOR_BLACK);
+					PS.color(x, y, J.COLOR_BACKGROUND);
 				}
 			}
 		}
@@ -1885,14 +1917,14 @@ var J = {//juice
 				if((x > 10 && x < 21) && (y > 0 && y < 31)){
 					PS.fade(x, y, 0);
 					PS.alpha(x, y, 0);
-					PS.color(x, y, PS.COLOR_BLACK);
+					PS.color(x, y, J.COLOR_BACKGROUND);
 				}
 
 				//right quadrant
 				if((x > 0 && x < 31) && (y > 10 && y < 21)){
 					PS.fade(x, y, 0);
 					PS.alpha(x, y, 0);
-					PS.color(x, y, PS.COLOR_BLACK);
+					PS.color(x, y, J.COLOR_BACKGROUND);
 				}
 			}
 		}
@@ -1917,6 +1949,47 @@ var J = {//juice
 				}
 			}
 		}
+	},
+
+	miss_epilogue: function(){
+		PS.gridPlane(J.LAYER_OBJECT);
+		for(var x = 0; x < G.GRID_WIDTH; x++){
+			for(var y = 0; y < G.GRID_HEIGHT; y++){
+				// center quadrant
+				if((x > 10 && x < 21) && (y > 10 && y < 21)){
+					PS.fade(x, y, 25);
+					PS.alpha(x, y, 0);
+					//PS.color(x, y, J.COLOR_BACKGROUND);
+				}
+			}
+		}
+	},
+
+	epilogue_fade_done : false,
+
+	start_epilogue_fade: function(){
+		PS.gridPlane(J.LAYER_BACKGROUND);
+		PS.gridFade(J.epilogue_fade_rate);
+		PS.gridColor(PS.COLOR_WHITE);
+
+		for(var x = 0; x< G.GRID_WIDTH; x++){
+			for(var y = 0; y < G.GRID_HEIGHT; y++){
+				// don't mess with peg spot
+					PS.fade(x, y, J.epilogue_fade_rate, { onEnd : J.epilogueOver });
+					PS.alpha(x, y, 255);
+					PS.color(x, y, PS.COLOR_WHITE);
+
+			}
+		}
+	},
+
+	epilogueOver : function() {
+		if(!J.epilogue_fade_done) {
+			J.COLOR_BACKGROUND = PS.COLOR_WHITE;
+			G.start_global_timer();
+		}
+
+		J.epilogue_fade_done = true;
 	}
 };
 
@@ -1957,12 +2030,13 @@ var P = { // sPrites
 		P.object_exists = true;
 		G.isPlayable = true;
 
-		J.clear_cross(); // to remove fade
+		if(S.current_chapter != 5){
+			J.clear_cross(); // to remove fade
+		}
 		J.show_object(type);
 	},
 
 	show_object_helper: function(){
-
 		//sound stuff
 		if(G.actionType == L.ACT_FADE_IN_TAP){
 			A.play_appear_horiz();
@@ -1997,8 +2071,6 @@ var P = { // sPrites
 
 		PS.imageLoad(theImage, loader);
 		J.object_show_counter--;
-
-
 	},
 
 	show_drag_helper: function(){
@@ -2149,7 +2221,20 @@ var P = { // sPrites
 		G.dragRight = false;
 		G.dragDown = false;
 		P.drag_exists = false;
-	}
+	},
+
+	show_object_epilogue: function(){
+		var loader;
+		loader = function(data){
+			P.current_object = PS.spriteImage(data);
+			PS.spritePlane(P.current_object, J.LAYER_OBJECT);
+			PS.spriteMove(P.current_object, 11, 11);
+
+		};
+		var theImage = "sprites/epilogue_ready.png";
+		PS.imageLoad(theImage, loader);
+		P.object_is_appearing = false;
+	},
 };
 
 var A = {//audio
@@ -2517,8 +2602,9 @@ var callback = function ( id ) {
 		PS.statusColor(PS.COLOR_WHITE);
 		PS.statusText("USERNAME INVALID, REFRESH PLZ");
 	}else{
-		S.current_chapter = 0;
-		S.welcome_statement();
+		S.current_chapter = 5;
+		//S.welcome_statement();
+		S.start_chapter(5);
 	}
 
 // This is where you should complete initialization
