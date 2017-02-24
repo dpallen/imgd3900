@@ -669,7 +669,7 @@ var L = {//level or chapter logic
 		L.level = [
 			[
 				[1, 0,0,0,0,0, 10, 0,0,0,0,0, 9, 0,0,0,0,0, 0, 0,0,0,0,0]  //logic
-				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 			],
 			[
 				[1, 0,0,0,0,0, 10, 0,0,0,0,0, 9, 0,0,0,0,0, 0, 0,0,0,0,0]  //logic
@@ -738,271 +738,523 @@ var L = {//level or chapter logic
 
 		L.level = [
 			[
-				[3, 0,0,0,0,0, 10, 0,0,0,0,0, 0, 0,0,0,0,0, 0, 0,0,0,0,9]  //logic
+				[1, 0,0,0,0,0, 10, 0,0,0,0,0, 9, 0,0,0,0,0, 0, 0,0,0,0,0]  //logic
 			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 				],
 
 			[
 				[1, 0,0,0,0,0, 10, 0,0,9,0,0, 1, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
-				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 			],
 			[
 
-				[1, 0,0,0,0,0, 10, 0,0,9,0,0, 1, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
-				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			],
-			[
 				[1, 0,0,10,0,0, 9, 0,0,0,0,0, 1, 0,0,10,0,0, 9, 0,0,0,0,0]  //logic
 			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-				],
+			],
 			[
-				[0, 0,0,1,0,0, 10, 0,0,9,0,0, 0, 0,0,1,0,0, 10, 0,0,9,0,0]  //logic
+				[1, 0,0,0,0,0, 10, 0,0,9,0,0, 0, 0,0,1,0,0, 10, 0,0,9,0,0]  //logic
 			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 				],
+
+
+
 			[
 				[2, 0,0,0,0,0, 10, 0,0,0,0,0, 9, 0,0,0,0,0, 0, 0,0,0,0,0]  //logic
 			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 				],
+
 			[
 				[2, 0,0,0,0,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
 			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-				],
-			[
-				[2, 0,0,10,0,9, 2, 0,0,10,0,9, 2, 0,0,10,0,9, 2, 0,0,10,0,9]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-				],
-			[
-				[1, 0,0,0,0,0, 0, 0,0,10,0,0, 9, 0,0,2,0,0, 10, 0,0,9,0,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-				],
-			[
-				[1, 0,0,10,0,9, 2, 0,0,10,0,9, 1, 0,0,10,0,9, 2, 0,0,10,0,9]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-				],
-			[
-				[1, 0,0,0,0,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0] //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-				],
-			[
-				[1, 0,10,9,1,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-				],
-			[
-				[2, 0,0,0,0,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-				],
-			[
-				[1, 0,10,9,1,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-				],
-			[
-				[2, 0,0,0,0,0, 10, 0,0,9,0,2, 0, 10,0,9,0,0, 0, 0,0,0,0,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-				],
-			[
-				[1, 0,0,0,0,0, 10, 0,0,9,0,0, 1, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
-			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-				],
-			[
-				[2, 0,0,0,0,0, 10, 0,0,9,0,0, 1, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
-				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 			],
 			[
-				[2, 0,0,0,0,0, 10, 0,0,9,0,0, 1, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
-				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+
+				[2, 0,0,10,0,0, 9, 0,0,0,0,0, 2, 0,0,10,0,0, 9, 0,0,0,0,0]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 			],
 			[
-				[1, 0,0,0,0,0, 10, 0,0,9,0,0, 1, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
-				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+				[2, 0,0,0,0,0, 10, 0,0,9,0,0, 0, 0,0,2,0,0, 10, 0,0,9,0,0]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+				],
+
+
+
+			[
+				[3, 0,0,0,0,0, 10, 0,0,0,0,0, 9, 0,0,0,0,0, 0, 0,0,0,0,0]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+				],
+
+			[
+				[3, 0,0,0,0,0, 10, 0,0,9,0,0, 3, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 			],
+			[
+
+				[2, 0,0,10,0,0, 9, 0,0,0,0,0, 2, 0,0,10,0,0, 9, 0,0,0,0,0]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[1, 0,0,0,0,0, 10, 0,0,9,0,0, 0, 0,0,1,0,0, 10, 0,0,9,0,0]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+				],
+
+
+			[
+				[1, 0,0,0,0,0, 10, 0,0,9,0,0, 0, 0,0,1,0,0, 10, 0,0,9,0,0]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+				],
+
 			[
 				[1, 0,0,0,0,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
-				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 			],
 			[
-				[1, 0,10,9,2,0, 10, 0,0,9,0,0, 1, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
-				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+
+				[2, 0,0,10,0,0, 9, 0,0,0,0,0, 1, 0,0,10,0,0, 9, 0,0,0,0,0]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 			],
 			[
-				[1, 0,0,10,0,9, 1, 0,0,10,0,9, 2, 0,0,10,0,9, 2, 0,0,10,0,9]  //logic
-				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+				[3, 0,0,0,0,0, 10, 0,0,9,0,0, 0, 0,0,1,0,0, 10, 0,0,9,0,0]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+				],
+
+			[
+
+				[1, 0,0,10,9,0, 1, 0,0,10,9,0, 1, 0,0,10,9,0, 0, 0,0,0,0,0]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 			],
 			[
-				[2, 0,0,0,0,0, 10, 0,0,9,0,0, 1, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
-				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+				[2, 0,0,10,9,0, 2, 0,0,10,9,0, 2, 0,0,10,9,0, 0, 0,0,0,0,0]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 			],
 			[
-				[1, 0,0,0,0,0, 10, 0,0,9,0,0, 0, 0,0,0,0,0, 0, 0,0,0,0,0]  //logic
-				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			],
-			/*[
-				[2, 0,0,0,0,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
-				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+				[1, 0,0,10,9,0, 1, 0,0,10,9,0, 2, 0,0,10,9,0, 0, 0,0,0,0,0]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 			],
 			[
-				[2, 0,0,0,0,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
-				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+				[3, 0,0,0,0,0, 10, 0,0,9,0,0, 0, 0,0,1,0,0, 10, 0,0,9,0,0]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+
+
+			[
+				[1, 0,0,10,9,0, 2, 0,0,10,9,0, 1, 0,0,10,9,0, 0, 0,0,0,0,0]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 			],
 			[
-				[2, 0,0,0,0,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
-				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+				[2, 0,0,10,9,0, 1, 0,0,10,9,0, 2, 0,0,10,9,0, 0, 0,0,0,0,0]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 			],
 			[
-				[2, 0,0,0,0,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
-				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			],
+				[3, 0,0,0,0,0, 10, 0,0,9,0,0, 0, 0,0,1,0,0, 10, 0,0,9,0,0]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+				],
 			[
-				[2, 0,0,0,0,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
-				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			],
-			[
-				[2, 0,0,0,0,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
-				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			],
-			[
-				[1, 0,10,9,1,0, 10, 0,0,9,0,0, 1, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
-				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			]*/
+				[3, 0,0,0,0,0, 10, 0,0,9,0,0, 0, 0,0,0,0,0, 0, 0,0,0,0,0]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+				]
 				
 		];
 		//The next two lines will go into a generic 'level load' function once we write it
 		G.measure_counter = 0;
 		L.max_measures = L.level.length;
 	},
+
 	two : function() {
 
 		L.level = [
 			[
-				[1, 10,9,0,0,0, 1, 10,0,0,0,9, 1, 0,0,0,0,0, 10, 0,0,0,0,9]  //logic
+				[1, 0,0,0,0,0, 0, 0,0,0,0,0, 10, 0,0,0,0,0, 9, 0,0,0,0,0]  //logic
 				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 			],
 			[
-				[2, 0,0,0,0,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
-				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+				[1, 0,0,10,9,0, 1, 0,0,10,9,0, 1, 0,0,10,9,0, 0, 0,0,0,0,0]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 			],
 			[
+				[2, 0,0,10,9,0, 2, 0,0,10,9,0, 2, 0,0,10,9,0, 0, 0,0,0,0,0]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[3, 0,0,0,0,0, 10, 0,0,9,0,0, 0, 0,0,1,0,0, 10, 0,0,9,0,0]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+				],
 
-				[1, 0,0,0,0,0, 10, 0,0,0,0,0, 0, 0,0,0,0,0, 0, 0,0,0,0,9]  //logic
+
+
+			[
+				[2, 0,0,0,0,0, 0, 0,0,0,0,0, 10, 0,0,0,0,0, 9, 0,0,0,0,0]  //logic
 				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 			],
 			[
-				[1, 0,0,0,0,0, 0, 0,0,0,0,0, 0, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+				[2, 0,0,10,9,0, 2, 0,0,10,9,0, 2, 0,0,10,9,0, 0, 0,0,0,0,0]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[1, 0,0,10,9,0, 1, 0,0,10,9,0, 1, 0,0,10,9,0, 0, 0,0,0,0,0]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[3, 0,0,0,0,0, 10, 0,0,9,0,0, 0, 0,0,1,0,0, 10, 0,0,9,0,0]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+				],
+				
+
+
+			[
+				[1, 0,0,10,0,0, 9, 0,0,1,0,0, 10, 9,0,1,0,0, 10, 0,0,9,0,0]  //logic
 				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 			],
 			[
-				[0, 0,0,2,0,0, 10, 0,0,9,0,0, 0, 0,0,1,0,0, 10, 0,0,9,0,0]  //logic
+				[1, 0,0,10,0,0, 9, 0,0,1,0,0, 10, 9,0,1,0,0, 10, 0,0,9,0,0]  //logic
 				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 			],
 			[
-				[2, 0,0,0,0,0, 10, 0,0,9,0,0, 1, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+				[1, 0,0,0,0,0, 10, 0,0,9,0,0, 3, 0,0,10,0,0, 9, 0,0,0,0,0]  //logic
 				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 			],
 			[
-				[1, 0,0,0,0,0, 0, 0,0,10,0,0, 9, 0,0,1,0,0, 10, 0,0,9,0,0]  //logic
+				[2, 0,0,0,0,0, 10, 0,0,9,0,0, 3, 0,0,10,0,0, 9, 0,0,0,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+
+
+
+			[
+				[2, 0,0,10,0,0, 9, 0,0,2,0,0, 10, 9,0,2,0,0, 10, 0,0,9,0,0]  //logic
 				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 			],
 			[
-				[3, 0,0,0,0,0, 10, 0,0,0,0,0, 0, 0,0,0,0,0, 0, 0,0,0,0,9]  //logic
+				[2, 0,0,10,0,0, 9, 0,0,2,0,0, 10, 9,0,2,0,0, 10, 0,0,9,0,0]  //logic
 				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 			],
 			[
-				[1, 0,0,0,0,0, 10, 0,0,0,0,0, 0, 0,0,0,0,0, 0, 0,0,0,0,9]  //logic
+				[2, 0,0,0,0,0, 10, 0,0,9,0,0, 3, 0,0,10,0,0, 9, 0,0,0,0,0]  //logic
 				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 			],
 			[
-				[1, 0,0,0,0,0, 10, 0,0,0,0,0, 0, 0,0,0,0,0, 0, 0,0,0,0,9]  //logic
+				[1, 0,0,0,0,0, 10, 0,0,9,0,0, 3, 0,0,10,0,0, 9, 0,0,0,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+
+
+
+			[
+				[3, 0,0,0,0,0, 0, 0,0,0,0,0, 10, 0,0,0,0,0, 9, 0,0,0,0,0]  //logic
 				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 			],
 			[
-				[2, 0,0,10,0,9, 1, 0,0,10,0,9, 2, 0,0,10,0,9, 2, 0,0,10,0,9]  //logic
+				[1, 0,0,10,9,0, 1, 0,0,10,9,0, 1, 0,0,10,9,0, 0, 0,0,0,0,0]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[2, 0,0,10,0,0, 9, 0,0,2,0,0, 10, 9,0,2,0,0, 10, 0,0,9,0,0]  //logic
 				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 			],
 			[
-				[1, 0,10,0,9,0, 0, 0,0,1,0,0, 0, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+				[0, 0,0,0,0,0, 0, 0,0,0,0,0, 0, 0,0,0,0,0, 1, 0,0,10,9,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+
+			[
+				[3, 0,0,0,0,0, 0, 0,0,0,0,0, 10, 0,0,0,0,0, 9, 0,0,0,0,0]  //logic
 				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 			],
 			[
-				[1, 10,0,9,0,0, 0, 0,0,0,0,0, 1, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+				[1, 0,0,10,9,0, 2, 0,0,10,9,0, 1, 0,0,10,9,0, 0, 0,0,0,0,0]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[2, 0,0,10,0,0, 9, 0,0,1,0,0, 10, 9,0,2,0,0, 10, 0,0,9,0,0]  //logic
 				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 			],
 			[
-				[2, 0,10,9,0,0, 0, 0,0,0,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+				[0, 0,0,0,0,0, 0, 0,0,0,0,0, 0, 0,0,0,0,0, 1, 0,0,10,9,0]  //logic
 				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
 			],
-			[
-				[3, 0,0,0,0,0, 10, 0,0,9,0,0, 1, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
-				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			],
-			[
-				[1, 0,0,0,0,0, 10, 0,0,9,0,0, 1, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
-				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			],
-			[
-				[2, 0,0,0,0,0, 10, 0,0,9,0,0, 3, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
-				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			],
-			[
-				[2, 0,0,0,0,0, 10, 0,0,9,0,0, 1, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
-				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			],
-			[
-				[1, 0,0,0,0,0, 10, 0,0,9,0,0, 1, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
-				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			],
-			[
-				[1, 0,0,0,0,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
-				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			],
-			[
-				[1, 0,10,9,0,0, 0, 0,0,0,0,0, 3, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
-				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			],
-			[
-				[2, 0,0,10,0,9, 1, 0,0,10,0,9, 1, 0,0,10,0,9, 2, 0,0,10,0,9]  //logic
-				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			],
-			[
-				[2, 0,0,0,0,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
-				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			],
-			[
-				[1, 0,0,0,0,0, 0, 0,0,0,0,0, 0, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
-				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			],
-			/*[
-			 [2, 0,0,0,0,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
-			 //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			 ],
-			 [
-			 [2, 0,0,0,0,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
-			 //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			 ],
-			 [
-			 [2, 0,0,0,0,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
-			 //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			 ],
-			 [
-			 [2, 0,0,0,0,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
-			 //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			 ],
-			 [
-			 [2, 0,0,0,0,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
-			 //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			 ],
-			 [
-			 [2, 0,0,0,0,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
-			 //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			 ],
-			 [
-			 [1, 0,10,9,1,0, 10, 0,0,9,0,0, 1, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
-			 //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
-			 ]*/
 
 		];
 		//The next two lines will go into a generic 'level load' function once we write it
 		G.measure_counter = 0;
 		L.max_measures = L.level.length;
 	},
+
+	three : function() {
+
+		L.level = [
+			[
+				[1, 0,0,0,0,0, 10, 0,0,0,0,0, 9, 0,0,0,0,0, 0, 0,0,0,0,0]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+				],
+
+			[
+				[1, 0,0,0,0,0, 10, 0,0,9,0,0, 1, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+
+				[1, 0,0,10,0,0, 9, 0,0,0,0,0, 1, 0,0,10,0,0, 9, 0,0,0,0,0]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[1, 0,0,0,0,0, 10, 0,0,9,0,0, 0, 0,0,1,0,0, 10, 0,0,9,0,0]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+				],
+
+
+
+
+			[
+				[2, 0,0,0,0,0, 10, 0,0,0,0,0, 9, 0,0,0,0,0, 0, 0,0,0,0,0]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+				],
+
+			[
+				[2, 0,0,0,0,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+
+				[2, 0,0,10,0,0, 9, 0,0,0,0,0, 2, 0,0,10,0,0, 9, 0,0,0,0,0]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[2, 0,0,0,0,0, 10, 0,0,9,0,0, 0, 0,0,2,0,0, 10, 0,0,9,0,0]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+				],
+
+
+
+
+			[
+				[3, 0,0,0,0,0, 10, 0,0,0,0,0, 9, 0,0,0,0,0, 0, 0,0,0,0,0]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+				],
+
+			[
+				[3, 0,0,0,0,0, 10, 0,0,9,0,0, 3, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+
+				[2, 0,0,10,0,0, 9, 0,0,0,0,0, 2, 0,0,10,0,0, 9, 0,0,0,0,0]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[1, 0,0,0,0,0, 10, 0,0,9,0,0, 0, 0,0,1,0,0, 10, 0,0,9,0,0]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+				],
+
+
+
+			[
+				[1, 0,0,0,0,0, 10, 0,0,9,0,0, 0, 0,0,1,0,0, 10, 0,0,9,0,0]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+				],
+
+			[
+				[1, 0,0,0,0,0, 10, 0,0,9,0,0, 2, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+
+				[2, 0,0,10,0,0, 9, 0,0,0,0,0, 1, 0,0,10,0,0, 9, 0,0,0,0,0]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[3, 0,0,0,0,0, 10, 0,0,9,0,0, 0, 0,0,1,0,0, 10, 0,0,9,0,0]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+				],
+
+
+
+			[
+
+				[1, 0,0,10,9,0, 1, 0,0,10,9,0, 1, 0,0,10,9,0, 0, 0,0,0,0,0]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[2, 0,0,10,9,0, 2, 0,0,10,9,0, 2, 0,0,10,9,0, 0, 0,0,0,0,0]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[1, 0,0,10,9,0, 1, 0,0,10,9,0, 2, 0,0,10,9,0, 0, 0,0,0,0,0]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[3, 0,0,0,0,0, 10, 0,0,9,0,0, 0, 0,0,1,0,0, 10, 0,0,9,0,0]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+
+
+			[
+				[1, 0,0,10,9,0, 2, 0,0,10,9,0, 1, 0,0,10,9,0, 0, 0,0,0,0,0]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[2, 0,0,10,9,0, 1, 0,0,10,9,0, 2, 0,0,10,9,0, 0, 0,0,0,0,0]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[3, 0,0,0,0,0, 10, 0,0,9,0,0, 0, 0,0,1,0,0, 10, 0,0,9,0,0]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+				],
+			[
+				[3, 0,0,0,0,0, 10, 0,0,9,0,0, 0, 0,0,0,0,0, 0, 0,0,0,0,0]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+				]
+				
+		];
+		//The next two lines will go into a generic 'level load' function once we write it
+		G.measure_counter = 0;
+		L.max_measures = L.level.length;
+	},
+
+	four : function() {
+
+		L.level = [
+			[
+				[0, 0,0,0,0,0, 0, 0,0,0,0,0, 0, 0,0,0,0,0, 1, 0,0,10,9,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[3, 0,0,10,9,0, 3, 0,0,10,9,0, 3, 0,0,10,9,0, 3, 0,0,10,9,0]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[0, 0,0,0,0,0, 0, 0,0,0,0,0, 0, 0,0,0,0,0, 1, 0,0,10,9,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[3, 0,0,10,9,0, 3, 0,0,10,9,0, 3, 0,0,10,9,0, 3, 0,0,10,9,0]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+
+
+
+			[
+				[0, 0,0,1,0,0, 10, 9,0,2,0,0, 10, 9,0,3,0,0, 10, 9,0,0,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[0, 0,0,2,0,0, 10, 9,0,1,0,0, 10, 9,0,3,0,0, 10, 9,0,0,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[1, 0,0,10,9,0, 3, 0,0,10,9,0, 1, 0,0,10,9,0, 0, 0,0,0,0,0]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[2, 0,0,10,9,0, 1, 0,0,10,9,0, 3, 0,0,10,9,0, 0, 0,0,0,0,0]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+
+
+			[
+				[0, 0,0,0,0,0, 0, 0,0,0,0,0, 0, 0,0,0,0,0, 1, 0,0,10,9,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[3, 0,0,10,9,0, 3, 0,0,10,9,0, 3, 0,0,10,9,0, 3, 0,0,10,9,0]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[0, 0,0,0,0,0, 0, 0,0,0,0,0, 0, 0,0,0,0,0, 1, 0,0,10,9,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[3, 0,0,10,9,0, 3, 0,0,10,9,0, 3, 0,0,10,9,0, 3, 0,0,10,9,0]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+
+			[
+				[0, 0,0,2,0,0, 10, 9,0,1,0,0, 10, 9,0,3,0,0, 10, 9,0,0,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[0, 0,0,2,0,0, 10, 9,0,3,0,0, 10, 9,0,2,0,0, 10, 9,0,0,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[3, 0,0,10,9,0, 1, 0,0,10,9,0, 2, 0,0,10,9,0, 0, 0,0,0,0,0]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[3, 0,0,10,9,0, 1, 0,0,10,9,0, 3, 0,0,10,9,0, 0, 0,0,0,0,0]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+
+
+
+			[
+				[3, 0,0,10,9,0, 1, 0,0,10,9,0, 3, 0,0,10,9,0, 2, 0,0,10,9,0]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[3, 0,0,10,9,0, 2, 0,0,10,9,0, 3, 0,0,10,9,0, 0, 0,0,0,0,0]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[3, 0,0,10,9,0, 1, 0,0,10,9,0, 3, 0,0,10,9,0, 1, 0,0,10,9,0]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[3, 0,0,10,9,0, 2, 0,0,10,9,0, 3, 0,0,10,9,0, 0, 0,0,0,0,0]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+
+			[
+				[3, 0,0,10,9,0, 2, 0,0,10,9,0, 3, 0,0,10,9,0, 2, 0,0,10,9,0]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[3, 0,0,10,9,0, 1, 0,0,10,9,0, 3, 0,0,10,9,0, 0, 0,0,0,0,0]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[3, 0,0,10,9,0, 2, 0,0,10,9,0, 3, 0,0,10,9,0, 1, 0,0,10,9,0]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[3, 0,0,10,9,0, 1, 0,0,10,9,0, 3, 0,0,10,9,0, 3, 0,0,10,9,0]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+
+
+			[
+				[3, 0,0,0,0,0, 0, 0,0,0,0,0, 10, 9,0,3,0,0, 9, 0,0,0,0,0]  //logic
+				//[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[3, 0,0,10,9,0, 2, 0,0,10,9,0, 3, 0,0,10,9,0, 2, 0,0,10,9,0]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[3, 0,0,10,9,0, 2, 0,0,10,9,0, 3, 0,0,10,9,0, 1, 0,0,10,9,0]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[3, 0,0,10,9,0, 1, 0,0,10,9,0, 3, 0,0,10,9,0, 3, 0,0,10,9,0]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+
+		
+			[
+				[1, 0,0,10,9,0, 2, 0,0,10,9,0, 1, 0,0,10,9,0, 2, 0,0,10,9,0]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+			[
+				[3, 0,0,0,0,0, 10, 0,0,9,0,0, 1, 0,0,0,0,0, 10, 0,0,9,0,0]  //logic
+			  //[q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s, q, s,t,e,t,s],  //logic key
+			],
+				
+		];
+		//The next two lines will go into a generic 'level load' function once we write it
+		G.measure_counter = 0;
+		L.max_measures = L.level.length;
+	},
+
+
 	five: function() {
 		L.level = [
 			[
